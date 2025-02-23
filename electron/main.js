@@ -3,9 +3,27 @@ const path = require('path');
 const { spawn } = require('child_process');
 const os = require('os');
 const isDev = process.env.NODE_ENV === 'development';
+const waitOn = require('wait-on');
 
 let mainWindow;
 let server;
+let loadingScreen;
+
+function createLoadingScreen() {
+    loadingScreen = new BrowserWindow({
+        width: 300,
+        height: 400,
+        frame: false,
+        transparent: true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    });
+
+    loadingScreen.loadFile(path.join(__dirname, 'loading.html'));
+    loadingScreen.center();
+}
 
 function getLocalIP() {
     const interfaces = os.networkInterfaces();
@@ -20,28 +38,38 @@ function getLocalIP() {
 }
 
 function startServer() {
-    // Start the server process
-    server = spawn('node', ['server/index.js'], {
-        stdio: 'pipe'
-    });
+    return new Promise((resolve, reject) => {
+        server = spawn('node', ['server/index.js'], {
+            stdio: 'pipe'
+        });
 
-    server.stdout.on('data', (data) => {
-        console.log(`Server: ${data}`);
-        mainWindow?.webContents.send('server-log', data.toString());
-    });
+        server.stdout.on('data', (data) => {
+            console.log(`Server: ${data}`);
+            if (data.toString().includes('Server running')) {
+                resolve();
+            }
+            mainWindow?.webContents.send('server-log', data.toString());
+        });
 
-    server.stderr.on('data', (data) => {
-        console.error(`Server Error: ${data}`);
-        mainWindow?.webContents.send('server-error', data.toString());
+        server.stderr.on('data', (data) => {
+            console.error(`Server Error: ${data}`);
+            mainWindow?.webContents.send('server-error', data.toString());
+        });
+
+        // Set a timeout for server start
+        setTimeout(() => {
+            reject(new Error('Server startup timeout'));
+        }, 30000);
     });
 }
 
-function createWindow() {
+async function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
         minWidth: 800,
         minHeight: 600,
+        show: false, // Don't show until ready
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -53,12 +81,32 @@ function createWindow() {
 
     // In development, use React dev server
     if (isDev) {
-        mainWindow.loadURL('http://localhost:3000');
-        mainWindow.webContents.openDevTools();
+        try {
+            // Wait for React dev server to be ready
+            await waitOn({
+                resources: ['http://localhost:3000'],
+                timeout: 30000, // 30 seconds timeout
+            });
+            await mainWindow.loadURL('http://localhost:3000');
+            mainWindow.webContents.openDevTools();
+        } catch (err) {
+            console.error('Failed to load React dev server:', err);
+            // Fallback to production build if dev server fails
+            mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
+        }
     } else {
         // In production, load the built files
         mainWindow.loadFile(path.join(__dirname, '../build/index.html'));
     }
+
+    // Show window when ready
+    mainWindow.once('ready-to-show', () => {
+        if (loadingScreen) {
+            loadingScreen.close();
+            loadingScreen = null;
+        }
+        mainWindow.show();
+    });
 
     // Send local IP to renderer
     mainWindow.webContents.on('did-finish-load', () => {
@@ -71,9 +119,18 @@ function createWindow() {
     });
 }
 
-app.on('ready', () => {
-    startServer();
-    createWindow();
+app.on('ready', async () => {
+    createLoadingScreen();
+    try {
+        await startServer();
+        await createWindow();
+    } catch (error) {
+        console.error('Failed to start application:', error);
+        if (loadingScreen) {
+            loadingScreen.close();
+        }
+        app.quit();
+    }
 });
 
 app.on('window-all-closed', () => {
