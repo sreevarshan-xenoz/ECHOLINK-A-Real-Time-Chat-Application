@@ -57,7 +57,7 @@ body {
     background: rgba(0, 247, 255, 0.05);
     backdrop-filter: blur(10px);
     border-radius: 12px;
-    padding: 15px 25px;
+    padding: 20px 25px;
     margin-bottom: 10px;
     border: 1px solid rgba(0, 247, 255, 0.2);
     box-shadow: var(--neon-glow);
@@ -67,8 +67,162 @@ body {
     color: var(--accent-color);
     font-size: 24px;
     font-weight: 600;
-    margin: 0;
+    margin: 0 0 15px 0;
     text-shadow: var(--neon-text-glow);
+}
+
+.app-header .ai-model-select {
+    margin: 0;
+    padding: 10px 0 0 0;
+    background: none;
+    border: none;
+    animation: none;
+}
+
+.app-header .ai-model-select p {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.app-header .model-options {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.app-header .model-option {
+    background: rgba(0, 247, 255, 0.05);
+    border: 1px solid rgba(0, 247, 255, 0.2);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 14px;
+    min-width: 90px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.app-header .model-option:hover {
+    background: rgba(0, 247, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.app-header .model-option.selected {
+    background: rgba(0, 247, 255, 0.15);
+    border-color: var(--accent-color);
+    box-shadow: var(--neon-glow);
+}
+
+.app-header .model-icon {
+    font-size: 16px;
+}
+
+.verified-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--success-color);
+    color: var(--text-light);
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 0 10px rgba(0, 255, 200, 0.5);
+}
+
+.api-key-form {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(0, 247, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 247, 255, 0.1);
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.api-key-input {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text-light);
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.api-key-input:focus {
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 10px rgba(0, 247, 255, 0.2);
+}
+
+.api-key-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.verify-button,
+.cancel-button {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.verify-button {
+    background: var(--accent-gradient);
+    color: var(--text-light);
+    min-width: 100px;
+    justify-content: center;
+}
+
+.verify-button:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: var(--neon-glow);
+}
+
+.verify-button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.cancel-button {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+}
+
+.cancel-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.error-message {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 0, 76, 0.1);
+    border: 1px solid rgba(255, 0, 76, 0.2);
+    border-radius: 6px;
+    color: var(--error-color);
+    font-size: 13px;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .app > .sidebar,
@@ -372,4 +526,176 @@ body {
 
 .connect-button:active, .retry-button:active {
     transform: translateY(1px);
+}
+
+.ai-model-select {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 247, 255, 0.1);
+    animation: fadeInUp 0.5s ease-out 0.2s both;
+}
+
+.ai-model-select p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.model-options {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.model-option {
+    background: rgba(0, 247, 255, 0.05);
+    border: 1px solid rgba(0, 247, 255, 0.2);
+    border-radius: 10px;
+    padding: 10px 15px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+}
+
+.model-option:hover {
+    background: rgba(0, 247, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 247, 255, 0.2);
+}
+
+.model-option.selected {
+    background: rgba(0, 247, 255, 0.15);
+    border-color: var(--accent-color);
+    box-shadow: var(--neon-glow);
+    transform: translateY(-1px);
+}
+
+.model-icon {
+    font-size: 18px;
+    display: inline-block;
+    animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+.model-option:nth-child(1) .model-icon {
+    animation-delay: 0s;
+}
+
+.model-option:nth-child(2) .model-icon {
+    animation-delay: 0.3s;
+}
+
+.model-option:nth-child(3) .model-icon {
+    animation-delay: 0.6s;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.settings-button {
+    background: rgba(0, 247, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.settings-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(45deg, #00f7ff, #00c3ff);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.settings-button:hover {
+    background: rgba(0, 247, 255, 0.2);
+    transform: rotate(45deg);
+}
+
+.settings-panel {
+    background: rgba(0, 247, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    border: 1px solid rgba(0, 247, 255, 0.2);
+    padding: 20px;
+    margin-top: 10px;
+    animation: slideDown 0.3s ease-out;
+    position: relative;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.settings-header h3 {
+    color: var(--accent-color);
+    font-size: 18px;
+    margin: 0;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 24px;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.close-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: rotate(90deg);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 } 
