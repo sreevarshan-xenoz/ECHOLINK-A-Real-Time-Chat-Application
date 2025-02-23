@@ -2,28 +2,34 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background-color: #f0f2f5;
-    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #1a0f35 0%, #2d0a31 100%);
+    color: #fff;
+    position: relative;
 }
 
-.chat-container.dark {
-    background-color: #1a1a1a;
-    color: #fff;
+.chat-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at top right, rgba(0, 247, 255, 0.1), transparent 70%),
+                radial-gradient(circle at bottom left, rgba(255, 0, 247, 0.1), transparent 70%);
+    pointer-events: none;
 }
 
 .chat-header {
-    background-color: #075e54;
-    padding: 10px 16px;
-    color: white;
-    border-bottom: 1px solid #dadada;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.dark .chat-header {
-    background-color: #1f2937;
-    border-color: #374151;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    padding: 15px 25px;
+    color: #00f7ff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 15px;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px -1px rgba(0, 0, 0, 0.2);
+    position: relative;
+    z-index: 1;
 }
 
 .chat-user-info {
@@ -89,16 +95,20 @@
     flex: 1;
     overflow-y: auto;
     padding: 20px;
-    background-color: #e5ddd5;
-}
-
-.dark .messages-container {
-    background-color: #111827;
+    margin: 0 15px;
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 1;
 }
 
 .message {
-    margin: 8px 0;
+    margin: 12px 0;
     display: flex;
+    position: relative;
+    z-index: 1;
 }
 
 .message.sent {
@@ -107,17 +117,32 @@
 
 .message-content {
     max-width: 65%;
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 12px 16px;
+    border-radius: 16px;
     position: relative;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
 }
 
 .message.sent .message-content {
-    background-color: #dcf8c6;
+    background: rgba(0, 247, 255, 0.1);
+    border-bottom-right-radius: 4px;
+    margin-right: 8px;
 }
 
 .message.received .message-content {
-    background-color: white;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom-left-radius: 4px;
+    margin-left: 8px;
+}
+
+.message.sent .message-content:hover {
+    background: rgba(0, 247, 255, 0.15);
+}
+
+.message.received .message-content:hover {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .dark .message.sent .message-content {
@@ -220,125 +245,176 @@
 }
 
 .message-input-container {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    margin: 15px;
+    padding: 8px;
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
-    padding: 10px;
-    background-color: #f0f2f5;
-    border-top: 1px solid #dadada;
-    gap: 10px;
+    gap: 8px;
     align-items: center;
-}
-
-.dark .message-input-container {
-    background-color: #1f2937;
-    border-color: #374151;
+    position: relative;
+    z-index: 1;
 }
 
 .text-input-form {
-    display: flex;
     flex: 1;
-    gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .message-input {
     flex: 1;
-    padding: 12px;
+    padding: 8px 16px;
     border: none;
     border-radius: 20px;
-    background-color: white;
+    background: transparent;
+    color: #fff;
     font-size: 15px;
+    transition: all 0.3s ease;
+    min-width: 0; /* Prevents input from overflowing */
 }
 
-.dark .message-input {
-    background-color: #374151;
-    color: white;
+.message-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .message-input:focus {
     outline: none;
 }
 
-.send-button {
-    background: linear-gradient(45deg, #00f7ff, #00c3ff);
-    color: #fff;
+.attachment-button,
+.voice-button {
+    background: rgba(0, 247, 255, 0.1);
     border: none;
     border-radius: 50%;
-    width: 45px;
-    height: 45px;
+    min-width: 38px;
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.attachment-button::before,
+.voice-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(45deg, #00f7ff, #00c3ff);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.send-button {
+    background: rgba(0, 247, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    min-width: 38px;
+    width: 38px;
+    height: 38px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(0, 247, 255, 0.5),
-                0 0 20px rgba(0, 247, 255, 0.3);
+    backdrop-filter: blur(5px);
+    flex-shrink: 0;
+    margin-left: auto; /* Pushes the send button to the right */
 }
 
 .send-button::before {
     content: '';
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #ff00f7, #00f7ff, #b300ff, #00f7ff);
+    inset: 0;
     border-radius: 50%;
-    z-index: -1;
-    animation: border-animation 3s linear infinite;
-    background-size: 400%;
+    padding: 2px;
+    background: linear-gradient(45deg, #00f7ff, #00c3ff);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
 }
 
 .send-button::after {
     content: '➤';
-    font-size: 20px;
+    color: #00f7ff;
+    font-size: 18px;
     transform: rotate(-45deg);
     display: block;
-    transition: transform 0.3s ease;
     text-shadow: 0 0 10px rgba(0, 247, 255, 0.8);
-}
-
-.attachment-button,
-.voice-button {
-    background-color: #075e54;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-}
-
-.dark .attachment-button,
-.dark .voice-button {
-    background-color: #047857;
 }
 
 .send-button:hover,
 .attachment-button:hover,
 .voice-button:hover {
-    background-color: #128c7e;
+    background: rgba(0, 247, 255, 0.2);
+    transform: translateY(-1px);
 }
 
-.dark .send-button:hover,
-.dark .attachment-button:hover,
-.dark .voice-button:hover {
-    background-color: #065f46;
+.send-button:hover::after {
+    transform: rotate(-45deg) scale(1.1);
+}
+
+.send-button:active::after {
+    transform: rotate(-45deg) scale(0.9);
 }
 
 .voice-button.recording {
     animation: pulse 1s infinite;
-    background-color: #dc2626;
+    background: rgba(255, 0, 76, 0.2);
+}
+
+.voice-button.recording::before {
+    background: linear-gradient(45deg, #ff004c, #ff0062);
 }
 
 @keyframes pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+    0% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 0, 76, 0.4);
+    }
+    50% { 
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(255, 0, 76, 0);
+    }
+    100% { 
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(255, 0, 76, 0);
+    }
+}
+
+.message-input-container .button-group {
+    display: flex;
+    gap: 8px;
+    margin-right: 4px;
+}
+
+.message-input-container .button-group button {
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+.message-input-container .button-group button:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.message-input-container .button-group button:active {
+    transform: translateY(1px);
 }
 
 .search-input {

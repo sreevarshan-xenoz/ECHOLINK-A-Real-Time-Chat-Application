@@ -38,7 +38,7 @@ const App = () => {
             });
 
             // Artificial delay for loading screen
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 3000));
             setIsLoading(false);
         } catch (error) {
             console.error('Initialization error:', error);
