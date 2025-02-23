@@ -257,7 +257,47 @@
     outline: none;
 }
 
-.send-button,
+.send-button {
+    background: linear-gradient(45deg, #00f7ff, #00c3ff);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 247, 255, 0.5),
+                0 0 20px rgba(0, 247, 255, 0.3);
+}
+
+.send-button::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #ff00f7, #00f7ff, #b300ff, #00f7ff);
+    border-radius: 50%;
+    z-index: -1;
+    animation: border-animation 3s linear infinite;
+    background-size: 400%;
+}
+
+.send-button::after {
+    content: '➤';
+    font-size: 20px;
+    transform: rotate(-45deg);
+    display: block;
+    transition: transform 0.3s ease;
+    text-shadow: 0 0 10px rgba(0, 247, 255, 0.8);
+}
+
 .attachment-button,
 .voice-button {
     background-color: #075e54;
@@ -273,7 +313,6 @@
     font-size: 20px;
 }
 
-.dark .send-button,
 .dark .attachment-button,
 .dark .voice-button {
     background-color: #047857;

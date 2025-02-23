@@ -69,6 +69,7 @@ const Sidebar = ({ onPeerSelect, currentUser }) => {
                         </div>
                         <div className="user-details">
                             <span className="user-name">Your ID</span>
+                            <div className="user-id">{currentUser.id}</div>
                             <span className="user-status">
                                 <span className="status-indicator status-online"></span>
                                 Online
@@ -78,6 +79,7 @@ const Sidebar = ({ onPeerSelect, currentUser }) => {
                     <button 
                         onClick={handleCopyId}
                         className="copy-button"
+                        title="Copy your ID to share with others"
                     >
                         {copied ? '✓ Copied' : '📋 Copy ID'}
                     </button>
@@ -85,12 +87,17 @@ const Sidebar = ({ onPeerSelect, currentUser }) => {
             </div>
 
             <div className="connect-container">
+                <h3>Connect with Others</h3>
+                <div className="connect-steps">
+                    <p>1. Share your ID with friends</p>
+                    <p>2. Or enter their ID below to connect</p>
+                </div>
                 <form onSubmit={handleConnect}>
                     <input
                         type="text"
                         value={connectInput}
                         onChange={(e) => setConnectInput(e.target.value)}
-                        placeholder="Enter peer ID to connect"
+                        placeholder="Paste friend's ID here"
                         className="connect-input"
                     />
                     <button type="submit" className="connect-button">
@@ -139,6 +146,19 @@ const Sidebar = ({ onPeerSelect, currentUser }) => {
                     </div>
                 )}
             </div>
+
+            {peers.length === 0 && (
+                <div className="no-peers-guide">
+                    <h3>Welcome to Echo Link! 👋</h3>
+                    <p>To start chatting:</p>
+                    <ol>
+                        <li>Copy your ID using the button above</li>
+                        <li>Share it with your friends</li>
+                        <li>Ask them to paste it in their connect field</li>
+                        <li>Or paste their ID in your connect field</li>
+                    </ol>
+                </div>
+            )}
         </div>
     );
 };

@@ -57,6 +57,17 @@
     font-size: 16px;
 }
 
+.user-id {
+    font-family: monospace;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin: 4px 0;
+    word-break: break-all;
+}
+
 .user-status {
     font-size: 12px;
     color: rgba(255, 255, 255, 0.7);
@@ -87,6 +98,22 @@
 .connect-container {
     padding: 20px;
     background: rgba(255, 255, 255, 0.05);
+}
+
+.connect-container h3 {
+    color: white;
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.connect-steps {
+    margin-bottom: 15px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+}
+
+.connect-steps p {
+    margin: 4px 0;
 }
 
 .connect-container form {
@@ -229,6 +256,35 @@
     font-size: 13px;
     color: rgba(255, 255, 255, 0.5);
     margin-top: 10px;
+}
+
+.no-peers-guide {
+    padding: 20px;
+    margin: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    color: white;
+}
+
+.no-peers-guide h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--accent-color);
+}
+
+.no-peers-guide p {
+    margin-bottom: 10px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.no-peers-guide ol {
+    margin-left: 20px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.no-peers-guide li {
+    margin: 8px 0;
+    line-height: 1.4;
 }
 
 /* Animations */

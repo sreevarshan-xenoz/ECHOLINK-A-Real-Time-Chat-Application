@@ -16,7 +16,6 @@ class WebRTCService {
         // STUN servers for NAT traversal
         this.configuration = {
             iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
@@ -39,6 +38,60 @@ class WebRTCService {
 
         // Initialize encryption key
         this.initializeEncryption();
+    }
+
+    async initialize() {
+        try {
+            // Check WebRTC support
+            if (!window.RTCPeerConnection) {
+                throw new Error('WebRTC is not supported in this browser');
+            }
+
+            // Create a test connection to verify STUN servers
+            const testConnection = new RTCPeerConnection(this.configuration);
+            await this.checkStunConnectivity(testConnection);
+            testConnection.close();
+
+            console.log('WebRTC Service initialized with ID:', this.peerId);
+            return true;
+        } catch (error) {
+            console.error('Failed to initialize WebRTC:', error);
+            throw error;
+        }
+    }
+
+    async checkStunConnectivity(connection = null) {
+        try {
+            const pc = connection || new RTCPeerConnection(this.configuration);
+            
+            return new Promise((resolve, reject) => {
+                let timeout = setTimeout(() => {
+                    pc.close();
+                    reject(new Error('STUN connectivity check timeout'));
+                }, 5000);
+
+                pc.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        clearTimeout(timeout);
+                        if (!connection) pc.close();
+                        resolve(true);
+                    }
+                };
+
+                // Create a data channel to trigger ICE candidate gathering
+                pc.createDataChannel('test');
+                pc.createOffer()
+                    .then(offer => pc.setLocalDescription(offer))
+                    .catch(err => {
+                        clearTimeout(timeout);
+                        if (!connection) pc.close();
+                        reject(err);
+                    });
+            });
+        } catch (error) {
+            console.error('STUN connectivity check failed:', error);
+            return false;
+        }
     }
 
     async initializeEncryption() {
@@ -150,32 +203,50 @@ class WebRTCService {
         }, peerId);
     }
 
-    async createPeerConnection(peerId) {
-        const peerConnection = new RTCPeerConnection(this.configuration);
-        
-        // Create data channel
-        const dataChannel = peerConnection.createDataChannel('chat');
-        this.setupDataChannel(dataChannel, peerId);
+    createPeerConnection(peerId) {
+        try {
+            const peerConnection = new RTCPeerConnection(this.configuration);
+            
+            // Create data channel
+            const dataChannel = peerConnection.createDataChannel('chat');
+            this.setupDataChannel(dataChannel, peerId);
 
-        // Handle incoming data channels
-        peerConnection.ondatachannel = (event) => {
-            this.setupDataChannel(event.channel, peerId);
-        };
+            // Handle incoming data channels
+            peerConnection.ondatachannel = (event) => {
+                this.setupDataChannel(event.channel, peerId);
+            };
 
-        // Handle ICE candidates
-        peerConnection.onicecandidate = (event) => {
-            if (event.candidate) {
-                this.broadcastMessage({
-                    type: 'ICE_CANDIDATE',
-                    candidate: event.candidate,
-                    sender: this.peerId,
-                    recipient: peerId
-                });
-            }
-        };
+            // Handle ICE candidates
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    this.broadcastMessage({
+                        type: 'ICE_CANDIDATE',
+                        candidate: event.candidate,
+                        sender: this.peerId,
+                        recipient: peerId
+                    });
+                }
+            };
 
-        this.connections.set(peerId, peerConnection);
-        return peerConnection;
+            // Handle connection state changes
+            peerConnection.onconnectionstatechange = () => {
+                if (peerConnection.connectionState === 'connected') {
+                    this.broadcastMessage({
+                        type: 'PEER_CONNECTED',
+                        peerId: peerId
+                    });
+                } else if (peerConnection.connectionState === 'disconnected' || 
+                         peerConnection.connectionState === 'failed') {
+                    this.handlePeerDisconnection(peerId);
+                }
+            };
+
+            this.connections.set(peerId, peerConnection);
+            return peerConnection;
+        } catch (error) {
+            console.error('Error creating peer connection:', error);
+            throw error;
+        }
     }
 
     setupDataChannel(dataChannel, peerId) {
@@ -188,103 +259,98 @@ class WebRTCService {
         };
 
         dataChannel.onclose = () => {
-            console.log(`Data channel closed with peer: ${peerId}`);
-            this.broadcastMessage({
-                type: 'PEER_DISCONNECTED',
-                peerId: peerId
-            });
+            this.handlePeerDisconnection(peerId);
         };
 
-        dataChannel.onmessage = async (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'TYPING_STATUS') {
-                this.typingStatus.set(peerId, data.isTyping);
-                this.broadcastMessage(data);
-            } else {
-                const decryptedMessage = await this.decryptMessage(data.data);
-                this.messageHandlers.forEach(handler => handler(decryptedMessage));
+        dataChannel.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                this.messageHandlers.forEach(handler => handler(message));
+            } catch (error) {
+                console.error('Error handling message:', error);
             }
         };
 
         this.dataChannels.set(peerId, dataChannel);
     }
 
-    async initiateConnection(peerId) {
-        const peerConnection = await this.createPeerConnection(peerId);
+    handlePeerDisconnection(peerId) {
+        this.connections.get(peerId)?.close();
+        this.connections.delete(peerId);
+        this.dataChannels.delete(peerId);
         
+        this.broadcastMessage({
+            type: 'PEER_DISCONNECTED',
+            peerId: peerId
+        });
+    }
+
+    async initiateConnection(peerId) {
         try {
+            const peerConnection = this.createPeerConnection(peerId);
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
             
-            this.broadcastMessage({
-                type: 'OFFER',
-                offer: offer,
-                sender: this.peerId,
-                recipient: peerId
-            });
+            return offer;
         } catch (error) {
-            console.error('Error creating offer:', error);
-            this.connections.delete(peerId);
+            console.error('Error initiating connection:', error);
+            throw error;
         }
     }
 
     async handleOffer(offer, senderId) {
-        const peerConnection = await this.createPeerConnection(senderId);
-        
         try {
+            const peerConnection = this.createPeerConnection(senderId);
             await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
             
-            this.broadcastMessage({
-                type: 'ANSWER',
-                answer: answer,
-                sender: this.peerId,
-                recipient: senderId
-            });
+            return answer;
         } catch (error) {
             console.error('Error handling offer:', error);
-            this.connections.delete(senderId);
+            throw error;
         }
     }
 
     async handleAnswer(answer, senderId) {
-        const peerConnection = this.connections.get(senderId);
-        if (peerConnection) {
-            try {
+        try {
+            const peerConnection = this.connections.get(senderId);
+            if (peerConnection) {
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-            } catch (error) {
-                console.error('Error handling answer:', error);
             }
+        } catch (error) {
+            console.error('Error handling answer:', error);
+            throw error;
         }
     }
 
     async handleIceCandidate(candidate, senderId) {
-        const peerConnection = this.connections.get(senderId);
-        if (peerConnection) {
-            try {
+        try {
+            const peerConnection = this.connections.get(senderId);
+            if (peerConnection) {
                 await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch (error) {
-                console.error('Error handling ICE candidate:', error);
             }
+        } catch (error) {
+            console.error('Error handling ICE candidate:', error);
+            throw error;
         }
     }
 
-    async sendMessage(message, peerId) {
-        const dataChannel = this.dataChannels.get(peerId);
-        if (dataChannel && dataChannel.readyState === 'open') {
-            const encryptedMessage = await this.encryptMessage({
-                ...message,
-                id: uuidv4(),
-                sender: this.peerId,
-                recipient: peerId,
-                timestamp: new Date().toISOString()
-            });
-
-            dataChannel.send(JSON.stringify({
-                type: message.type,
-                data: encryptedMessage
-            }));
+    sendMessage(message, peerId) {
+        try {
+            const dataChannel = this.dataChannels.get(peerId);
+            if (dataChannel?.readyState === 'open') {
+                dataChannel.send(JSON.stringify({
+                    ...message,
+                    sender: this.peerId,
+                    timestamp: new Date().toISOString()
+                }));
+            } else {
+                throw new Error('Data channel not ready');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            throw error;
         }
     }
 
@@ -309,7 +375,6 @@ class WebRTCService {
 
     disconnect() {
         this.connections.forEach(connection => connection.close());
-        this.dataChannels.forEach(channel => channel.close());
         this.connections.clear();
         this.dataChannels.clear();
         this.messageHandlers.clear();
