@@ -3,7 +3,7 @@ import Sidebar from './components/Sidebar';
 import Chat from './components/Chat';
 import { webrtcService } from './services/webrtc-service';
 import { fileService } from './services/file-service';
-import { aiService } from './services/ai-service';
+import aiService from './services/ai-service';
 import './App.css';
 
 const App = () => {
@@ -21,6 +21,7 @@ const App = () => {
         stun: false
     });
     const [showSettings, setShowSettings] = useState(false);
+    const [isAIChatActive, setIsAIChatActive] = useState(false);
     
     const initializeServices = async () => {
         try {
@@ -43,6 +44,17 @@ const App = () => {
             setCurrentUser({
                 id: webrtcService.getPeerId()
             });
+
+            // Check for stored API key
+            const storedApiKey = localStorage.getItem('openai_api_key');
+            if (storedApiKey) {
+                try {
+                    await aiService.initialize(storedApiKey);
+                    setIsAiInitialized(true);
+                } catch (error) {
+                    console.error('Failed to initialize AI service:', error);
+                }
+            }
 
             // Artificial delay for loading screen
             await new Promise(resolve => setTimeout(resolve, 3000));
@@ -68,6 +80,12 @@ const App = () => {
 
     const handlePeerSelect = (peerId) => {
         setSelectedPeer(peerId);
+        setIsAIChatActive(false);
+    };
+
+    const handleAIChatSelect = () => {
+        setSelectedPeer(null);
+        setIsAIChatActive(true);
     };
 
     const handleModelSelect = async (model) => {
@@ -251,13 +269,14 @@ const App = () => {
             <div className="app-content">
                 <Sidebar
                     onPeerSelect={handlePeerSelect}
+                    onAIChatSelect={handleAIChatSelect}
                     currentUser={currentUser}
+                    isAiInitialized={isAiInitialized}
                 />
                 <Chat
                     currentUser={currentUser}
                     selectedPeer={selectedPeer}
-                    aiModel={selectedAIModel}
-                    isAiInitialized={isAiInitialized}
+                    isAIChatActive={isAIChatActive}
                 />
             </div>
         </div>

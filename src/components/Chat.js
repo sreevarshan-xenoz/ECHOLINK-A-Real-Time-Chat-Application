@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { webrtcService } from '../services/webrtc-service';
-import { aiService } from '../services/ai-service';
+import aiService from '../services/ai-service';
 import './Chat.css';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { v4 as uuidv4 } from 'uuid';
 
-const Chat = ({ currentUser, selectedPeer }) => {
+const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [peers, setPeers] = useState([]);
@@ -19,9 +22,18 @@ const Chat = ({ currentUser, selectedPeer }) => {
     const [messageCompletion, setMessageCompletion] = useState('');
     const [sentiment, setSentiment] = useState(null);
     const [language, setLanguage] = useState(null);
-    const [apiKey, setApiKey] = useState(localStorage.getItem('openai_api_key') || '');
     const [isAiInitialized, setIsAiInitialized] = useState(false);
     const completionTimeout = useRef(null);
+    const [codeEditor, setCodeEditor] = useState({ visible: false, language: 'javascript', code: '' });
+    const [sharedWorkspace, setSharedWorkspace] = useState(null);
+    const [translatedMessages, setTranslatedMessages] = useState(new Map());
+    const [userLanguage, setUserLanguage] = useState(navigator.language.split('-')[0]);
+    const [isAIChatEnabled, setIsAIChatEnabled] = useState(false);
+    const [aiPersonality, setAiPersonality] = useState("default");
+
+    useEffect(() => {
+        setIsAIChatEnabled(isAIChatActive);
+    }, [isAIChatActive]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,27 +80,11 @@ const Chat = ({ currentUser, selectedPeer }) => {
         scrollToBottom();
     }, [messages]);
 
-    useEffect(() => {
-        if (apiKey && !isAiInitialized) {
-            initializeAI();
-        }
-    }, [apiKey]);
-
-    const initializeAI = async () => {
-        try {
-            await aiService.initialize(apiKey);
-            setIsAiInitialized(true);
-            localStorage.setItem('openai_api_key', apiKey);
-        } catch (error) {
-            console.error('Failed to initialize AI:', error);
-        }
-    };
-
     const handleMessageChange = async (e) => {
         const text = e.target.value;
         setNewMessage(text);
         
-        // Handle typing indicator
+        // Handle typing indicator only for peer chat
         if (selectedPeer) {
             clearTimeout(typingTimeout);
             webrtcService.setTypingStatus(true, selectedPeer);
@@ -109,35 +105,79 @@ const Chat = ({ currentUser, selectedPeer }) => {
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
-        if (newMessage.trim() && selectedPeer) {
-            const message = {
-                type: 'CHAT',
-                text: newMessage,
-                timestamp: new Date().toISOString(),
-            };
+        if (!newMessage.trim()) return;
 
-            // Analyze message before sending
+        const messageData = {
+            type: 'CHAT',
+            text: newMessage,
+            timestamp: new Date().toISOString(),
+            sender: currentUser.id,
+            id: uuidv4()
+        };
+
+        if (isAIChatActive) {
+            // Add user message to messages immediately
+            setMessages(prev => [...prev, messageData]);
+
+            // Get AI response
+            try {
+                if (!isAiInitialized) {
+                    throw new Error('AI is not initialized. Please configure AI in settings (⚙️).');
+                }
+
+                const aiResponse = await aiService.chatWithAI(newMessage);
+                if (aiResponse) {
+                    const aiMessage = {
+                        type: 'CHAT',
+                        text: aiResponse.text,
+                        timestamp: aiResponse.timestamp,
+                        sender: 'AI_ASSISTANT',
+                        id: uuidv4(),
+                        isAI: true
+                    };
+                    setMessages(prev => [...prev, aiMessage]);
+                    scrollToBottom();
+                }
+            } catch (error) {
+                console.error('Error getting AI response:', error);
+                // Add specific error message to chat
+                setMessages(prev => [...prev, {
+                    type: 'CHAT',
+                    text: error.message || 'Sorry, I encountered an error. Please try again.',
+                    timestamp: new Date().toISOString(),
+                    sender: 'AI_ASSISTANT',
+                    id: uuidv4(),
+                    isAI: true,
+                    isError: true
+                }]);
+
+                // If API key is invalid, reset initialization
+                if (error.message.includes('API key')) {
+                    setIsAiInitialized(false);
+                }
+            }
+        } else if (selectedPeer) {
+            // Handle peer chat
             if (isAiInitialized) {
                 const [messageSentiment, messageLanguage] = await Promise.all([
                     aiService.getSentiment(newMessage),
                     aiService.detectLanguage(newMessage)
                 ]);
 
-                message.sentiment = messageSentiment;
-                message.language = messageLanguage;
-                
-                // Add to AI service history for context
-                aiService.addToHistory({
-                    text: newMessage,
-                    sender: currentUser.id,
-                    timestamp: message.timestamp
-                });
+                messageData.sentiment = messageSentiment;
+                messageData.language = messageLanguage;
             }
 
-            webrtcService.sendMessage(message, selectedPeer);
-            setMessages(prev => [...prev, { ...message, sender: currentUser.id }]);
-            setNewMessage('');
-            setMessageCompletion('');
+            // Add message to messages immediately
+            setMessages(prev => [...prev, messageData]);
+            
+            // Send to peer
+            webrtcService.sendMessage(messageData, selectedPeer);
+        }
+
+        setNewMessage('');
+        setMessageCompletion('');
+        if (selectedPeer) {
             webrtcService.setTypingStatus(false, selectedPeer);
         }
     };
@@ -148,10 +188,16 @@ const Chat = ({ currentUser, selectedPeer }) => {
             setIsRecording(false);
             const { blob, url } = webrtcService.lastRecordedAudio;
             
+            let transcription = null;
+            if (isAiInitialized) {
+                transcription = await aiService.transcribeAudio(blob);
+            }
+            
             const message = {
                 type: 'VOICE_MESSAGE',
                 audioUrl: url,
                 audioData: Array.from(new Uint8Array(await blob.arrayBuffer())),
+                transcription: transcription,
                 timestamp: new Date().toISOString(),
             };
 
@@ -243,25 +289,82 @@ const Chat = ({ currentUser, selectedPeer }) => {
         }
     };
 
-    // Render AI features
-    const renderAIFeatures = () => {
-        if (!isAiInitialized) {
-            return (
-                <div className="ai-setup">
-                    <input
-                        type="password"
-                        placeholder="Enter OpenAI API Key to enable AI features"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        className="api-key-input"
-                    />
-                    <button onClick={initializeAI} className="ai-setup-button">
-                        Enable AI Features
-                    </button>
-                </div>
-            );
+    const handleCodeShare = () => {
+        const codeMessage = {
+            type: 'CODE_SHARE',
+            code: codeEditor.code,
+            language: codeEditor.language,
+            timestamp: new Date().toISOString(),
+            workspaceId: uuidv4()
+        };
+        webrtcService.sendMessage(codeMessage, selectedPeer);
+        setMessages(prev => [...prev, { ...codeMessage, sender: currentUser.id }]);
+        setCodeEditor({ ...codeEditor, visible: false });
+    };
+
+    const handleTranslateMessage = async (messageId, text) => {
+        if (translatedMessages.has(messageId)) {
+            setTranslatedMessages(prev => {
+                const next = new Map(prev);
+                next.delete(messageId);
+                return next;
+            });
+            return;
         }
-        return null;
+
+        try {
+            const detectedLang = await aiService.detectLanguage(text);
+            if (detectedLang === userLanguage) return;
+
+            const translation = await aiService.translateText(text, detectedLang, userLanguage);
+            setTranslatedMessages(prev => {
+                const next = new Map(prev);
+                next.set(messageId, translation);
+                return next;
+            });
+        } catch (error) {
+            console.error('Translation failed:', error);
+        }
+    };
+
+    const handleAIChat = async (text) => {
+        if (!isAiInitialized || !isAIChatEnabled) return;
+
+        const aiResponse = await aiService.chatWithAI(text);
+        if (aiResponse) {
+            setMessages(prev => [...prev, {
+                type: 'CHAT',
+                text: aiResponse.text,
+                timestamp: aiResponse.timestamp,
+                sender: 'AI_ASSISTANT',
+                isAI: true
+            }]);
+        }
+    };
+
+    const toggleAIChat = () => {
+        const newState = !isAIChatEnabled;
+        setIsAIChatEnabled(newState);
+        if (!newState) {
+            aiService.clearAIChatHistory();
+        }
+    };
+
+    const changeAIPersonality = (personality) => {
+        switch (personality) {
+            case 'professional':
+                aiService.setAIPersonality("You are a professional assistant, focused on providing accurate and formal responses.");
+                break;
+            case 'friendly':
+                aiService.setAIPersonality("You are a friendly and casual AI, using informal language and emojis occasionally.");
+                break;
+            case 'concise':
+                aiService.setAIPersonality("You provide brief, direct answers without unnecessary elaboration.");
+                break;
+            default:
+                aiService.setAIPersonality("You are Echo, a friendly and helpful AI assistant. You're knowledgeable but concise in your responses.");
+        }
+        setAiPersonality(personality);
     };
 
     return (
@@ -292,19 +395,39 @@ const Chat = ({ currentUser, selectedPeer }) => {
 
             <div className="messages-container">
                 {filteredMessages
-                    .filter(msg => 
-                        msg.sender === selectedPeer || 
-                        (msg.sender === currentUser.id && msg.recipient === selectedPeer)
-                    )
+                    .filter(msg => {
+                        if (isAIChatActive) {
+                            // Show all messages in AI chat mode
+                            return true;
+                        } else if (selectedPeer) {
+                            // In peer chat mode, show messages between current user and selected peer
+                            return msg.sender === selectedPeer || msg.sender === currentUser.id;
+                        }
+                        return false;
+                    })
                     .map((message, index) => (
                         <div
                             key={index}
                             className={`message ${message.sender === currentUser.id ? 'sent' : 'received'}`}
+                            data-sender={message.sender}
                         >
                             <div className="message-content">
                                 {message.type === 'CHAT' && (
                                     <>
                                         <p>{message.text}</p>
+                                        {translatedMessages.has(message.id) && (
+                                            <p className="translated-text">
+                                                {translatedMessages.get(message.id)}
+                                            </p>
+                                        )}
+                                        <div className="message-actions">
+                                            <button 
+                                                className="translate-button"
+                                                onClick={() => handleTranslateMessage(message.id, message.text)}
+                                            >
+                                                {translatedMessages.has(message.id) ? 'Show Original' : '🌐 Translate'}
+                                            </button>
+                                        </div>
                                         {message.sentiment && (
                                             <span className={`sentiment-indicator ${message.sentiment.toLowerCase()}`}>
                                                 {message.sentiment === 'POSITIVE' ? '😊' : 
@@ -319,7 +442,14 @@ const Chat = ({ currentUser, selectedPeer }) => {
                                     </>
                                 )}
                                 {message.type === 'VOICE_MESSAGE' && (
-                                    <audio controls src={message.audioUrl} />
+                                    <div className="voice-message">
+                                        <audio controls src={message.audioUrl} />
+                                        {message.transcription && (
+                                            <div className="transcription">
+                                                <p><i>Transcription: {message.transcription}</i></p>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                                 {message.type === 'FILE_META' && (
                                     <div className="file-message">
@@ -327,6 +457,28 @@ const Chat = ({ currentUser, selectedPeer }) => {
                                         <span className="file-size">
                                             {(message.size / 1024).toFixed(1)} KB
                                         </span>
+                                    </div>
+                                )}
+                                {message.type === 'CODE_SHARE' && (
+                                    <div className="code-share-container">
+                                        <div className="code-header">
+                                            <span className="language-tag">{message.language}</span>
+                                            <button onClick={() => navigator.clipboard.writeText(message.code)}>
+                                                Copy Code
+                                            </button>
+                                            {message.sender === currentUser.id && (
+                                                <button onClick={() => setSharedWorkspace(message.workspaceId)}>
+                                                    Edit Live
+                                                </button>
+                                            )}
+                                        </div>
+                                        <SyntaxHighlighter 
+                                            language={message.language}
+                                            style={atomDark}
+                                            showLineNumbers={true}
+                                        >
+                                            {message.code}
+                                        </SyntaxHighlighter>
                                     </div>
                                 )}
                                 <span className="timestamp">
@@ -374,7 +526,32 @@ const Chat = ({ currentUser, selectedPeer }) => {
                 </div>
             )}
 
-            {renderAIFeatures()}
+            {isAiInitialized && (
+                <div className="ai-chat-controls">
+                    <div className="ai-toggle">
+                        <button 
+                            className={`ai-toggle-button ${isAIChatEnabled ? 'active' : ''}`}
+                            onClick={toggleAIChat}
+                        >
+                            {isAIChatEnabled ? '🤖 AI Chat Active' : '🤖 Enable AI Chat'}
+                        </button>
+                    </div>
+                    {isAIChatEnabled && (
+                        <div className="ai-personality-selector">
+                            <select 
+                                value={aiPersonality}
+                                onChange={(e) => changeAIPersonality(e.target.value)}
+                                className="personality-select"
+                            >
+                                <option value="default">Default</option>
+                                <option value="professional">Professional</option>
+                                <option value="friendly">Friendly</option>
+                                <option value="concise">Concise</option>
+                            </select>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div className="message-input-container">
                 <input
@@ -386,35 +563,68 @@ const Chat = ({ currentUser, selectedPeer }) => {
                 <button
                     className="attachment-button"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={!selectedPeer || !peers.includes(selectedPeer)}
+                    disabled={!selectedPeer || (selectedPeer && !peers.includes(selectedPeer))}
                 >
                     📎
                 </button>
                 <button
                     className={`voice-button ${isRecording ? 'recording' : ''}`}
                     onClick={toggleVoiceRecording}
-                    disabled={!selectedPeer || !peers.includes(selectedPeer)}
+                    disabled={!selectedPeer || (selectedPeer && !peers.includes(selectedPeer))}
                 >
                     🎤
+                </button>
+                <button
+                    className="code-button"
+                    onClick={() => setCodeEditor({ ...codeEditor, visible: !codeEditor.visible })}
+                    disabled={!selectedPeer && !isAIChatActive}
+                >
+                    <span role="img" aria-label="code">⌨️</span>
                 </button>
                 <form className="text-input-form" onSubmit={handleSendMessage}>
                     <input
                         type="text"
                         value={newMessage}
                         onChange={handleMessageChange}
-                        placeholder="Type a message..."
+                        placeholder={isAIChatActive ? "Chat with AI..." : "Type a message..."}
                         className="message-input"
-                        disabled={!selectedPeer || !peers.includes(selectedPeer)}
+                        disabled={!selectedPeer && !isAIChatActive}
                     />
                     <button 
                         type="submit" 
                         className="send-button"
-                        disabled={!selectedPeer || !peers.includes(selectedPeer)}
+                        disabled={!selectedPeer && !isAIChatActive}
                     >
                         Send
                     </button>
                 </form>
             </div>
+
+            {codeEditor.visible && (
+                <div className="code-editor-container">
+                    <select 
+                        value={codeEditor.language}
+                        onChange={(e) => setCodeEditor({ ...codeEditor, language: e.target.value })}
+                    >
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                        <option value="java">Java</option>
+                        <option value="cpp">C++</option>
+                        <option value="ruby">Ruby</option>
+                    </select>
+                    <textarea
+                        value={codeEditor.code}
+                        onChange={(e) => setCodeEditor({ ...codeEditor, code: e.target.value })}
+                        placeholder="Write or paste your code here..."
+                    />
+                    <div className="code-editor-actions">
+                        <button onClick={handleCodeShare}>Share Code</button>
+                        <button onClick={() => setCodeEditor({ ...codeEditor, visible: false })}>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

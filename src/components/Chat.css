@@ -584,4 +584,387 @@
     .api-key-input {
         font-size: 13px;
     }
+}
+
+.code-button {
+    background: rgba(0, 247, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    min-width: 38px;
+    width: 38px;
+    height: 38px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.code-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(45deg, #00f7ff, #00c3ff);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+}
+
+.code-editor-container {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(0, 247, 255, 0.2);
+    border-radius: 12px;
+    margin: 15px;
+    padding: 15px;
+    animation: slideUp 0.3s ease;
+}
+
+.code-editor-container select {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: white;
+    padding: 8px;
+    margin-bottom: 10px;
+    width: 200px;
+}
+
+.code-editor-container textarea {
+    width: 100%;
+    height: 200px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    padding: 12px;
+    font-family: 'Fira Code', monospace;
+    resize: vertical;
+    margin-bottom: 10px;
+}
+
+.code-editor-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.code-editor-actions button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.code-editor-actions button:first-child {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.code-editor-actions button:last-child {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.code-share-container {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.code-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.language-tag {
+    background: rgba(0, 247, 255, 0.2);
+    color: var(--accent-color);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.code-header button {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.code-header button:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Add live collaboration indicator */
+.live-collaboration {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 255, 0, 0.2);
+    color: #00ff00;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    animation: pulse 2s infinite;
+}
+
+.live-collaboration::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: #00ff00;
+    border-radius: 50%;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+/* Add code snippet hover effect */
+.code-share-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 247, 255, 0.2);
+}
+
+/* Add syntax highlighting theme overrides */
+.code-share-container pre {
+    margin: 0 !important;
+    border-radius: 0 0 8px 8px !important;
+}
+
+.translated-text {
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(0, 247, 255, 0.05);
+    border-radius: 6px;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.8);
+    position: relative;
+}
+
+.translated-text::before {
+    content: '🌐';
+    position: absolute;
+    top: -6px;
+    left: 8px;
+    font-size: 12px;
+    background: var(--accent-color);
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.message-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.message-content:hover .message-actions {
+    opacity: 1;
+}
+
+.translate-button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    padding: 2px 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.translate-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+}
+
+/* Add translation animation */
+@keyframes translateIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.translated-text {
+    animation: translateIn 0.3s ease;
+}
+
+.voice-message {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px;
+    background: rgba(0, 247, 255, 0.05);
+    border-radius: 8px;
+    margin: 4px 0;
+}
+
+.voice-message audio {
+    width: 250px;
+    height: 40px;
+    border-radius: 20px;
+    background: rgba(0, 247, 255, 0.1);
+}
+
+.voice-message .transcription {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border-left: 2px solid var(--accent-color);
+    margin-top: 4px;
+}
+
+.voice-message .transcription p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.dark .voice-message {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.dark .voice-message .transcription {
+    background: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* AI Chat Styles */
+.ai-chat-controls {
+    padding: 10px 15px;
+    background: rgba(0, 247, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ai-toggle {
+    flex: 1;
+}
+
+.ai-toggle-button {
+    background: rgba(0, 247, 255, 0.1);
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.ai-toggle-button.active {
+    background: var(--accent-gradient);
+    box-shadow: 0 0 15px rgba(0, 247, 255, 0.3);
+}
+
+.ai-toggle-button:hover {
+    transform: translateY(-1px);
+    background: rgba(0, 247, 255, 0.2);
+}
+
+.ai-toggle-button.active:hover {
+    background: var(--accent-gradient);
+}
+
+.ai-personality-selector {
+    min-width: 120px;
+}
+
+.personality-select {
+    width: 100%;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.personality-select:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.personality-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(0, 247, 255, 0.2);
+}
+
+.message.received[data-sender='AI_ASSISTANT'] .message-content {
+    background: rgba(0, 247, 255, 0.15);
+    border-color: rgba(0, 247, 255, 0.3);
+}
+
+.message.received[data-sender='AI_ASSISTANT']::before {
+    content: '🤖';
+    position: absolute;
+    left: -25px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    filter: drop-shadow(0 0 5px rgba(0, 247, 255, 0.5));
+}
+
+@keyframes aiThinking {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+.ai-thinking {
+    padding: 8px 12px;
+    color: var(--accent-color);
+    font-size: 14px;
+    animation: aiThinking 1s infinite;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-thinking::after {
+    content: '...';
+    letter-spacing: 2px;
 } 

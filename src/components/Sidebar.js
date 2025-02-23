@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { webrtcService } from '../services/webrtc-service';
 import './Sidebar.css';
 
-const Sidebar = ({ onPeerSelect, currentUser }) => {
+const Sidebar = ({ onPeerSelect, currentUser, onAIChatSelect, isAiInitialized }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [peers, setPeers] = useState([]);
     const [selectedPeerId, setSelectedPeerId] = useState(null);
     const [connectInput, setConnectInput] = useState('');
     const [copied, setCopied] = useState(false);
+    const [activeTab, setActiveTab] = useState('peers'); // 'peers' or 'ai'
 
     useEffect(() => {
         const unsubscribe = webrtcService.onMessage((message) => {
@@ -27,6 +28,14 @@ const Sidebar = ({ onPeerSelect, currentUser }) => {
     const handlePeerSelect = (peerId) => {
         setSelectedPeerId(peerId);
         onPeerSelect(peerId);
+        setActiveTab('peers');
+    };
+
+    const handleAIChatSelect = () => {
+        setSelectedPeerId(null);
+        onPeerSelect(null);
+        onAIChatSelect();
+        setActiveTab('ai');
     };
 
     const handleConnect = async (e) => {
@@ -86,77 +95,132 @@ const Sidebar = ({ onPeerSelect, currentUser }) => {
                 </div>
             </div>
 
-            <div className="connect-container">
-                <h3>Connect with Others</h3>
-                <div className="connect-steps">
-                    <p>1. Share your ID with friends</p>
-                    <p>2. Or enter their ID below to connect</p>
-                </div>
-                <form onSubmit={handleConnect}>
-                    <input
-                        type="text"
-                        value={connectInput}
-                        onChange={(e) => setConnectInput(e.target.value)}
-                        placeholder="Paste friend's ID here"
-                        className="connect-input"
-                    />
-                    <button type="submit" className="connect-button">
-                        Connect
-                    </button>
-                </form>
+            <div className="sidebar-tabs">
+                <button 
+                    className={`tab-button ${activeTab === 'peers' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('peers')}
+                >
+                    👥 Peers
+                </button>
+                <button 
+                    className={`tab-button ${activeTab === 'ai' ? 'active' : ''}`}
+                    onClick={handleAIChatSelect}
+                    disabled={!isAiInitialized}
+                >
+                    🤖 AI Chat
+                </button>
             </div>
 
-            <div className="search-container">
-                <input
-                    type="text"
-                    placeholder="Search peers..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="search-input"
-                />
-            </div>
+            {activeTab === 'peers' ? (
+                <>
+                    <div className="connect-container">
+                        <h3>Connect with Others</h3>
+                        <div className="connect-steps">
+                            <p>1. Share your ID with friends</p>
+                            <p>2. Or enter their ID below to connect</p>
+                        </div>
+                        <form onSubmit={handleConnect}>
+                            <input
+                                type="text"
+                                value={connectInput}
+                                onChange={(e) => setConnectInput(e.target.value)}
+                                placeholder="Paste friend's ID here"
+                                className="connect-input"
+                            />
+                            <button type="submit" className="connect-button">
+                                Connect
+                            </button>
+                        </form>
+                    </div>
 
-            <div className="peers-list">
-                {filteredPeers.map((peerId) => (
-                    <div
-                        key={peerId}
-                        className={`peer-item ${selectedPeerId === peerId ? 'selected' : ''}`}
-                        onClick={() => handlePeerSelect(peerId)}
-                    >
-                        <div className="user-profile-info">
-                            <div className="user-avatar">
-                                {getInitials(peerId)}
-                            </div>
-                            <div className="peer-info">
-                                <div className="peer-header">
-                                    <h4>{peerId.substring(0, 8)}...</h4>
-                                    <span className="peer-status">
-                                        <span className="status-indicator status-online"></span>
-                                        online
-                                    </span>
+                    <div className="search-container">
+                        <input
+                            type="text"
+                            placeholder="Search peers..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="search-input"
+                        />
+                    </div>
+
+                    <div className="peers-list">
+                        {filteredPeers.map((peerId) => (
+                            <div
+                                key={peerId}
+                                className={`peer-item ${selectedPeerId === peerId ? 'selected' : ''}`}
+                                onClick={() => handlePeerSelect(peerId)}
+                            >
+                                <div className="user-profile-info">
+                                    <div className="user-avatar">
+                                        {getInitials(peerId)}
+                                    </div>
+                                    <div className="peer-info">
+                                        <div className="peer-header">
+                                            <h4>{peerId.substring(0, 8)}...</h4>
+                                            <span className="peer-status">
+                                                <span className="status-indicator status-online"></span>
+                                                online
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                        ))}
+                        {filteredPeers.length === 0 && (
+                            <div className="no-peers">
+                                <p>No peers found</p>
+                                <p className="help-text">Connect to peers using their ID</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {peers.length === 0 && (
+                        <div className="no-peers-guide">
+                            <h3>Welcome to Echo Link! 👋</h3>
+                            <p>To start chatting:</p>
+                            <ol>
+                                <li>Copy your ID using the button above</li>
+                                <li>Share it with your friends</li>
+                                <li>Ask them to paste it in their connect field</li>
+                                <li>Or paste their ID in your connect field</li>
+                            </ol>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="ai-chat-section">
+                    <div className="ai-chat-info">
+                        <div className="ai-avatar">
+                            🤖
+                        </div>
+                        <div className="ai-details">
+                            <h3>Echo AI Assistant</h3>
+                            <p>Your personal AI chat companion</p>
+                            {!isAiInitialized && (
+                                <div className="ai-setup-notice">
+                                    Please set up AI in settings to start chatting
+                                </div>
+                            )}
                         </div>
                     </div>
-                ))}
-                {filteredPeers.length === 0 && (
-                    <div className="no-peers">
-                        <p>No peers found</p>
-                        <p className="help-text">Connect to peers using their ID</p>
+                    <div className="ai-features">
+                        <div className="feature-item">
+                            <span>💡</span>
+                            <p>Ask questions and get instant answers</p>
+                        </div>
+                        <div className="feature-item">
+                            <span>📝</span>
+                            <p>Get help with writing and analysis</p>
+                        </div>
+                        <div className="feature-item">
+                            <span>🔍</span>
+                            <p>Research and learn new topics</p>
+                        </div>
+                        <div className="feature-item">
+                            <span>🎯</span>
+                            <p>Get personalized recommendations</p>
+                        </div>
                     </div>
-                )}
-            </div>
-
-            {peers.length === 0 && (
-                <div className="no-peers-guide">
-                    <h3>Welcome to Echo Link! 👋</h3>
-                    <p>To start chatting:</p>
-                    <ol>
-                        <li>Copy your ID using the button above</li>
-                        <li>Share it with your friends</li>
-                        <li>Ask them to paste it in their connect field</li>
-                        <li>Or paste their ID in your connect field</li>
-                    </ol>
                 </div>
             )}
         </div>

@@ -1,104 +1,31 @@
 {
-  "name": "p2p-chat-app",
+  "name": "untitled",
   "version": "1.0.0",
-  "description": "A decentralized chat application using WebRTC and IPFS",
-  "main": "electron/main.js",
+  "description": "Chat application",
+  "private": true,
+  "dependencies": {
+    "@google/generative-ai": "^0.22.0",
+    "@tensorflow-models/universal-sentence-encoder": "^1.3.3",
+    "@tensorflow/tfjs": "^4.10.0",
+    "openai": "^4.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "react-syntax-highlighter": "^15.5.0",
+    "socket.io-client": "^4.7.2",
+    "uuid": "^9.0.1"
+  },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "electron-dev": "cross-env NODE_ENV=development concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
-    "electron": "electron .",
-    "pack": "electron-builder --dir",
-    "predist": "npm run build",
-    "dist": "electron-builder -mwl",
-    "dist:win": "electron-builder --win",
-    "dist:mac": "electron-builder --mac",
-    "dist:linux": "electron-builder --linux",
-    "postinstall": "electron-builder install-app-deps",
-    "dev": "npm run electron-dev"
+    "eject": "react-scripts eject"
   },
-  "build": {
-    "appId": "com.p2pchat.app",
-    "productName": "P2P Chat",
-    "copyright": "Copyright © 2023",
-    "mac": {
-      "category": "public.app-category.social-networking",
-      "icon": "build/icon.icns",
-      "target": ["dmg", "zip"]
-    },
-    "win": {
-      "icon": "build/icon.ico",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": ["x64"]
-        },
-        {
-          "target": "portable",
-          "arch": ["x64"]
-        }
-      ]
-    },
-    "linux": {
-      "icon": "build/icon.png",
-      "target": ["AppImage", "deb", "rpm"],
-      "category": "Network"
-    },
-    "files": [
-      "build/**/*",
-      "electron/**/*",
-      "server/**/*",
-      "package.json"
-    ],
-    "directories": {
-      "buildResources": "assets",
-      "output": "dist"
-    },
-    "protocols": {
-      "name": "p2p-chat-protocol",
-      "schemes": ["p2pchat"]
-    },
-    "extraResources": [
-      {
-        "from": "server",
-        "to": "server",
-        "filter": ["**/*"]
-      }
-    ],
-    "publish": null
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "socket.io-client": "^4.7.2",
-    "uuid": "^9.0.1",
-    "chalk": "^4.1.2",
-    "qrcode-terminal": "^0.12.0",
-    "electron-is-dev": "^2.0.0",
-    "@tensorflow/tfjs": "^4.10.0",
-    "@tensorflow-models/universal-sentence-encoder": "^1.3.3",
-    "openai": "^4.0.0",
-    "wait-on": "^7.0.1",
-    "electron-updater": "^6.1.4",
-    "ipfs-core": "^0.18.1",
-    "ipfs-http-client": "^60.0.1",
-    "it-all": "^3.0.4",
-    "it-pipe": "^3.0.1",
-    "buffer": "^6.0.3",
-    "libp2p": "^0.46.14",
-    "libp2p-websockets": "^7.0.11",
-    "libp2p-webrtc-star": "^0.25.0"
-  },
-  "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
-    "concurrently": "^8.2.0",
-    "cross-env": "^7.0.3",
-    "electron": "^25.3.0",
-    "electron-builder": "^24.6.0",
-    "electron-notarize": "^1.2.2"
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
   },
   "browserslist": {
     "production": [
