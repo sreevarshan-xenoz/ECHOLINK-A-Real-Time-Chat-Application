@@ -1,18 +1,22 @@
-// server.js
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIo(server);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 
 io.on('connection', (socket) => {
-  console.log('New client connected');
+  console.log('A user connected');
 
   socket.on('join', (roomId) => {
     socket.join(roomId);
-    console.log(`Client joined room: ${roomId}`);
+    console.log(`User joined room ${roomId}`);
   });
 
   socket.on('offer', (roomId, offer) => {
@@ -28,9 +32,9 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('Client disconnected');
+    console.log('User disconnected');
   });
 });
 
-const PORT = process.env.PORT || 8080;
-server.listen(PORT, () => console.log(`Signaling server listening on port ${PORT}`));
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

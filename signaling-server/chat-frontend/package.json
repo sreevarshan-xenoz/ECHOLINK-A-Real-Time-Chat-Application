@@ -1,0 +1,22 @@
+{
+  "name": "chat-frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@chainsafe/libp2p-noise": "^16.0.3",
+    "@libp2p/bootstrap": "^11.0.26",
+    "@libp2p/mplex": "^11.0.26",
+    "@libp2p/tcp": "^10.1.2",
+    "@libp2p/websockets": "^9.2.2",
+    "libp2p": "^2.7.2",
+    "socket.io-client": "^4.8.1"
+  }
+}
