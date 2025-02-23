@@ -1,7 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
+import io from 'socket.io-client';
 
 class WebRTCService {
     constructor() {
+        // Get the local IP address from the window.location or default to localhost
+        const serverIP = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
+        this.socket = io(`http://${serverIP}:5000`);
+        
         this.connections = new Map(); // PeerId -> RTCPeerConnection
         this.dataChannels = new Map(); // PeerId -> RTCDataChannel
         this.messageHandlers = new Set();
@@ -13,8 +18,24 @@ class WebRTCService {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
             ]
         };
+
+        // Initialize socket event listeners
+        this.socket.on('connect', () => {
+            console.log('Connected to signaling server');
+            this.socket.emit('user_connected', this.peerId);
+        });
+
+        this.socket.on('user_status_change', (data) => {
+            this.broadcastMessage({
+                type: data.status === 'online' ? 'PEER_CONNECTED' : 'PEER_DISCONNECTED',
+                peerId: data.userId
+            });
+        });
 
         // Initialize encryption key
         this.initializeEncryption();

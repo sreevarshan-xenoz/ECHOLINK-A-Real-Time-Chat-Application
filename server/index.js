@@ -9,7 +9,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -26,6 +26,7 @@ io.on('connection', (socket) => {
             userId: userId,
             status: 'online'
         });
+        console.log(`User connected: ${userId}`);
     });
 
     socket.on('send_message', (data) => {
@@ -36,6 +37,7 @@ io.on('connection', (socket) => {
                 message: data.message,
                 timestamp: new Date()
             });
+            console.log(`Message sent from ${data.senderId} to ${data.recipientId}`);
         }
     });
 
@@ -63,13 +65,14 @@ io.on('connection', (socket) => {
                 userId: disconnectedUserId,
                 status: 'offline'
             });
+            console.log(`User disconnected: ${disconnectedUserId}`);
         }
-
-        console.log('Client disconnected');
     });
 });
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const HOST = '0.0.0.0';
+
+server.listen(PORT, HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}`);
 }); 
