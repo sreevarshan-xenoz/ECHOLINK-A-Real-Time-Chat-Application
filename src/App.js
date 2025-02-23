@@ -70,13 +70,16 @@ const App = () => {
                     <div className="loading-spinner"></div>
                     <div className="loading-status">
                         <h2>Echo Link</h2>
-                        <p>Initializing secure connection...</p>
+                        <p>Establishing Secure Connection</p>
                         <div className="status-items">
                             <div className={`status-item ${networkStatus.webrtc ? 'connected' : ''}`}>
-                                WebRTC {networkStatus.webrtc ? '✓' : '...'}
+                                WebRTC {networkStatus.webrtc ? '✓ Connected' : 'Connecting...'}
                             </div>
                             <div className={`status-item ${networkStatus.stun ? 'connected' : ''}`}>
-                                STUN {networkStatus.stun ? '✓' : '...'}
+                                STUN {networkStatus.stun ? '✓ Connected' : 'Establishing...'}
+                            </div>
+                            <div className="status-item connected">
+                                Initializing End-to-End Encryption
                             </div>
                         </div>
                     </div>

@@ -111,33 +111,87 @@ body {
     backdrop-filter: blur(10px);
     text-align: center;
     color: var(--text-light);
+    animation: fadeIn 0.5s ease-out;
+    border: 1px solid rgba(0, 247, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.loading-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 247, 255, 0.2),
+        transparent
+    );
+    animation: shimmer 3s infinite;
 }
 
 .loading-spinner {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     margin: 0 auto 20px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    border: 3px solid rgba(0, 247, 255, 0.1);
     border-radius: 50%;
-    border-top-color: #fff;
+    border-top-color: #00f7ff;
     animation: spin 1s ease-in-out infinite;
+    position: relative;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+.loading-spinner::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: rgba(0, 247, 255, 0.4);
+    animation: spin 2s linear infinite;
+}
+
+.loading-status {
+    position: relative;
+    z-index: 1;
+}
+
+.loading-status h2 {
+    margin: 0 0 20px;
+    font-size: 32px;
+    font-weight: 600;
+    background: linear-gradient(45deg, #00f7ff, #00c3ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: glow 2s ease-in-out infinite;
+}
+
+.loading-status p {
+    margin: 0 0 20px;
+    font-size: 16px;
+    opacity: 0.9;
+    animation: fadeInUp 0.5s ease-out 0.3s both;
 }
 
 .status-items {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    animation: fadeInUp 0.5s ease-out 0.6s both;
 }
 
 .status-item {
-    padding: 8px 12px;
+    padding: 10px 15px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 12px;
     transition: all 0.3s ease;
+    transform-origin: left;
 }
 
 .status-item.connected {
@@ -145,6 +199,7 @@ body {
     color: var(--accent-color);
     border: 1px solid rgba(0, 247, 255, 0.3);
     box-shadow: var(--neon-glow);
+    animation: scaleIn 0.3s ease-out forwards;
 }
 
 .loading-text.error {
@@ -219,6 +274,42 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        filter: drop-shadow(0 0 5px rgba(0, 247, 255, 0.5));
+    }
+    50% {
+        filter: drop-shadow(0 0 20px rgba(0, 247, 255, 0.7));
+    }
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+@keyframes scaleIn {
+    from {
+        transform: scaleX(0.8);
+        opacity: 0;
+    }
+    to {
+        transform: scaleX(1);
+        opacity: 1;
+    }
 }
 
 /* Status Indicators */
