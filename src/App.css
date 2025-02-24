@@ -357,6 +357,7 @@ body.light {
     background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
     position: relative;
     overflow: hidden;
+    perspective: 1000px;
 }
 
 .wave-container {
@@ -364,6 +365,7 @@ body.light {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    transform-style: preserve-3d;
 }
 
 .wave {
@@ -373,24 +375,30 @@ body.light {
     background: linear-gradient(135deg, rgba(0, 247, 255, 0.2), rgba(0, 183, 255, 0.2));
     border-radius: 38% 42% 40% 40%;
     animation: wave 10s infinite linear;
+    transform-origin: 50% 50%;
 }
 
 .wave:nth-child(2) {
     background: linear-gradient(135deg, rgba(0, 247, 255, 0.15), rgba(0, 183, 255, 0.15));
-    animation: wave 15s infinite linear;
+    animation: wave 8s infinite linear reverse;
+    transform-origin: 48% 52%;
 }
 
 .wave:nth-child(3) {
     background: linear-gradient(135deg, rgba(0, 247, 255, 0.1), rgba(0, 183, 255, 0.1));
-    animation: wave 20s infinite linear;
+    animation: wave 12s infinite linear;
+    transform-origin: 52% 48%;
 }
 
 @keyframes wave {
     0% {
-        transform: translate(-50%, -50%) rotate(0deg);
+        transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    }
+    50% {
+        transform: translate(-50%, -50%) rotate(180deg) scale(1.1);
     }
     100% {
-        transform: translate(-50%, -50%) rotate(360deg);
+        transform: translate(-50%, -50%) rotate(360deg) scale(1);
     }
 }
 
@@ -398,24 +406,32 @@ body.light {
     position: relative;
     z-index: 1;
     text-align: center;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     opacity: 0;
-    animation: contentFadeIn 1s ease forwards 0.5s;
+    animation: contentFadeIn 0.5s ease forwards 0.2s;
+    transform: translateZ(0);
 }
 
 @keyframes contentFadeIn {
     from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(20px) translateZ(-50px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) translateZ(0);
     }
 }
 
 .logo-container {
     margin-bottom: 2rem;
     position: relative;
+    transform-style: preserve-3d;
 }
 
 .logo-text {
@@ -425,8 +441,8 @@ body.light {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     opacity: 0;
-    transform: scale(0.5);
-    animation: logoReveal 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards 1s;
+    transform: scale(0.5) translateZ(-100px);
+    animation: logoReveal 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 0.5s;
     text-shadow: 0 0 30px rgba(0, 247, 255, 0.5);
     position: relative;
 }
@@ -434,15 +450,15 @@ body.light {
 @keyframes logoReveal {
     0% {
         opacity: 0;
-        transform: scale(0.5);
+        transform: scale(0.5) translateZ(-100px);
     }
     50% {
         opacity: 1;
-        transform: scale(1.1);
+        transform: scale(1.1) translateZ(50px);
     }
     100% {
         opacity: 1;
-        transform: scale(1);
+        transform: scale(1) translateZ(0);
     }
 }
 
@@ -465,6 +481,7 @@ body.light {
         width: 0;
         height: 0;
         opacity: 0;
+        transform: translate(-50%, -50%) rotate(0deg);
     }
     50% {
         opacity: 1;
@@ -473,6 +490,7 @@ body.light {
         width: 300px;
         height: 300px;
         opacity: 0;
+        transform: translate(-50%, -50%) rotate(360deg);
     }
 }
 
@@ -486,17 +504,17 @@ body.light {
     flex-direction: column;
     gap: 1rem;
     opacity: 0;
-    animation: statusFadeIn 0.5s ease forwards 2s;
+    animation: statusFadeIn 0.5s ease forwards 1s;
 }
 
 @keyframes statusFadeIn {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(10px) translateZ(-50px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) translateZ(0);
     }
 }
 
@@ -507,19 +525,44 @@ body.light {
     display: flex;
     align-items: center;
     gap: 1rem;
-    transition: all 0.3s ease;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transform-origin: left;
+}
+
+.status-item:hover {
+    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .status-item.connected {
     background: rgba(0, 247, 255, 0.1);
     border-color: rgba(0, 247, 255, 0.3);
     transform: translateX(10px);
+    animation: statusSuccess 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes statusSuccess {
+    0% {
+        transform: translateX(0);
+    }
+    50% {
+        transform: translateX(15px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+    100% {
+        transform: translateX(10px);
+    }
 }
 
 .status-icon {
     font-size: 1.5rem;
     opacity: 0.7;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 0 5px rgba(0, 247, 255, 0.5));
 }
 
 .status-item.connected .status-icon {
@@ -530,41 +573,61 @@ body.light {
 @keyframes iconPulse {
     0% {
         transform: scale(1);
+        filter: drop-shadow(0 0 5px rgba(0, 247, 255, 0.5));
     }
     50% {
         transform: scale(1.2);
+        filter: drop-shadow(0 0 10px rgba(0, 247, 255, 0.8));
     }
     100% {
         transform: scale(1);
+        filter: drop-shadow(0 0 5px rgba(0, 247, 255, 0.5));
     }
 }
 
 .loading-progress {
     margin-top: 2rem;
     width: 100%;
-    height: 4px;
+    height: 6px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
+    border-radius: 3px;
     overflow: hidden;
     opacity: 0;
-    animation: progressFadeIn 0.5s ease forwards 2.5s;
+    animation: progressFadeIn 0.5s ease forwards 1.5s;
+    position: relative;
 }
 
-@keyframes progressFadeIn {
-    from {
-        opacity: 0;
+.loading-progress::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, 
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: progressGlow 2s linear infinite;
+}
+
+@keyframes progressGlow {
+    0% {
+        transform: translateX(-100%);
     }
-    to {
-        opacity: 1;
+    100% {
+        transform: translateX(100%);
     }
 }
 
 .progress-bar {
     height: 100%;
     background: linear-gradient(90deg, #00f7ff, #00c3ff);
-    border-radius: 2px;
-    transition: width 0.5s ease;
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    transform-origin: left;
 }
 
 .progress-bar::after {
@@ -577,27 +640,24 @@ body.light {
     background: linear-gradient(
         90deg,
         transparent,
-        rgba(255, 255, 255, 0.3),
+        rgba(255, 255, 255, 0.4),
         transparent
     );
     animation: shimmer 1.5s infinite;
 }
 
-@keyframes shimmer {
-    0% {
-        transform: translateX(-100%);
-    }
-    100% {
-        transform: translateX(100%);
-    }
-}
-
 .loading-tip {
-    margin-top: 1rem;
-    color: rgba(255, 255, 255, 0.6);
+    margin-top: 1.5rem;
+    color: rgba(255, 255, 255, 0.8);
     font-style: italic;
+    font-size: 0.9rem;
     opacity: 0;
-    animation: tipFadeIn 0.5s ease forwards 3s;
+    animation: tipFadeIn 0.5s ease forwards 2s;
+    position: relative;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #00f7ff;
 }
 
 @keyframes tipFadeIn {
@@ -611,77 +671,41 @@ body.light {
     }
 }
 
-.tagline {
-    font-size: 1.1rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin: 0.5rem 0 2rem;
-}
-
-.tutorial-overlay {
-    position: fixed;
+.particles {
+    position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-    animation: fadeIn 0.3s ease;
+    overflow: hidden;
+    pointer-events: none;
 }
 
-.tutorial-content {
-    background: rgba(30, 30, 30, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 2rem;
-    max-width: 500px;
-    width: 90%;
-    text-align: center;
-}
-
-.tutorial-steps {
-    margin: 2rem 0;
-}
-
-.tutorial-step {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 1rem 0;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    text-align: left;
-}
-
-.step-number {
-    width: 32px;
-    height: 32px;
-    background: var(--primary-color);
+.particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(0, 247, 255, 0.5);
     border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    color: var(--bg-dark);
+    pointer-events: none;
+    animation: particleFloat 10s infinite linear;
 }
 
-.tutorial-close {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    border: none;
-    padding: 0.75rem 2rem;
-    border-radius: 8px;
-    color: var(--bg-dark);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.tutorial-close:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 247, 255, 0.3);
+@keyframes particleFloat {
+    0% {
+        transform: translate(0, 0) rotate(0deg);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        transform: translate(var(--tx), var(--ty)) rotate(360deg);
+        opacity: 0;
+    }
 }
 
 @keyframes slideDown {
@@ -733,33 +757,12 @@ body.light {
 @keyframes wave {
     0% {
         transform: translate(-50%, -50%) scaleX(0.5);
-        opacity: 0.5;
     }
     50% {
         transform: translate(-50%, -50%) scaleX(1.2);
-        opacity: 1;
     }
     100% {
         transform: translate(-50%, -50%) scaleX(0.5);
-        opacity: 0.5;
-    }
-}
-
-@keyframes glow {
-    0%, 100% {
-        filter: drop-shadow(0 0 8px rgba(0, 247, 255, 0.3));
-    }
-    50% {
-        filter: drop-shadow(0 0 15px rgba(0, 247, 255, 0.5));
-    }
-}
-
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-3px);
     }
 }
 
@@ -841,64 +844,4 @@ body.light {
 .app.light .status-item {
     background: rgba(0, 0, 0, 0.05);
     color: var(--text-light);
-}
-
-.loading-progress {
-    margin-top: 1.5rem;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
-    position: relative;
-}
-
-.loading-progress .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
-    border-radius: 2px;
-    transition: width 0.5s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.loading-progress .progress-bar::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.3),
-        transparent
-    );
-    animation: shimmer 1.5s infinite;
-}
-
-.loading-tip {
-    margin-top: 1rem;
-    font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.6);
-    font-style: italic;
-    animation: fadeInOut 2s ease infinite;
-}
-
-@keyframes shimmer {
-    0% {
-        transform: translateX(-100%);
-    }
-    100% {
-        transform: translateX(100%);
-    }
-}
-
-@keyframes fadeInOut {
-    0%, 100% {
-        opacity: 0.6;
-    }
-    50% {
-        opacity: 1;
-    }
 } 

@@ -68,7 +68,7 @@ class WebRTCService {
                 let timeout = setTimeout(() => {
                     pc.close();
                     reject(new Error('STUN connectivity check timeout'));
-                }, 5000);
+                }, 2000);
 
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {
