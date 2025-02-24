@@ -133,14 +133,16 @@ const App = () => {
         return (
             <div className={`app loading ${theme}`}>
                 <div className="loading-container">
+                    <div className="wave-container">
+                        <div className="wave"></div>
+                        <div className="wave"></div>
+                        <div className="wave"></div>
+                    </div>
+                    
                     <div className="loading-content">
                         <div className="logo-container">
-                            <div className="logo-animation">
-                                <div className="logo-circle"></div>
-                                <div className="logo-wave"></div>
-                            </div>
-                            <h1>Echo Link</h1>
-                            <p className="tagline">Secure P2P Communication</p>
+                            <div className="logo-ring"></div>
+                            <h1 className="logo-text">Echo Link</h1>
                         </div>
                         
                         <div className="loading-status">
@@ -164,6 +166,23 @@ const App = () => {
                                     </span>
                                 </div>
                             </div>
+                            
+                            <div className="loading-progress">
+                                <div 
+                                    className="progress-bar" 
+                                    style={{ 
+                                        width: `${(Object.values(networkStatus).filter(Boolean).length / 3) * 100}%` 
+                                    }}
+                                ></div>
+                            </div>
+                            
+                            <p className="loading-tip">
+                                {!networkStatus.stun ? 
+                                    "Tip: Ensure your firewall allows WebRTC connections" :
+                                    !networkStatus.webrtc ? 
+                                    "Tip: Check your internet connection" :
+                                    "Almost ready..."}
+                            </p>
                         </div>
                     </div>
                 </div>

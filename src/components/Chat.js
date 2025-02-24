@@ -48,6 +48,11 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
         setIsAIChatEnabled(isAIChatActive);
     }, [isAIChatActive]);
 
+    // Clear messages when switching between peers or AI chat
+    useEffect(() => {
+        setMessages([]);
+    }, [selectedPeer, isAIChatActive]);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -400,6 +405,100 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
         }
     }, []);
 
+    const MessageInput = () => {
+        const [showEmoji, setShowEmoji] = useState(false);
+        const [attachmentType, setAttachmentType] = useState(null);
+        const inputRef = useRef(null);
+        
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && settings.enterToSend) {
+                e.preventDefault();
+                handleSendMessage(e);
+            } else if (e.key === 'Tab' && messageCompletion) {
+                e.preventDefault();
+                setNewMessage(messageCompletion);
+                setMessageCompletion('');
+            }
+        };
+
+        const handlePaste = async (e) => {
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    await handleFileSelect({ target: { files: [file] } });
+                }
+            }
+        };
+
+        return (
+            <div className="message-input-container">
+                <div className="input-actions">
+                    <button 
+                        className="action-button"
+                        onClick={() => setShowEmoji(!showEmoji)}
+                        title="Emoji picker"
+                    >
+                        😊
+                    </button>
+                    <button 
+                        className="action-button"
+                        onClick={() => fileInputRef.current.click()}
+                        title="Attach file"
+                    >
+                        📎
+                    </button>
+                    <button 
+                        className="action-button"
+                        onClick={toggleVoiceRecording}
+                        title={isRecording ? "Stop recording" : "Start voice message"}
+                    >
+                        {isRecording ? '⏹️' : '🎤'}
+                    </button>
+                </div>
+                
+                <div className="input-wrapper">
+                    <textarea
+                        ref={inputRef}
+                        className="message-input"
+                        value={newMessage}
+                        onChange={handleMessageChange}
+                        onKeyDown={handleKeyDown}
+                        onPaste={handlePaste}
+                        placeholder={isAIChatActive ? "Ask me anything..." : "Type a message..."}
+                        rows={1}
+                        style={{ height: 'auto' }}
+                    />
+                    
+                    {messageCompletion && (
+                        <div className="message-completion">
+                            <span className="completion-text">{messageCompletion}</span>
+                            <span className="completion-hint">Press Tab to complete</span>
+                        </div>
+                    )}
+                </div>
+                
+                <button 
+                    className={`action-button send-button ${newMessage.trim() ? 'active' : ''}`}
+                    onClick={handleSendMessage}
+                    disabled={!newMessage.trim()}
+                    title="Send message"
+                >
+                    ➤
+                </button>
+                
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
+                    multiple
+                />
+            </div>
+        );
+    };
+
     return (
         <div className={`chat-container ${isDarkMode ? 'dark' : ''} background-${settings.chatBackground}`}>
             <div className="chat-header">
@@ -717,52 +816,7 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
                 </div>
             )}
 
-            <div className="message-input-container">
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileSelect}
-                    style={{ display: 'none' }}
-                />
-                <button
-                    className="attachment-button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={!selectedPeer || (selectedPeer && !peers.includes(selectedPeer))}
-                >
-                    📎
-                </button>
-                <button
-                    className={`voice-button ${isRecording ? 'recording' : ''}`}
-                    onClick={toggleVoiceRecording}
-                    disabled={!selectedPeer || (selectedPeer && !peers.includes(selectedPeer))}
-                >
-                    🎤
-                </button>
-                <button
-                    className="code-button"
-                    onClick={() => setCodeEditor({ ...codeEditor, visible: !codeEditor.visible })}
-                    disabled={!selectedPeer && !isAIChatActive}
-                >
-                    <span role="img" aria-label="code">⌨️</span>
-                </button>
-                <form className="text-input-form" onSubmit={handleSendMessage}>
-                    <input
-                        type="text"
-                        value={newMessage}
-                        onChange={handleMessageChange}
-                        placeholder={isAIChatActive ? "Chat with AI..." : "Type a message..."}
-                        className="message-input"
-                        disabled={!selectedPeer && !isAIChatActive}
-                    />
-                    <button 
-                        type="submit" 
-                        className="send-button"
-                        disabled={!selectedPeer && !isAIChatActive}
-                    >
-                        Send
-                    </button>
-                </form>
-            </div>
+            <MessageInput />
 
             {codeEditor.visible && (
                 <div className="code-editor-container">
