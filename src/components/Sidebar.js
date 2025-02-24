@@ -29,12 +29,13 @@ const Sidebar = ({ onPeerSelect, currentUser, onAIChatSelect, isAiInitialized })
         setSelectedPeerId(peerId);
         onPeerSelect(peerId);
         setActiveTab('peers');
+        onAIChatSelect(false); // Disable AI chat when selecting a peer
     };
 
     const handleAIChatSelect = () => {
         setSelectedPeerId(null);
         onPeerSelect(null);
-        onAIChatSelect();
+        onAIChatSelect(true); // Enable AI chat
         setActiveTab('ai');
     };
 

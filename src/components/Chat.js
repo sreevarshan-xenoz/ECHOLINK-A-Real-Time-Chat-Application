@@ -13,7 +13,7 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
     const [isRecording, setIsRecording] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState(null);
     const [typingStatus, setTypingStatus] = useState({});
-    const [darkMode, setDarkMode] = useState(false);
+    const [isDarkMode, setIsDarkMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -30,6 +30,19 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
     const [userLanguage, setUserLanguage] = useState(navigator.language.split('-')[0]);
     const [isAIChatEnabled, setIsAIChatEnabled] = useState(false);
     const [aiPersonality, setAiPersonality] = useState("default");
+    const [showSettings, setShowSettings] = useState(false);
+    const [settings, setSettings] = useState({
+        notifications: true,
+        soundEffects: true,
+        messagePreview: true,
+        chatBackground: 'default',
+        fontSize: 'medium',
+        bubbleStyle: 'modern',
+        enterToSend: true,
+        autoScroll: true,
+        readReceipts: true,
+        typingIndicator: true
+    });
 
     useEffect(() => {
         setIsAIChatEnabled(isAIChatActive);
@@ -222,7 +235,7 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
     };
 
     const toggleDarkMode = () => {
-        setDarkMode(!darkMode);
+        setIsDarkMode(!isDarkMode);
         document.body.classList.toggle('dark-mode');
     };
 
@@ -277,7 +290,7 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
         return () => unsubscribe();
     }, [isAiInitialized]);
 
-    const useSmartReply = (reply) => {
+    const handleSmartReply = (reply) => {
         setNewMessage(reply);
         setSmartReplies([]);
     };
@@ -367,31 +380,182 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
         setAiPersonality(personality);
     };
 
+    const handleSettingChange = (setting, value) => {
+        setSettings(prev => ({
+            ...prev,
+            [setting]: value
+        }));
+        // Save settings to localStorage
+        localStorage.setItem('chat_settings', JSON.stringify({
+            ...settings,
+            [setting]: value
+        }));
+    };
+
+    // Load settings from localStorage
+    useEffect(() => {
+        const savedSettings = localStorage.getItem('chat_settings');
+        if (savedSettings) {
+            setSettings(JSON.parse(savedSettings));
+        }
+    }, []);
+
     return (
-        <div className={`chat-container ${darkMode ? 'dark' : ''}`}>
+        <div className={`chat-container ${isDarkMode ? 'dark' : ''} background-${settings.chatBackground}`}>
             <div className="chat-header">
                 <div className="chat-user-info">
-                    <div className="user-details">
-                        <h3>{selectedPeer ? selectedPeer.substring(0, 8) + '...' : 'Select a peer'}</h3>
-                        <span className="status">
-                            {peers.includes(selectedPeer) ? 'online' : 'offline'}
-                        </span>
-                        {typingStatus[selectedPeer] && <span className="typing-indicator">typing...</span>}
-                    </div>
+                    {selectedPeer ? (
+                        <>
+                            <div className="avatar">{selectedPeer.substring(0, 2).toUpperCase()}</div>
+                            <div className="user-details">
+                                <h3>{selectedPeer}</h3>
+                                <span className="status">online</span>
+                            </div>
+                        </>
+                    ) : isAIChatActive ? (
+                        <>
+                            <div className="avatar ai-avatar">🤖</div>
+                            <div className="user-details">
+                                <h3>AI Assistant</h3>
+                                <span className="status">ready</span>
+                            </div>
+                        </>
+                    ) : null}
                 </div>
                 <div className="chat-actions">
-                    <input
-                        type="text"
-                        placeholder="Search messages..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="search-input"
-                    />
-                    <button onClick={toggleDarkMode} className="theme-toggle">
-                        {darkMode ? '☀️' : '🌙'}
+                    <button 
+                        className="settings-button"
+                        onClick={() => setShowSettings(!showSettings)}
+                        title="Chat settings"
+                    >
+                        ⚙️
+                    </button>
+                    <button
+                        className="theme-toggle"
+                        onClick={toggleDarkMode}
+                        title="Toggle dark mode"
+                    >
+                        {isDarkMode ? '☀️' : '🌙'}
                     </button>
                 </div>
             </div>
+
+            {showSettings && (
+                <div className="settings-panel">
+                    <div className="settings-header">
+                        <h3>Chat Settings</h3>
+                        <button 
+                            className="close-button"
+                            onClick={() => setShowSettings(false)}
+                        >
+                            ×
+                        </button>
+                    </div>
+                    <div className="settings-content">
+                        <div className="settings-section">
+                            <h4>Notifications</h4>
+                            <label className="setting-item">
+                                <span>Message Notifications</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.notifications}
+                                    onChange={(e) => handleSettingChange('notifications', e.target.checked)}
+                                />
+                            </label>
+                            <label className="setting-item">
+                                <span>Sound Effects</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.soundEffects}
+                                    onChange={(e) => handleSettingChange('soundEffects', e.target.checked)}
+                                />
+                            </label>
+                            <label className="setting-item">
+                                <span>Message Preview</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.messagePreview}
+                                    onChange={(e) => handleSettingChange('messagePreview', e.target.checked)}
+                                />
+                            </label>
+                        </div>
+
+                        <div className="settings-section">
+                            <h4>Appearance</h4>
+                            <label className="setting-item">
+                                <span>Chat Background</span>
+                                <select
+                                    value={settings.chatBackground}
+                                    onChange={(e) => handleSettingChange('chatBackground', e.target.value)}
+                                >
+                                    <option value="default">Default</option>
+                                    <option value="gradient">Gradient</option>
+                                    <option value="solid">Solid Color</option>
+                                    <option value="pattern">Pattern</option>
+                                </select>
+                            </label>
+                            <label className="setting-item">
+                                <span>Font Size</span>
+                                <select
+                                    value={settings.fontSize}
+                                    onChange={(e) => handleSettingChange('fontSize', e.target.value)}
+                                >
+                                    <option value="small">Small</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="large">Large</option>
+                                </select>
+                            </label>
+                            <label className="setting-item">
+                                <span>Message Bubble Style</span>
+                                <select
+                                    value={settings.bubbleStyle}
+                                    onChange={(e) => handleSettingChange('bubbleStyle', e.target.value)}
+                                >
+                                    <option value="modern">Modern</option>
+                                    <option value="classic">Classic</option>
+                                    <option value="minimal">Minimal</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div className="settings-section">
+                            <h4>Chat Behavior</h4>
+                            <label className="setting-item">
+                                <span>Enter to Send</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.enterToSend}
+                                    onChange={(e) => handleSettingChange('enterToSend', e.target.checked)}
+                                />
+                            </label>
+                            <label className="setting-item">
+                                <span>Auto Scroll to Bottom</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.autoScroll}
+                                    onChange={(e) => handleSettingChange('autoScroll', e.target.checked)}
+                                />
+                            </label>
+                            <label className="setting-item">
+                                <span>Read Receipts</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.readReceipts}
+                                    onChange={(e) => handleSettingChange('readReceipts', e.target.checked)}
+                                />
+                            </label>
+                            <label className="setting-item">
+                                <span>Typing Indicator</span>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.typingIndicator}
+                                    onChange={(e) => handleSettingChange('typingIndicator', e.target.checked)}
+                                />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="messages-container">
                 {filteredMessages
@@ -511,7 +675,7 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
                     {smartReplies.map((reply, index) => (
                         <button
                             key={index}
-                            onClick={() => useSmartReply(reply)}
+                            onClick={() => handleSmartReply(reply)}
                             className="smart-reply-button"
                         >
                             {reply}
