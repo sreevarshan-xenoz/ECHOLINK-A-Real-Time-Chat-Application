@@ -92,10 +92,14 @@
     flex-direction: column;
     gap: 1rem;
     scroll-behavior: smooth;
+    will-change: transform;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 .messages-container::-webkit-scrollbar {
     width: 6px;
+    transform: translateZ(0);
 }
 
 .messages-container::-webkit-scrollbar-track {
@@ -105,6 +109,7 @@
 .messages-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
+    transform: translateZ(0);
 }
 
 .message {
@@ -114,9 +119,14 @@
     opacity: 0;
     transform: translateY(20px);
     animation: messageAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    will-change: transform, opacity;
 }
 
 @keyframes messageAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
     to {
         opacity: 1;
         transform: translateY(0);
@@ -130,6 +140,10 @@
 }
 
 @keyframes messageSentAppear {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
     to {
         opacity: 1;
         transform: translateX(0);
@@ -142,6 +156,10 @@
 }
 
 @keyframes messageReceivedAppear {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
     to {
         opacity: 1;
         transform: translateX(0);
@@ -154,6 +172,9 @@
     position: relative;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    backface-visibility: hidden;
 }
 
 .message-content::before {
@@ -165,7 +186,7 @@
     bottom: 0;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
 }
 
 .message-content:hover::before {
@@ -192,6 +213,8 @@
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     transform-origin: bottom;
     animation: slideUp 0.3s ease;
+    will-change: transform, opacity;
+    transform: translateZ(0);
 }
 
 @keyframes slideUp {
@@ -255,6 +278,7 @@
 
 .send-button:hover {
     transform: translateY(-2px) scale(1.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 4px 12px rgba(0, 247, 255, 0.3);
 }
 
@@ -1467,6 +1491,7 @@
 /* Scrollbar Styling */
 .messages-container::-webkit-scrollbar {
     width: 6px;
+    transform: translateZ(0);
 }
 
 .messages-container::-webkit-scrollbar-track {
@@ -1476,6 +1501,7 @@
 .messages-container::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 3px;
+    transform: translateZ(0);
 }
 
 .messages-container::-webkit-scrollbar-thumb:hover {
@@ -1521,4 +1547,12 @@
 .chat-container.light .action-button {
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Add container for virtualized list */
+.virtualized-list {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
 } 

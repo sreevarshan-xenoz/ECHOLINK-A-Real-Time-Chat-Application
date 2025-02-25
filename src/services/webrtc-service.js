@@ -38,6 +38,89 @@ class WebRTCService {
 
         // Initialize encryption key
         this.initializeEncryption();
+
+        const MESSAGE_BATCH_SIZE = 50;
+        const MESSAGE_BATCH_INTERVAL = 100; // ms
+        let messageBatch = [];
+        let batchTimeout = null;
+
+        const processBatch = () => {
+            if (messageBatch.length > 0) {
+                const batch = messageBatch;
+                messageBatch = [];
+                batch.forEach(message => {
+                    this.messageHandlers.forEach(handler => handler(message));
+                });
+            }
+        };
+
+        const addMessageToBatch = (message) => {
+            messageBatch.push(message);
+            if (messageBatch.length >= MESSAGE_BATCH_SIZE) {
+                if (batchTimeout) {
+                    clearTimeout(batchTimeout);
+                }
+                processBatch();
+            } else if (!batchTimeout) {
+                batchTimeout = setTimeout(() => {
+                    batchTimeout = null;
+                    processBatch();
+                }, MESSAGE_BATCH_INTERVAL);
+            }
+        };
+
+        // Debounce connection checks
+        const debounce = (func, wait) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        };
+
+        const debouncedCheckConnection = debounce(async (peer) => {
+            try {
+                const pc = this.connections.get(peer);
+                if (!pc) return false;
+                
+                const stats = await pc.getStats();
+                let isConnected = false;
+                stats.forEach(report => {
+                    if (report.type === "candidate-pair" && report.state === "succeeded") {
+                        isConnected = true;
+                    }
+                });
+                return isConnected;
+            } catch (error) {
+                console.error('Connection check failed:', error);
+                return false;
+            }
+        }, 1000);
+
+        // Update message handling
+        const handleMessage = (message) => {
+            addMessageToBatch(message);
+        };
+
+        // Update connection management
+        const CONNECTION_CHECK_INTERVAL = 5000;
+        let connectionCheckInterval;
+
+        const startConnectionChecks = () => {
+            if (connectionCheckInterval) return;
+            connectionCheckInterval = setInterval(() => {
+                Array.from(this.connections.keys()).forEach(peer => {
+                    debouncedCheckConnection(peer);
+                });
+            }, CONNECTION_CHECK_INTERVAL);
+        };
+
+        const stopConnectionChecks = () => {
+            if (connectionCheckInterval) {
+                clearInterval(connectionCheckInterval);
+                connectionCheckInterval = null;
+            }
+        };
     }
 
     async initialize() {

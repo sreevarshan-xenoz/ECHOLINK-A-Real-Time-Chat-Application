@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { webrtcService } from '../services/webrtc-service';
 import aiService from '../services/ai-service';
 import './Chat.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { v4 as uuidv4 } from 'uuid';
+import { FixedSizeList as List } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 
 const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
     const [messages, setMessages] = useState([]);
@@ -43,6 +45,129 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
         readReceipts: true,
         typingIndicator: true
     });
+    const [batchSize] = useState(50);
+    const [visibleMessages, setVisibleMessages] = useState([]);
+    const [completionSuggestion, setCompletionSuggestion] = useState('');
+    const [isUsingCompletion, setIsUsingCompletion] = useState(false);
+    
+    // Memoize filtered messages
+    const filteredMessages = useMemo(() => {
+        return messages
+            .filter(msg => {
+                if (isAIChatActive) return true;
+                if (selectedPeer) {
+                    return msg.sender === selectedPeer || msg.sender === currentUser.id;
+                }
+                return false;
+            })
+            .filter(msg => 
+                !searchQuery || msg.text?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+    }, [messages, isAIChatActive, selectedPeer, currentUser.id, searchQuery]);
+
+    // Message row renderer for virtualization
+    const MessageRow = ({ index, style }) => {
+        const message = filteredMessages[index];
+        return (
+            <div style={style}>
+                <div
+                    className={`message ${message.sender === currentUser.id ? 'sent' : 'received'}`}
+                    data-sender={message.sender}
+                >
+                    <div className="message-content">
+                        {message.type === 'CHAT' && (
+                            <>
+                                <p>{message.text}</p>
+                                {translatedMessages.has(message.id) && (
+                                    <p className="translated-text">
+                                        {translatedMessages.get(message.id)}
+                                    </p>
+                                )}
+                                <div className="message-actions">
+                                    <button 
+                                        className="translate-button"
+                                        onClick={() => handleTranslateMessage(message.id, message.text)}
+                                    >
+                                        {translatedMessages.has(message.id) ? 'Show Original' : '🌐 Translate'}
+                                    </button>
+                                </div>
+                                {message.sentiment && (
+                                    <span className={`sentiment-indicator ${message.sentiment.toLowerCase()}`}>
+                                        {message.sentiment === 'POSITIVE' ? '😊' : 
+                                         message.sentiment === 'NEGATIVE' ? '😔' : '😐'}
+                                    </span>
+                                )}
+                                {message.language && (
+                                    <span className="language-indicator">
+                                        {message.language}
+                                    </span>
+                                )}
+                            </>
+                        )}
+                        {message.type === 'VOICE_MESSAGE' && (
+                            <div className="voice-message">
+                                <audio controls src={message.audioUrl} />
+                                {message.transcription && (
+                                    <div className="transcription">
+                                        <p><i>Transcription: {message.transcription}</i></p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {message.type === 'FILE_META' && (
+                            <div className="file-message">
+                                <span>📎 {message.name}</span>
+                                <span className="file-size">
+                                    {(message.size / 1024).toFixed(1)} KB
+                                </span>
+                            </div>
+                        )}
+                        {message.type === 'CODE_SHARE' && (
+                            <div className="code-share-container">
+                                <div className="code-header">
+                                    <span className="language-tag">{message.language}</span>
+                                    <button onClick={() => navigator.clipboard.writeText(message.code)}>
+                                        Copy Code
+                                    </button>
+                                    {message.sender === currentUser.id && (
+                                        <button onClick={() => setSharedWorkspace(message.workspaceId)}>
+                                            Edit Live
+                                        </button>
+                                    )}
+                                </div>
+                                <SyntaxHighlighter 
+                                    language={message.language}
+                                    style={atomDark}
+                                    showLineNumbers={true}
+                                >
+                                    {message.code}
+                                </SyntaxHighlighter>
+                            </div>
+                        )}
+                        <span className="timestamp">
+                            {new Date(message.timestamp).toLocaleTimeString()}
+                        </span>
+                        <div className="message-reactions">
+                            {message.reactions?.map((reaction, i) => (
+                                <span key={i} className="reaction">{reaction}</span>
+                            ))}
+                            <div className="reaction-picker">
+                                {['👍', '❤️', '😊', '😂', '👏', '🎉'].map(emoji => (
+                                    <span
+                                        key={emoji}
+                                        onClick={() => handleReaction(message.id, emoji)}
+                                        className="reaction-option"
+                                    >
+                                        {emoji}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     useEffect(() => {
         setIsAIChatEnabled(isAIChatActive);
@@ -244,82 +369,6 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
         document.body.classList.toggle('dark-mode');
     };
 
-    const filteredMessages = searchQuery
-        ? messages.filter(msg => 
-            msg.text?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : messages;
-
-    // Handle incoming messages with AI analysis
-    useEffect(() => {
-        const unsubscribe = webrtcService.onMessage(async (message) => {
-            switch (message.type) {
-                case 'CHAT':
-                    if (isAiInitialized) {
-                        // Generate smart replies for received messages
-                        const replies = await aiService.getSmartReplies(message.text);
-                        setSmartReplies(replies);
-                        
-                        // Add to AI service history
-                        aiService.addToHistory({
-                            text: message.text,
-                            sender: message.sender,
-                            timestamp: message.timestamp
-                        });
-                    }
-                    setMessages(prev => [...prev, message]);
-                    break;
-                case 'PEER_CONNECTED':
-                    setPeers(prev => [...prev, message.peerId]);
-                    break;
-                case 'PEER_DISCONNECTED':
-                    setPeers(prev => prev.filter(id => id !== message.peerId));
-                    break;
-                case 'TYPING_STATUS':
-                    setTypingStatus(prev => ({
-                        ...prev,
-                        [message.sender]: message.isTyping
-                    }));
-                    break;
-                case 'REACTION':
-                    setMessages(prev => prev.map(msg =>
-                        msg.id === message.messageId
-                            ? { ...msg, reactions: [...(msg.reactions || []), message.reaction] }
-                            : msg
-                    ));
-                    break;
-                default:
-                    break;
-            }
-        });
-
-        return () => unsubscribe();
-    }, [isAiInitialized]);
-
-    const handleSmartReply = (reply) => {
-        setNewMessage(reply);
-        setSmartReplies([]);
-    };
-
-    const useCompletion = () => {
-        if (messageCompletion) {
-            setNewMessage(prev => prev + messageCompletion);
-            setMessageCompletion('');
-        }
-    };
-
-    const handleCodeShare = () => {
-        const codeMessage = {
-            type: 'CODE_SHARE',
-            code: codeEditor.code,
-            language: codeEditor.language,
-            timestamp: new Date().toISOString(),
-            workspaceId: uuidv4()
-        };
-        webrtcService.sendMessage(codeMessage, selectedPeer);
-        setMessages(prev => [...prev, { ...codeMessage, sender: currentUser.id }]);
-        setCodeEditor({ ...codeEditor, visible: false });
-    };
-
     const handleTranslateMessage = async (messageId, text) => {
         if (translatedMessages.has(messageId)) {
             setTranslatedMessages(prev => {
@@ -499,6 +548,35 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
         );
     };
 
+    const handleSmartReply = (reply) => {
+        setNewMessage(reply);
+        handleSendMessage({ preventDefault: () => {} });
+    };
+
+    const useCompletion = (text) => {
+        if (text.length > 0 && !isUsingCompletion) {
+            aiService.getMessageCompletion(text)
+                .then(completion => {
+                    setCompletionSuggestion(completion);
+                })
+                .catch(error => {
+                    console.error('Error getting completion:', error);
+                    setCompletionSuggestion('');
+                });
+        } else {
+            setCompletionSuggestion('');
+        }
+    };
+
+    const handleCodeShare = (code, language) => {
+        const codeMessage = {
+            type: 'code',
+            content: code,
+            language: language || 'javascript'
+        };
+        handleSendMessage({ preventDefault: () => {} }, codeMessage);
+    };
+
     return (
         <div className={`chat-container ${isDarkMode ? 'dark' : ''} background-${settings.chatBackground}`}>
             <div className="chat-header">
@@ -657,115 +735,19 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
             )}
 
             <div className="messages-container">
-                {filteredMessages
-                    .filter(msg => {
-                        if (isAIChatActive) {
-                            // Show all messages in AI chat mode
-                            return true;
-                        } else if (selectedPeer) {
-                            // In peer chat mode, show messages between current user and selected peer
-                            return msg.sender === selectedPeer || msg.sender === currentUser.id;
-                        }
-                        return false;
-                    })
-                    .map((message, index) => (
-                        <div
-                            key={index}
-                            className={`message ${message.sender === currentUser.id ? 'sent' : 'received'}`}
-                            data-sender={message.sender}
+                <AutoSizer>
+                    {({ height, width }) => (
+                        <List
+                            height={height}
+                            width={width}
+                            itemCount={filteredMessages.length}
+                            itemSize={80} // Adjust based on average message height
+                            overscanCount={5}
                         >
-                            <div className="message-content">
-                                {message.type === 'CHAT' && (
-                                    <>
-                                        <p>{message.text}</p>
-                                        {translatedMessages.has(message.id) && (
-                                            <p className="translated-text">
-                                                {translatedMessages.get(message.id)}
-                                            </p>
-                                        )}
-                                        <div className="message-actions">
-                                            <button 
-                                                className="translate-button"
-                                                onClick={() => handleTranslateMessage(message.id, message.text)}
-                                            >
-                                                {translatedMessages.has(message.id) ? 'Show Original' : '🌐 Translate'}
-                                            </button>
-                                        </div>
-                                        {message.sentiment && (
-                                            <span className={`sentiment-indicator ${message.sentiment.toLowerCase()}`}>
-                                                {message.sentiment === 'POSITIVE' ? '😊' : 
-                                                 message.sentiment === 'NEGATIVE' ? '😔' : '😐'}
-                                            </span>
-                                        )}
-                                        {message.language && (
-                                            <span className="language-indicator">
-                                                {message.language}
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                                {message.type === 'VOICE_MESSAGE' && (
-                                    <div className="voice-message">
-                                        <audio controls src={message.audioUrl} />
-                                        {message.transcription && (
-                                            <div className="transcription">
-                                                <p><i>Transcription: {message.transcription}</i></p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                                {message.type === 'FILE_META' && (
-                                    <div className="file-message">
-                                        <span>📎 {message.name}</span>
-                                        <span className="file-size">
-                                            {(message.size / 1024).toFixed(1)} KB
-                                        </span>
-                                    </div>
-                                )}
-                                {message.type === 'CODE_SHARE' && (
-                                    <div className="code-share-container">
-                                        <div className="code-header">
-                                            <span className="language-tag">{message.language}</span>
-                                            <button onClick={() => navigator.clipboard.writeText(message.code)}>
-                                                Copy Code
-                                            </button>
-                                            {message.sender === currentUser.id && (
-                                                <button onClick={() => setSharedWorkspace(message.workspaceId)}>
-                                                    Edit Live
-                                                </button>
-                                            )}
-                                        </div>
-                                        <SyntaxHighlighter 
-                                            language={message.language}
-                                            style={atomDark}
-                                            showLineNumbers={true}
-                                        >
-                                            {message.code}
-                                        </SyntaxHighlighter>
-                                    </div>
-                                )}
-                                <span className="timestamp">
-                                    {new Date(message.timestamp).toLocaleTimeString()}
-                                </span>
-                                <div className="message-reactions">
-                                    {message.reactions?.map((reaction, i) => (
-                                        <span key={i} className="reaction">{reaction}</span>
-                                    ))}
-                                    <div className="reaction-picker">
-                                        {['👍', '❤️', '😊', '😂', '👏', '🎉'].map(emoji => (
-                                            <span
-                                                key={emoji}
-                                                onClick={() => handleReaction(message.id, emoji)}
-                                                className="reaction-option"
-                                            >
-                                                {emoji}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                            {MessageRow}
+                        </List>
+                    )}
+                </AutoSizer>
                 <div ref={messagesEndRef} />
             </div>
 
