@@ -16,8 +16,8 @@ A decentralized peer-to-peer chat application using WebRTC for direct communicat
 
 ### 1. Clone the Repository
 ```bash
-git clone <your-repository-url>
-cd p2p-chat-app
+git clone https://github.com/sreevarshan-xenoz/ECHOLINK-A-Real-Time-Chat-Application.git
+cd ECHOLINK-A-Real-Time-Chat-Application
 ```
 
 ### 2. Install Dependencies
