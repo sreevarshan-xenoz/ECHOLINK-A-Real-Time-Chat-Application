@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Chat from './components/Chat';
+import Landing from './components/Landing';
 import { webrtcService } from './services/webrtc-service';
 import { fileService } from './services/file-service';
 import aiService from './services/ai-service';
 import './App.css';
 
-const App = () => {
+const MainApp = () => {
     const [selectedPeer, setSelectedPeer] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -230,178 +232,69 @@ const App = () => {
         );
     };
 
-    if (isLoading) {
-        return <LoadingScreen networkStatus={networkStatus} />;
-    }
-
-    if (error || !currentUser) {
+    if (error) {
         return (
-            <div className={`app error ${theme}`}>
-                <div className="error-container">
-                    <div className="error-content">
-                        <div className="error-icon">⚠️</div>
-                        <h2>Connection Error</h2>
-                        <p className="error-message">
-                            {error || 'Failed to initialize. Please check your connection.'}
-                        </p>
-                        <button onClick={handleRetry} className="retry-button">
-                            <span className="icon">🔄</span> Retry Connection
-                        </button>
-                    </div>
+            <div className="error-container">
+                <div className="error-message">
+                    <h2>Connection Error</h2>
+                    <p>{error}</p>
+                    <button onClick={handleRetry} className="retry-button">Retry Connection</button>
                 </div>
             </div>
         );
     }
 
+    if (isLoading) {
+        return <LoadingScreen networkStatus={networkStatus} />;
+    }
+
     return (
-        <div className={`app ${theme}`}>
-            <div className="app-header">
-                <div className="header-content">
-                    <div className="header-left">
-                        <h1>Echo Link</h1>
-                        <span className="connection-status">
-                            <span className="status-dot online"></span>
-                            Connected
-                        </span>
-                    </div>
-                    <div className="header-actions">
-                        <button 
-                            className="theme-toggle"
-                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                            title="Toggle theme"
-                        >
-                            {theme === 'dark' ? '☀️' : '🌙'}
-                        </button>
-                        <button 
-                            className="settings-button"
-                            onClick={() => setShowSettings(!showSettings)}
-                            title="Settings"
-                        >
-                            ⚙️
-                        </button>
-                    </div>
-                </div>
-
-                {showSettings && (
-                    <div className="settings-panel">
-                        <div className="settings-header">
-                            <h3>Settings</h3>
-                            <button 
-                                className="close-button"
-                                onClick={() => setShowSettings(false)}
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <div className="settings-content">
-                            <div className="settings-section">
-                                <h4>AI Configuration</h4>
-                                <div className="ai-model-select">
-                                    <p>Select AI Model</p>
-                                    <div className="model-options">
-                                        <button 
-                                            className={`model-option ${selectedAIModel === 'openai' ? 'selected' : ''}`}
-                                            onClick={() => handleModelSelect('openai')}
-                                        >
-                                            <span className="model-icon">🤖</span>
-                                            OpenAI
-                                            {selectedAIModel === 'openai' && isAiInitialized && 
-                                                <span className="verified-badge">✓</span>}
-                                        </button>
-                                        <button 
-                                            className={`model-option ${selectedAIModel === 'gemini' ? 'selected' : ''}`}
-                                            onClick={() => handleModelSelect('gemini')}
-                                        >
-                                            <span className="model-icon">💫</span>
-                                            Gemini
-                                            {selectedAIModel === 'gemini' && isAiInitialized && 
-                                                <span className="verified-badge">✓</span>}
-                                        </button>
-                                    </div>
-                                </div>
-                                {showApiInput && (
-                                    <form onSubmit={verifyAndInitializeAI} className="api-key-form">
-                                        <input
-                                            type="password"
-                                            placeholder={`Enter ${selectedAIModel} API Key`}
-                                            value={apiKey}
-                                            onChange={(e) => setApiKey(e.target.value)}
-                                            className="api-key-input"
-                                        />
-                                        <div className="form-actions">
-                                            <button 
-                                                type="submit" 
-                                                className="verify-button"
-                                                disabled={isVerifying}
-                                            >
-                                                {isVerifying ? 'Verifying...' : 'Verify'}
-                                            </button>
-                                            <button 
-                                                type="button" 
-                                                className="cancel-button"
-                                                onClick={() => setShowApiInput(false)}
-                                            >
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </form>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                <div className="notifications-container">
-                    {notifications.map(notification => (
-                        <div key={notification.id} className={`notification ${notification.type}`}>
-                            {notification.message}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="app-content">
-                <Sidebar
-                    onPeerSelect={handlePeerSelect}
-                    onAIChatSelect={handleAIChatSelect}
-                    currentUser={currentUser}
-                    isAiInitialized={isAiInitialized}
-                />
-                <Chat
-                    currentUser={currentUser}
-                    selectedPeer={selectedPeer}
-                    isAIChatActive={isAIChatActive}
-                />
-            </div>
-
-            {showTutorial && (
-                <div className="tutorial-overlay">
-                    <div className="tutorial-content">
-                        <h2>Welcome to Echo Link! 👋</h2>
-                        <div className="tutorial-steps">
-                            <div className="tutorial-step">
-                                <span className="step-number">1</span>
-                                <p>Share your ID with friends to connect</p>
-                            </div>
-                            <div className="tutorial-step">
-                                <span className="step-number">2</span>
-                                <p>Enable AI features in settings</p>
-                            </div>
-                            <div className="tutorial-step">
-                                <span className="step-number">3</span>
-                                <p>Start chatting securely!</p>
-                            </div>
-                        </div>
-                        <button 
-                            className="tutorial-close"
-                            onClick={() => setShowTutorial(false)}
-                        >
-                            Got it!
-                        </button>
-                    </div>
-                </div>
-            )}
+        <div className={`app-container ${theme}`}>
+            <Sidebar
+                currentUser={currentUser}
+                onPeerSelect={handlePeerSelect}
+                onAISelect={handleAIChatSelect}
+                selectedPeer={selectedPeer}
+                isAIChatActive={isAIChatActive}
+                onAIModelSelect={handleModelSelect}
+                selectedAIModel={selectedAIModel}
+                showApiInput={showApiInput}
+                apiKey={apiKey}
+                setApiKey={setApiKey}
+                onVerifyKey={verifyAndInitializeAI}
+                isVerifying={isVerifying}
+                isAiInitialized={isAiInitialized}
+                setShowSettings={setShowSettings}
+                theme={theme}
+                setTheme={setTheme}
+                notifications={notifications}
+                setShowTutorial={setShowTutorial}
+            />
+            <Chat
+                selectedPeer={selectedPeer}
+                currentUser={currentUser}
+                isAIChatActive={isAIChatActive}
+                selectedAIModel={selectedAIModel}
+                isAiInitialized={isAiInitialized}
+                showSettings={showSettings}
+                setShowSettings={setShowSettings}
+                showTutorial={showTutorial}
+                setShowTutorial={setShowTutorial}
+                addNotification={addNotification}
+            />
         </div>
+    );
+};
+
+const App = () => {
+    return (
+        <Router>
+            <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/chat" element={<MainApp />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </Router>
     );
 };
 

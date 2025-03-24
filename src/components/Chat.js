@@ -8,7 +8,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 
-const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
+const Chat = ({ 
+    currentUser, 
+    selectedPeer, 
+    isAIChatActive,
+    selectedAIModel,
+    isAiInitialized,
+    showSettings,
+    setShowSettings,
+    showTutorial,
+    setShowTutorial,
+    addNotification
+}) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [peers, setPeers] = useState([]);
@@ -24,7 +35,6 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
     const [messageCompletion, setMessageCompletion] = useState('');
     const [sentiment, setSentiment] = useState(null);
     const [language, setLanguage] = useState(null);
-    const [isAiInitialized, setIsAiInitialized] = useState(false);
     const completionTimeout = useRef(null);
     const [codeEditor, setCodeEditor] = useState({ visible: false, language: 'javascript', code: '' });
     const [sharedWorkspace, setSharedWorkspace] = useState(null);
@@ -32,7 +42,6 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
     const [userLanguage, setUserLanguage] = useState(navigator.language.split('-')[0]);
     const [isAIChatEnabled, setIsAIChatEnabled] = useState(false);
     const [aiPersonality, setAiPersonality] = useState("default");
-    const [showSettings, setShowSettings] = useState(false);
     const [settings, setSettings] = useState({
         notifications: true,
         soundEffects: true,
@@ -296,7 +305,7 @@ const Chat = ({ currentUser, selectedPeer, isAIChatActive }) => {
 
                 // If API key is invalid, reset initialization
                 if (error.message.includes('API key')) {
-                    setIsAiInitialized(false);
+                    addNotification('API key is invalid. Please update it in settings.', 'error');
                 }
             }
         } else if (selectedPeer) {

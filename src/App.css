@@ -844,4 +844,17 @@ body.light {
 .app.light .status-item {
     background: rgba(0, 0, 0, 0.05);
     color: var(--text-light);
+}
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    color: var(--text-dark);
+}
+
+.app-container.light {
+    background-color: var(--bg-light);
+    color: var(--text-light);
 } 

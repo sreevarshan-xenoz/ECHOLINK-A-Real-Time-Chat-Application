@@ -2,7 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { webrtcService } from '../services/webrtc-service';
 import './Sidebar.css';
 
-const Sidebar = ({ onPeerSelect, currentUser, onAIChatSelect, isAiInitialized }) => {
+const Sidebar = ({ 
+    onPeerSelect, 
+    currentUser, 
+    onAISelect,
+    selectedPeer,
+    isAIChatActive,
+    onAIModelSelect,
+    selectedAIModel,
+    showApiInput,
+    apiKey,
+    setApiKey,
+    onVerifyKey,
+    isVerifying,
+    isAiInitialized,
+    setShowSettings,
+    theme,
+    setTheme,
+    notifications,
+    setShowTutorial
+}) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [peers, setPeers] = useState([]);
     const [selectedPeerId, setSelectedPeerId] = useState(null);
@@ -27,15 +46,21 @@ const Sidebar = ({ onPeerSelect, currentUser, onAIChatSelect, isAiInitialized })
 
     const handlePeerSelect = (peerId) => {
         setSelectedPeerId(peerId);
-        onPeerSelect(peerId);
+        if (onPeerSelect) {
+            onPeerSelect(peerId);
+        }
         setActiveTab('peers');
-        onAIChatSelect(false); // Disable AI chat when selecting a peer
+        onAISelect(false); // Disable AI chat when selecting a peer
     };
 
     const handleAIChatSelect = () => {
+        if (onAISelect) {
+            onAISelect();
+        }
         setSelectedPeerId(null);
-        onPeerSelect(null);
-        onAIChatSelect(true); // Enable AI chat
+        if (onPeerSelect) {
+            onPeerSelect(null);
+        }
         setActiveTab('ai');
     };
 
