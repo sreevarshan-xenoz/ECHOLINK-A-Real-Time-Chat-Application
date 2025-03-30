@@ -1,8 +1,63 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './Landing.css';
 
+const FloatingCube = () => {
+    const cubeRef = useRef(null);
+
+    useEffect(() => {
+        const cube = cubeRef.current;
+        let rotateX = 0;
+        let rotateY = 0;
+
+        const handleMouseMove = (e) => {
+            const { clientX, clientY } = e;
+            const { innerWidth, innerHeight } = window;
+            
+            rotateX = (clientY - innerHeight / 2) / 20;
+            rotateY = (clientX - innerWidth / 2) / 20;
+            
+            cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    return (
+        <div className="floating-cube" ref={cubeRef}>
+            <div className="cube-face front"></div>
+            <div className="cube-face back"></div>
+            <div className="cube-face right"></div>
+            <div className="cube-face left"></div>
+            <div className="cube-face top"></div>
+            <div className="cube-face bottom"></div>
+        </div>
+    );
+};
+
+const ChatPreview = () => {
+    return (
+        <div className="chat-preview">
+            <div className="chat-preview-header">
+                <div className="preview-avatar">👤</div>
+                <div className="preview-status">Online</div>
+            </div>
+            <div className="chat-preview-messages">
+                <div className="preview-message received">Hey there! 👋</div>
+                <div className="preview-message sent">Hi! How are you?</div>
+                <div className="preview-message received">I'm great! Let's chat securely!</div>
+            </div>
+            <div className="chat-preview-input">
+                <input type="text" placeholder="Type a message..." disabled />
+                <button disabled>Send</button>
+            </div>
+        </div>
+    );
+};
+
 const Landing = () => {
+    const [showPreview, setShowPreview] = React.useState(false);
     useEffect(() => {
         // Add scroll animation observer
         const observer = new IntersectionObserver((entries) => {
@@ -29,9 +84,11 @@ const Landing = () => {
     return (
         <div className="landing-container">
             <div className="landing-content">
+                <FloatingCube />
                 <div className="landing-header scroll-animate">
                     <h1>ECHOLINK</h1>
                     <p className="tagline">Secure, Real-Time Communication</p>
+                    <Link to="/chat" className="cta-button">Start Chatting</Link>
                 </div>
                 
                 <div className="features">
@@ -52,6 +109,23 @@ const Landing = () => {
                     </div>
                 </div>
                 
+                <div className="demo-section scroll-animate">
+                    <h2>See It In Action</h2>
+                    <div className="demo-container">
+                        <div className="demo-text">
+                            <h3>Experience Real-Time Chat</h3>
+                            <p>Try our interactive demo to see how ECHOLINK works. Secure, fast, and user-friendly.</p>
+                            <button 
+                                className="demo-button" 
+                                onClick={() => setShowPreview(!showPreview)}
+                            >
+                                {showPreview ? 'Hide Demo' : 'Show Demo'}
+                            </button>
+                        </div>
+                        {showPreview && <ChatPreview />}
+                    </div>
+                </div>
+
                 <div className="about-section scroll-animate">
                     <h2>About ECHOLINK</h2>
                     <p className="about-description">
@@ -85,18 +159,7 @@ const Landing = () => {
                     </div>
                 </div>
                 
-                <div className="creator-section scroll-animate">
-                    <h2>Created By</h2>
-                    <div className="creator-profile">
-                        <div className="creator-avatar">👨‍💻</div>
-                        <h3>SREE VARSHAN V</h3>
-                        <p>Developer & Designer</p>
-                    </div>
-                </div>
-                
-                <div className="cta-container scroll-animate">
-                    <Link to="/chat" className="cta-button">Start Chatting</Link>
-                </div>
+
                 
                 <div className="landing-footer scroll-animate">
                     <p>© 2024 ECHOLINK - Secure Communications</p>
@@ -106,4 +169,4 @@ const Landing = () => {
     );
 };
 
-export default Landing; 
+export default Landing;
