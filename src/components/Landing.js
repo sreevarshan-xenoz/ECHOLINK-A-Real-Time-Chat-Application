@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './Landing.css';
+import { ParticleBackground, StatsSection, FeatureComparison, FloatingChatPreview } from './LandingFeatures';
 
 const FloatingCube = () => {
     const cubeRef = useRef(null);
@@ -83,6 +84,7 @@ const Landing = () => {
 
     return (
         <div className="landing-container">
+            <ParticleBackground />
             <div className="landing-content">
                 <FloatingCube />
                 <div className="landing-header scroll-animate">

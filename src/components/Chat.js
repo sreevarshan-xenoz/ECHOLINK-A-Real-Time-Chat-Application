@@ -18,7 +18,9 @@ const Chat = ({
     setShowSettings,
     showTutorial,
     setShowTutorial,
-    addNotification
+    addNotification,
+    theme,
+    setTheme
 }) => {
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
@@ -26,7 +28,6 @@ const Chat = ({
     const [isRecording, setIsRecording] = useState(false);
     const [mediaRecorder, setMediaRecorder] = useState(null);
     const [typingStatus, setTypingStatus] = useState({});
-    const [isDarkMode, setIsDarkMode] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -225,7 +226,23 @@ const Chat = ({
         });
 
         setPeers(webrtcService.getConnectedPeers());
-        return () => unsubscribe();
+        
+        // Cleanup function
+        return () => {
+            unsubscribe();
+            // Clear messages and states
+            setMessages([]);
+            setTypingStatus({});
+            setPeers([]);
+            // Clear any ongoing timeouts
+            if (typingTimeout) clearTimeout(typingTimeout);
+            if (completionTimeout.current) clearTimeout(completionTimeout.current);
+            // Reset AI chat state
+            if (isAIChatEnabled) {
+                setIsAIChatEnabled(false);
+                aiService.clearAIChatHistory();
+            }
+        };
     }, []);
 
     useEffect(() => {
@@ -374,8 +391,7 @@ const Chat = ({
     };
 
     const toggleDarkMode = () => {
-        setIsDarkMode(!isDarkMode);
-        document.body.classList.toggle('dark-mode');
+        setTheme(theme === 'dark' ? 'light' : 'dark');
     };
 
     const handleTranslateMessage = async (messageId, text) => {
@@ -587,7 +603,7 @@ const Chat = ({
     };
 
     return (
-        <div className={`chat-container ${isDarkMode ? 'dark' : ''} background-${settings.chatBackground}`}>
+        <div className={`chat-container ${theme === 'dark' ? 'dark' : ''} background-${settings.chatBackground}`}>
             <div className="chat-header">
                 <div className="chat-user-info">
                     {selectedPeer ? (
@@ -621,7 +637,7 @@ const Chat = ({
                         onClick={toggleDarkMode}
                         title="Toggle dark mode"
                     >
-                        {isDarkMode ? '☀️' : '🌙'}
+                        {theme === 'dark' ? '☀️' : '🌙'}
                     </button>
                 </div>
             </div>
@@ -838,4 +854,4 @@ const Chat = ({
     );
 };
 
-export default Chat; 
+export default Chat;

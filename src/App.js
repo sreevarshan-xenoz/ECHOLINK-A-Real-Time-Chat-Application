@@ -281,6 +281,8 @@ const MainApp = () => {
                 showTutorial={showTutorial}
                 setShowTutorial={setShowTutorial}
                 addNotification={addNotification}
+                theme={theme}
+                setTheme={setTheme}
             />
         </div>
     );
@@ -298,4 +300,4 @@ const App = () => {
     );
 };
 
-export default App; 
+export default App;

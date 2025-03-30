@@ -15,6 +15,11 @@
     --success-color: #00c851;
     --warning-color: #ffbb33;
     --info-color: #33b5e5;
+    --border-light: rgba(0, 0, 0, 0.1);
+    --shadow-light: rgba(0, 0, 0, 0.08);
+    --hover-light: rgba(0, 0, 0, 0.04);
+    --primary-light: #0088cc;
+    --text-light-secondary: #666666;
 }
 
 body {
@@ -27,6 +32,7 @@ body {
 body.light {
     background: var(--bg-light);
     color: var(--text-light);
+    background-image: linear-gradient(to bottom right, rgba(0, 247, 255, 0.05), rgba(0, 195, 255, 0.05));
 }
 
 .app {
@@ -41,6 +47,7 @@ body.light {
 .app.light {
     background: var(--bg-light);
     color: var(--text-light);
+    box-shadow: 0 0 20px var(--shadow-light);
 }
 
 .app-header {
@@ -813,21 +820,26 @@ body.light {
 .app.light {
     background: var(--bg-light);
     color: var(--text-light);
+    box-shadow: 0 0 20px var(--shadow-light);
 }
 
 .app.light .app-header {
-    background: rgba(0, 0, 0, 0.03);
+    background: white;
+    border-bottom: 1px solid var(--border-light);
+    box-shadow: 0 1px 3px var(--shadow-light);
 }
 
 .app.light .settings-panel {
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: var(--bg-light);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 4px 6px var(--shadow-light);
 }
 
 .app.light .model-option {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: white;
     color: var(--text-light);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 2px 4px var(--shadow-light);
 }
 
 .app.light .api-key-input {
@@ -857,4 +869,4 @@ body.light {
 .app-container.light {
     background-color: var(--bg-light);
     color: var(--text-light);
-} 
+}
