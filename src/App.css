@@ -16,10 +16,16 @@
     --warning-color: #ffbb33;
     --info-color: #33b5e5;
     --border-light: rgba(0, 0, 0, 0.1);
+    --border-dark: rgba(255, 255, 255, 0.1);
     --shadow-light: rgba(0, 0, 0, 0.08);
+    --shadow-dark: rgba(0, 0, 0, 0.2);
     --hover-light: rgba(0, 0, 0, 0.04);
+    --hover-dark: rgba(255, 255, 255, 0.1);
     --primary-light: #0088cc;
     --text-light-secondary: #666666;
+    --text-dark-secondary: rgba(255, 255, 255, 0.7);
+    --bg-dark-secondary: #2a2a2a;
+    --bg-light-secondary: #f5f5f5;
 }
 
 body {
@@ -44,10 +50,23 @@ body.light {
     overflow: hidden;
 }
 
+.app.dark {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+}
+
+.app.dark .app-content {
+    background: var(--bg-dark-secondary);
+}
+
 .app.light {
     background: var(--bg-light);
     color: var(--text-light);
     box-shadow: 0 0 20px var(--shadow-light);
+}
+
+.app.light .app-content {
+    background: var(--bg-light-secondary);
 }
 
 .app-header {
@@ -119,6 +138,7 @@ body.light {
     font-size: 1.5rem;
     font-weight: 600;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -445,6 +465,7 @@ body.light {
     font-size: 3.5rem;
     font-weight: 700;
     background: linear-gradient(135deg, #00f7ff, #00c3ff);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     opacity: 0;
@@ -821,6 +842,10 @@ body.light {
     background: var(--bg-light);
     color: var(--text-light);
     box-shadow: 0 0 20px var(--shadow-light);
+}
+
+.app.light .app-content {
+    background: var(--bg-light-secondary);
 }
 
 .app.light .app-header {

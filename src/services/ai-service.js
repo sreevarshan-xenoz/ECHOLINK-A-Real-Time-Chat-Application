@@ -9,12 +9,19 @@ class AIService {
         this.encoder = null;
         this.openai = null;
         this.gemini = null;
-        this.apiType = null; // 'openai' or 'gemini'
+        this.ollamaEndpoint = 'http://localhost:11434';
+        this.apiType = null; // 'openai', 'gemini', or 'ollama'
         this.messageHistory = [];
         this.maxHistoryLength = 10;
         this.isInitialized = false;
         this.aiChatHistory = [];
         this.aiPersonality = "You are Echo, a friendly and helpful AI assistant. You're knowledgeable but concise in your responses.";
+        this.selectedModel = null;
+    }
+
+    setModel(modelName) {
+        if (!modelName) throw new Error('Model name is required');
+        this.selectedModel = modelName;
     }
 
     async initialize(apiKey) {
@@ -23,55 +30,19 @@ class AIService {
                 throw new Error('API key is required');
             }
 
+            // Reset previous state
+            this.openai = null;
+            this.gemini = null;
+            this.apiType = null;
+            this.isInitialized = false;
+
             // Detect API type based on key format
-            if (apiKey.startsWith('sk-')) {
-                // OpenAI API key format
-                this.apiType = 'openai';
-                this.openai = new OpenAI({
-                    apiKey: apiKey,
-                    dangerouslyAllowBrowser: true
-                });
-                
-                // Test the OpenAI API key
-                await this.openai.chat.completions.create({
-                    model: "gpt-3.5-turbo",
-                    messages: [{ role: "system", content: "Test" }],
-                    max_tokens: 1
-                });
+            if (apiKey.toLowerCase() === 'ollama') {
+                await this.initializeOllama();
+            } else if (apiKey.startsWith('sk-')) {
+                await this.initializeOpenAI(apiKey);
             } else {
-                // Gemini API key
-                this.apiType = 'gemini';
-                this.gemini = new GoogleGenerativeAI(apiKey);
-                
-                // Test the Gemini API key with better error handling
-                try {
-                    const model = this.gemini.getGenerativeModel({ model: "gemini-pro" });
-                    const prompt = "Test message";
-                    const result = await model.generateContent(prompt);
-                    
-                    // Check if the result is valid
-                    if (!result || !result.response) {
-                        throw new Error('No response from Gemini API');
-                    }
-                    
-                    // Try to access the response text to validate the API key
-                    const response = await result.response;
-                    const text = response.text();
-                    
-                    if (!text) {
-                        throw new Error('Empty response from Gemini API');
-                    }
-                } catch (geminiError) {
-                    console.error('Gemini API test failed:', geminiError);
-                    // Check for specific error types
-                    if (geminiError.message?.includes('API key not valid')) {
-                        throw new Error('Invalid Gemini API key');
-                    } else if (geminiError.message?.includes('quota')) {
-                        throw new Error('Gemini API quota exceeded');
-                    } else {
-                        throw new Error(`Gemini API error: ${geminiError.message}`);
-                    }
-                }
+                await this.initializeGemini(apiKey);
             }
 
             // Load Universal Sentence Encoder
@@ -85,9 +56,71 @@ class AIService {
             this.openai = null;
             this.gemini = null;
             this.apiType = null;
-            throw error; // Throw the original error to preserve the message
+            throw error;
         }
     }
+
+    async initializeOllama() {
+        try {
+            const response = await fetch(`${this.ollamaEndpoint}/api/tags`);
+            if (!response.ok) throw new Error('Failed to connect to Ollama');
+            this.apiType = 'ollama';
+        } catch (error) {
+            throw new Error('Could not connect to Ollama. Make sure it\'s running locally.');
+        }
+    }
+
+    async initializeOpenAI(apiKey) {
+        this.openai = new OpenAI({
+            apiKey: apiKey,
+            dangerouslyAllowBrowser: true
+        });
+        
+        try {
+            await this.openai.chat.completions.create({
+                model: this.selectedModel || "gpt-3.5-turbo",
+                messages: [{ role: "system", content: "Test" }],
+                max_tokens: 1
+            });
+            this.apiType = 'openai';
+        } catch (error) {
+            throw new Error(`OpenAI initialization failed: ${error.message}`);
+        }
+    }
+
+    async initializeGemini(apiKey) {
+        this.gemini = new GoogleGenerativeAI(apiKey);
+        
+        try {
+            const model = this.gemini.getGenerativeModel({ 
+                model: this.selectedModel || "gemini-pro" 
+            });
+            const result = await model.generateContent("Test message");
+            
+            if (!result?.response) {
+                throw new Error('No response from Gemini API');
+            }
+            
+            const response = await result.response;
+            const text = response.text();
+            
+            if (!text) {
+                throw new Error('Empty response from Gemini API');
+            }
+            
+            this.apiType = 'gemini';
+        } catch (error) {
+            if (error.message?.includes('API key not valid')) {
+                throw new Error('Invalid Gemini API key');
+            } else if (error.message?.includes('quota')) {
+                throw new Error('Gemini API quota exceeded');
+            } else {
+                throw new Error(`Gemini API error: ${error.message}`);
+            }
+        }
+    }
+
+
 
     addToHistory(message) {
         this.messageHistory.push({
@@ -327,7 +360,42 @@ class AIService {
 
             let aiResponse;
 
-            if (this.apiType === 'openai') {
+            if (this.apiType === 'ollama') {
+                const response = await fetch(`${this.ollamaEndpoint}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: 'llama2',
+                        messages: [
+                            { role: 'system', content: this.aiPersonality },
+                            ...recentHistory
+                        ],
+                        stream: true
+                    })
+                });
+
+                if (!response.ok) throw new Error('Ollama API request failed');
+                const reader = response.body.getReader();
+                let streamedResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = new TextDecoder().decode(value);
+                    const lines = chunk.split('\n').filter(line => line.trim());
+                    
+                    for (const line of lines) {
+                        try {
+                            const data = JSON.parse(line);
+                            if (data.message?.content) {
+                                streamedResponse += data.message.content;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                aiResponse = streamedResponse.trim();
+            } else if (this.apiType === 'openai') {
                 const response = await this.openai.chat.completions.create({
                     model: "gpt-3.5-turbo",
                     messages: [
@@ -397,4 +465,4 @@ class AIService {
 }
 
 const aiService = new AIService();
-export default aiService; 
+export default aiService;

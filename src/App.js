@@ -31,6 +31,7 @@ const MainApp = () => {
 
     useEffect(() => {
         document.body.className = theme;
+        document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
 
     const initializeServices = async () => {
