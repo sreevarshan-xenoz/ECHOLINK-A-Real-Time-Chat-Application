@@ -5,7 +5,7 @@
     height: 100vh;
     opacity: 0;
     transform: translateY(20px);
-    animation: fadeInUp 0.6s ease-out forwards;
+    animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards, echoLinkReveal 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     background: var(--bg-primary);
     overflow: hidden;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -13,6 +13,141 @@
     backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-primary);
+    transition: all 0.3s ease;
+}
+
+.chat-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    z-index: 100;
+}
+
+.loading-pulse {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(0, 247, 255, 0.1);
+    position: relative;
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.loading-pulse::before,
+.loading-pulse::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    animation: pulseRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.loading-pulse::before {
+    animation-delay: -0.5s;
+}
+
+.loading-pulse::after {
+    animation-delay: -1s;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes pulseRing {
+    0% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.3;
+    }
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+.message-skeleton {
+    padding: 12px;
+    margin: 8px;
+    border-radius: 8px;
+    background: linear-gradient(90deg,
+        var(--bg-primary) 25%,
+        rgba(0, 247, 255, 0.1) 50%,
+        var(--bg-primary) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    height: 60px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.loading-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.loading-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(0, 247, 255, 0.5);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.loading-particle:nth-child(1) { animation: particleFloat 3s infinite cubic-bezier(0.4, 0, 0.2, 1); top: 20%; left: 20%; }
+.loading-particle:nth-child(2) { animation: particleFloat 4s infinite cubic-bezier(0.4, 0, 0.2, 1); top: 40%; left: 60%; }
+.loading-particle:nth-child(3) { animation: particleFloat 5s infinite cubic-bezier(0.4, 0, 0.2, 1); top: 60%; left: 40%; }
+.loading-particle:nth-child(4) { animation: particleFloat 3.5s infinite cubic-bezier(0.4, 0, 0.2, 1); top: 80%; left: 80%; }
+.loading-particle:nth-child(5) { animation: particleFloat 4.5s infinite cubic-bezier(0.4, 0, 0.2, 1); top: 30%; left: 70%; }
+.loading-particle:nth-child(6) { animation: particleFloat 3.8s infinite cubic-bezier(0.4, 0, 0.2, 1); top: 70%; left: 30%; }
+
+@keyframes particleFloat {
+    0% {
+        transform: translate(0, 0) rotate(0deg) scale(0.8);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+        transform: translate(20px, -20px) rotate(90deg) scale(1.2);
+    }
+    60% {
+        opacity: 1;
+        transform: translate(60px, -60px) rotate(180deg) scale(1);
+    }
+    100% {
+        transform: translate(100px, -100px) rotate(360deg) scale(0.8);
+        opacity: 0;
+    }
 }
 
 .settings-panel {
@@ -338,6 +473,31 @@
     transform: translateY(20px);
     animation: messageAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     will-change: transform, opacity;
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+        filter: blur(10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
+
+@keyframes echoLinkReveal {
+    0% {
+        clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+    }
+    50% {
+        clip-path: polygon(0 100%, 100% 100%, 100% 0, 0 0);
+    }
+    100% {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
 }
 
 @keyframes messageAppear {
@@ -712,10 +872,23 @@
     flex-wrap: wrap;
     gap: 4px;
     margin-top: 4px;
+    opacity: 0;
+    transform: scale(0.8);
+    animation: reactionAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes reactionAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .reaction-picker {
-    display: none;
     position: absolute;
     bottom: 100%;
     right: 0;
@@ -724,6 +897,16 @@
     padding: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 8px;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.message-content:hover .reaction-picker {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .dark .reaction-picker {
@@ -738,7 +921,19 @@
 
 .reaction-option {
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 4px;
+    border-radius: 50%;
+    background: transparent;
+}
+
+.reaction-option:hover {
+    transform: scale(1.2);
+    background: rgba(0, 247, 255, 0.1);
+}
+
+.reaction-option:active {
+    transform: scale(0.9);
 }
 
 .reaction-option:hover {
@@ -783,6 +978,79 @@
     color: white;
     font-size: 14px;
     width: 200px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+    background-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 247, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.message-hover-actions {
+    position: absolute;
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%) translateX(10px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.message-content:hover .message-hover-actions {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+    pointer-events: auto;
+}
+
+.hover-action-button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-action-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.hover-action-button:active {
+    transform: scale(0.9);
+}
+
+.message-status {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(-5px);
+    animation: statusAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes statusAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .search-input::placeholder {
@@ -949,13 +1217,30 @@
 }
 
 @keyframes fadeInUp {
-    from {
+    0% {
         opacity: 0;
         transform: translateY(20px);
     }
-    to {
+    50% {
+        opacity: 0.5;
+    }
+    100% {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes echoLinkReveal {
+    0% {
+        clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+    }
+    50% {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        filter: drop-shadow(0 0 10px rgba(0, 247, 255, 0.5));
+    }
+    100% {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        filter: drop-shadow(0 0 15px rgba(0, 247, 255, 0.2));
     }
 }
 
@@ -1855,10 +2140,23 @@
     flex-wrap: wrap;
     gap: 4px;
     margin-top: 4px;
+    opacity: 0;
+    transform: scale(0.8);
+    animation: reactionAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes reactionAppear {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .reaction-picker {
-    display: none;
     position: absolute;
     bottom: 100%;
     right: 0;
@@ -1867,6 +2165,16 @@
     padding: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 8px;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.message-content:hover .reaction-picker {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
 }
 
 .dark .reaction-picker {
@@ -1881,7 +2189,19 @@
 
 .reaction-option {
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 4px;
+    border-radius: 50%;
+    background: transparent;
+}
+
+.reaction-option:hover {
+    transform: scale(1.2);
+    background: rgba(0, 247, 255, 0.1);
+}
+
+.reaction-option:active {
+    transform: scale(0.9);
 }
 
 .reaction-option:hover {
@@ -1926,6 +2246,79 @@
     color: white;
     font-size: 14px;
     width: 200px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+    background-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 247, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+.message-hover-actions {
+    position: absolute;
+    right: -40px;
+    top: 50%;
+    transform: translateY(-50%) translateX(10px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.message-content:hover .message-hover-actions {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+    pointer-events: auto;
+}
+
+.hover-action-button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-action-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.hover-action-button:active {
+    transform: scale(0.9);
+}
+
+.message-status {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(-5px);
+    animation: statusAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes statusAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .search-input::placeholder {
@@ -2092,13 +2485,30 @@
 }
 
 @keyframes fadeInUp {
-    from {
+    0% {
         opacity: 0;
         transform: translateY(20px);
     }
-    to {
+    50% {
+        opacity: 0.5;
+    }
+    100% {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes echoLinkReveal {
+    0% {
+        clip-path: polygon(0 0, 0 0, 0 100%, 0 100%);
+    }
+    50% {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        filter: drop-shadow(0 0 10px rgba(0, 247, 255, 0.5));
+    }
+    100% {
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+        filter: drop-shadow(0 0 15px rgba(0, 247, 255, 0.2));
     }
 }
 
