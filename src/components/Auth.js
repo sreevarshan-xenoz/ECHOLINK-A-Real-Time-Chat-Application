@@ -48,35 +48,32 @@ const Auth = ({ onAuthSuccess }) => {
           <div className="form-group">
             <input
               type="email"
-              placeholder=" "
+              placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <label>Email</label>
           </div>
           {!resetMode && (
             <div className="form-group">
               <input
                 type="password"
-                placeholder=" "
+                placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <label>Password</label>
             </div>
           )}
           {!isLogin && !resetMode && (
             <div className="form-group">
               <input
                 type="password"
-                placeholder=" "
+                placeholder="Confirm Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
-              <label>Confirm Password</label>
             </div>
           )}
           <button type="submit" disabled={loading}>

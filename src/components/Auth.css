@@ -7,8 +7,6 @@
     --auth-placeholder: #a5b1c2;
     --auth-error: #ff4757;
     --auth-success: #00ff99;
-    --auth-label-active: var(--neon-blue);
-    --auth-label-inactive: #a5b1c2;
 }
 
 .auth-container {
@@ -55,46 +53,18 @@
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
-    position: relative;
+    margin-bottom: 1rem;
 }
 
 .form-group input {
     width: 100%;
-    padding: 1rem;
+    padding: 0.8rem 1rem;
     background: var(--auth-input-bg);
-    border: 2px solid var(--auth-border);
-    border-radius: 8px;
+    border: 1px solid var(--auth-border);
+    border-radius: 6px;
     color: var(--auth-text);
     font-size: 1rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.form-group label {
-    position: absolute;
-    left: 1rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--auth-label-inactive);
-    pointer-events: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-size: 1rem;
-    background: var(--auth-bg);
-    padding: 0 0.5rem;
-}
-
-.form-group input:focus + label,
-.form-group input:not(:placeholder-shown) + label {
-    top: 0;
-    transform: translateY(-50%) scale(0.9);
-    color: var(--auth-label-active);
-    text-shadow: 0 0 5px var(--auth-label-active);
-}
-
-.form-group input:focus {
-    border-color: var(--neon-blue);
-    box-shadow: 0 0 15px var(--auth-shadow);
-    outline: none;
+    transition: all 0.3s ease;
 }
 
 .form-group input::placeholder {
@@ -109,40 +79,21 @@
 
 .auth-box button {
     width: 100%;
-    padding: 1rem;
+    padding: 0.8rem;
     background: rgba(15, 154, 254, 0.2);
-    border: 2px solid var(--neon-blue);
+    border: 1px solid var(--neon-blue);
     color: var(--neon-blue);
-    border-radius: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
+    border-radius: 6px;
+    font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-top: 1.5rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.auth-box button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.7s ease;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
 }
 
 .auth-box button:hover:not(:disabled) {
     background: rgba(15, 154, 254, 0.3);
-    box-shadow: 0 0 20px var(--auth-shadow);
-    transform: translateY(-3px);
-    text-shadow: 0 0 5px var(--neon-blue);
-}
-
-.auth-box button:hover:not(:disabled)::before {
-    left: 100%;
+    box-shadow: 0 0 15px var(--auth-shadow);
+    transform: translateY(-2px);
 }
 
 .auth-box button:disabled {
