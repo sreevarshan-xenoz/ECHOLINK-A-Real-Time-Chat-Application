@@ -269,30 +269,6 @@
     margin-bottom: 60px;
 }
 
-.auth-buttons {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 10;
-}
-
-.auth-btn {
-    padding: 8px 20px;
-    background: rgba(15, 154, 254, 0.2);
-    border: 1px solid var(--neon-blue);
-    color: var(--neon-blue);
-    border-radius: 20px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.auth-btn:hover {
-    background: rgba(15, 154, 254, 0.3);
-    box-shadow: 0 0 15px rgba(15, 154, 254, 0.3);
-    transform: translateY(-2px);
-}
-
 .landing-header h1 {
     font-size: 4rem;
     font-weight: 700;
@@ -797,6 +773,37 @@
 
 .cta-button:hover:before {
     left: 100%;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.auth-button {
+    display: inline-block;
+    padding: 16px 40px;
+    background: transparent;
+    color: var(--neon-blue);
+    text-decoration: none;
+    border-radius: 30px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid var(--neon-blue);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-button:hover {
+    background: rgba(15, 154, 254, 0.1);
+    transform: translateY(-5px);
+    box-shadow: 0 0 10px var(--neon-blue),
+                0 0 25px var(--neon-blue);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
 }
 
 .ai-features-section {

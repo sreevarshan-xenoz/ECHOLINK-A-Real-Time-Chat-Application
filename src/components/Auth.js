@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import authService from '../services/auth-service';
+import { signIn, signUp, resetPassword } from '../services/supabase-service';
 import './Auth.css';
 
-const Auth = ({ onClose }) => {
+const Auth = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [resetMode, setResetMode] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,45 +17,44 @@ const Auth = ({ onClose }) => {
     setMessage('');
 
     try {
-      if (isLogin) {
-        const result = await authService.login(email, password);
-        if (result.success) {
-          onClose();
-        } else {
-          setMessage(result.error);
-        }
+      if (resetMode) {
+        const { error } = await resetPassword(email);
+        if (error) throw error;
+        setMessage('Password reset instructions sent to your email!');
+      } else if (isLogin) {
+        const { data, error } = await signIn(email, password);
+        if (error) throw error;
+        onAuthSuccess(data);
       } else {
-        const result = await authService.signup(email, password);
-        if (result.success) {
-          setMessage('Please check your email for verification link');
-          setIsLogin(true);
-        } else {
-          setMessage(result.error);
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match');
         }
+        const { data, error } = await signUp(email, password);
+        if (error) throw error;
+        setMessage('Please check your email for verification link!');
       }
     } catch (error) {
       setMessage(error.message);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="auth-overlay">
-      <div className="auth-container">
-        <button className="close-button" onClick={onClose}>×</button>
-        <div className="auth-content">
-          <h2>{isLogin ? 'Login' : 'Sign Up'}</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+    <div className="auth-container">
+      <div className="auth-box">
+        <h2>{resetMode ? 'Reset Password' : (isLogin ? 'Login' : 'Sign Up')}</h2>
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          {!resetMode && (
             <div className="form-group">
               <input
                 type="password"
@@ -63,18 +64,36 @@ const Auth = ({ onClose }) => {
                 required
               />
             </div>
-            {message && <div className="message">{message}</div>}
-            <button type="submit" className="auth-button" disabled={loading}>
-              {loading ? 'Processing...' : isLogin ? 'Login' : 'Sign Up'}
-            </button>
-          </form>
+          )}
+          {!isLogin && !resetMode && (
+            <div className="form-group">
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
+          <button type="submit" disabled={loading}>
+            {loading ? 'Processing...' : (resetMode ? 'Send Reset Link' : (isLogin ? 'Login' : 'Sign Up'))}
+          </button>
+        </form>
+        {message && <p className="message">{message}</p>}
+        {!resetMode ? (
           <p className="auth-switch">
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
             <button onClick={() => setIsLogin(!isLogin)}>
               {isLogin ? 'Sign Up' : 'Login'}
             </button>
           </p>
-        </div>
+        ) : null}
+        <p className="auth-switch">
+          <button onClick={() => setResetMode(!resetMode)}>
+            {resetMode ? 'Back to Login' : 'Forgot Password?'}
+          </button>
+        </p>
       </div>
     </div>
   );

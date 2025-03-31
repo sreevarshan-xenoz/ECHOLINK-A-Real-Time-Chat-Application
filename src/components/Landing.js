@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import './Landing.css';
 import { ParticleBackground, StatsSection, FeatureComparison, FloatingChatPreview } from './LandingFeatures';
 import Auth from './Auth';
-import authService from '../services/auth-service';
+import { getCurrentUser, signOut } from '../services/supabase-service';
 
 const FloatingCube = () => {
     const cubeRef = useRef(null);
@@ -62,16 +62,26 @@ const ChatPreview = () => {
 const Landing = () => {
     const [showPreview, setShowPreview] = useState(false);
     const [showAuth, setShowAuth] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState(null);
 
     useEffect(() => {
-        const unsubscribe = authService.onAuthStateChanged((user) => {
-            setIsAuthenticated(!!user);
-            setUser(user);
-        });
-        return () => unsubscribe();
+        checkUser();
     }, []);
+
+    const checkUser = async () => {
+        const { user: currentUser } = await getCurrentUser();
+        setUser(currentUser);
+    };
+
+    const handleAuthSuccess = (data) => {
+        setUser(data.user);
+        setShowAuth(false);
+    };
+
+    const handleSignOut = async () => {
+        await signOut();
+        setUser(null);
+    };
     useEffect(() => {
         // Add scroll animation observer
         const observer = new IntersectionObserver((entries) => {
@@ -101,24 +111,20 @@ const Landing = () => {
             <div className="landing-content">
                 <FloatingCube />
                 <div className="landing-header scroll-animate">
-                    <div className="auth-buttons">
-                        {isAuthenticated ? (
-                            <button className="auth-btn" onClick={() => authService.logout()}>
-                                Logout
-                            </button>
-                        ) : (
-                            <button className="auth-btn" onClick={() => setShowAuth(true)}>
-                                Login / Sign Up
-                            </button>
-                        )}
-                    </div>
                     <h1>ECHOLINK</h1>
                     <p className="tagline">Secure, Real-Time Communication</p>
-                    <Link to="/chat" className="cta-button">
-                        {isAuthenticated ? 'Continue Chatting' : 'Start Chatting'}
-                    </Link>
+                    {user ? (
+                        <div className="auth-buttons">
+                            <Link to="/chat" className="cta-button">Start Chatting</Link>
+                            <button onClick={handleSignOut} className="auth-button">Sign Out</button>
+                        </div>
+                    ) : (
+                        <div className="auth-buttons">
+                            <button onClick={() => setShowAuth(true)} className="cta-button">Get Started</button>
+                        </div>
+                    )}
                 </div>
-                {showAuth && <Auth onClose={() => setShowAuth(false)} />}
+                {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
                 
                 <div className="features">
                     <div className="feature-card scroll-animate">
