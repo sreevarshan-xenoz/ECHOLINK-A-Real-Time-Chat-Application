@@ -232,7 +232,7 @@ const Landing = () => {
                 <FloatingChatPreview />
 
                 <div className="landing-footer scroll-animate">
-                    <p>© 2024 ECHOLINK - Secure Communications</p>
+                    <p>© 2025 ECHOLINK - Secure Communications</p>
                 </div>
             </div>
         </div>
