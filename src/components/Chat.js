@@ -61,6 +61,28 @@ const Chat = ({
         }
     };
 
+    const handleFileSelect = async (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const fileMessage = {
+            id: uuidv4(),
+            type: 'FILE_META',
+            name: file.name,
+            size: file.size,
+            sender: currentUser.id,
+            timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, fileMessage]);
+        if (!isAIChatActive && selectedPeer) {
+            webrtcService.sendMessage(fileMessage, selectedPeer);
+            await webrtcService.sendFile(file, selectedPeer);
+        }
+
+        event.target.value = '';
+    };
+
     const handleReaction = (messageId, emoji) => {
         const reactionMessage = {
             type: 'REACTION',
@@ -78,6 +100,14 @@ const Chat = ({
 
         if (!isAIChatActive && selectedPeer) {
             webrtcService.sendMessage(reactionMessage, selectedPeer);
+        }
+    };
+
+    const [customEmojis, setCustomEmojis] = useState(['👍', '❤️', '😊', '😂', '👏', '🎉', '🔥', '🌟', '🎨', '🎮']);
+    
+    const handleCustomEmojiAdd = (emoji) => {
+        if (!customEmojis.includes(emoji)) {
+            setCustomEmojis(prev => [...prev, emoji]);
         }
     };
     const [showAISettings, setShowAISettings] = useState(false);
@@ -671,6 +701,67 @@ const Chat = ({
                         title="Share Code"
                     >
                         {"</"}
+                    </button>
+                    <button
+                        className={`voice-button ${isRecording ? 'recording' : ''}`}
+                        onClick={async () => {
+                            if (isRecording) {
+                                mediaRecorder.stop();
+                                setIsRecording(false);
+                            } else {
+                                try {
+                                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                                    const recorder = new MediaRecorder(stream);
+                                    const chunks = [];
+
+                                    recorder.ondataavailable = (e) => chunks.push(e.data);
+                                    recorder.onstop = async () => {
+                                        const audioBlob = new Blob(chunks, { type: 'audio/webm' });
+                                        const audioUrl = URL.createObjectURL(audioBlob);
+                                        const transcription = await aiService.transcribeAudio(audioBlob);
+                                        
+                                        const voiceMessage = {
+                                            id: uuidv4(),
+                                            type: 'VOICE_MESSAGE',
+                                            audioUrl,
+                                            transcription,
+                                            sender: currentUser.id,
+                                            timestamp: new Date().toISOString()
+                                        };
+
+                                        setMessages(prev => [...prev, voiceMessage]);
+                                        if (!isAIChatActive && selectedPeer) {
+                                            webrtcService.sendMessage(voiceMessage, selectedPeer);
+                                        }
+
+                                        stream.getTracks().forEach(track => track.stop());
+                                    };
+
+                                    recorder.start();
+                                    setMediaRecorder(recorder);
+                                    setIsRecording(true);
+                                } catch (error) {
+                                    console.error('Error accessing microphone:', error);
+                                    addNotification('Failed to access microphone', 'error');
+                                }
+                            }
+                        }}
+                        title={isRecording ? 'Stop Recording' : 'Record Voice Message'}
+                    >
+                        {isRecording ? '⏹️' : '🎤'}
+                    </button>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleFileSelect}
+                    />
+                    <button
+                        className="attach-button"
+                        onClick={() => fileInputRef.current?.click()}
+                        title="Attach File"
+                    >
+                        📎
                     </button>
                 </div>
                 <input
