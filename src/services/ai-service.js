@@ -17,6 +17,14 @@ class AIService {
         this.aiChatHistory = [];
         this.aiPersonality = "You are Echo, a friendly and helpful AI assistant. You're knowledgeable but concise in your responses.";
         this.selectedModel = null;
+        this.helpResponses = {
+            'how to use': 'To use EchoLink, start by connecting with others using their peer ID. You can share files, send messages, and even use AI features for smart replies and translations.',
+            'how to connect': 'To connect with others: 1) Share your Peer ID with them 2) Enter their Peer ID in the connection dialog 3) Click connect to establish a secure P2P connection.',
+            'features': 'EchoLink features include: \n- Real-time P2P messaging\n- File sharing\n- Voice messages\n- AI-powered smart replies\n- Message translation\n- Code sharing\n- Reactions and emojis',
+            'privacy': 'EchoLink uses end-to-end encryption for messages and P2P connections. Your data stays private and secure between you and your chat partner.',
+            'settings': 'Access settings by clicking the gear icon. You can customize:\n- Theme and appearance\n- Notifications\n- Privacy settings\n- AI features\n- Chat preferences',
+            'ai features': 'AI features include:\n- Smart replies\n- Message translation\n- Code assistance\n- Sentiment analysis\n- Message completion\nEnable AI chat to access these features.'
+        };
     }
 
     setModel(modelName) {
@@ -98,7 +106,7 @@ class AIService {
             const result = await model.generateContent("Test message");
             
             if (!result?.response) {
-                throw new Error('No response from Gemini API');
+                throw new Error('Failed to initialize AI model');
             }
             
             const response = await result.response;
@@ -118,6 +126,26 @@ class AIService {
                 throw new Error(`Gemini API error: ${error.message}`);
             }
         }
+    }
+
+    async handleHelpQuery(query) {
+        query = query.toLowerCase();
+        let response = "I'm here to help! Ask me about how to use the app, connect with others, or explore features.";
+
+        for (const [key, value] of Object.entries(this.helpResponses)) {
+            if (query.includes(key)) {
+                response = value;
+                break;
+            }
+        }
+
+        return {
+            type: 'CHAT',
+            content: response,
+            sender: 'AI_ASSISTANT',
+            timestamp: new Date().toISOString(),
+            id: Math.random().toString(36).substr(2, 9)
+        };
     }
 
 

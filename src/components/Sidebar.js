@@ -131,7 +131,6 @@ const Sidebar = ({
                 <button 
                     className={`tab-button ${activeTab === 'ai' ? 'active' : ''}`}
                     onClick={handleAIChatSelect}
-                    disabled={!isAiInitialized}
                 >
                     🤖 AI Chat
                 </button>
@@ -253,4 +252,4 @@ const Sidebar = ({
     );
 };
 
-export default Sidebar; 
+export default Sidebar;

@@ -95,6 +95,10 @@ const MainApp = () => {
     const handleAIChatSelect = () => {
         setSelectedPeer(null);
         setIsAIChatActive(true);
+        if (!isAiInitialized) {
+            setShowSettings(true);
+            addNotification('Please configure AI settings to start chatting', 'info');
+        }
     };
 
     const handleModelSelect = async (model) => {

@@ -80,30 +80,107 @@ const Chat = ({
             webrtcService.sendMessage(reactionMessage, selectedPeer);
         }
     };
-    const [isAIChatEnabled, setIsAIChatEnabled] = useState(false);
-    const [aiPersonality, setAiPersonality] = useState("default");
     const [showAISettings, setShowAISettings] = useState(false);
+
+    useEffect(() => {
+        if (isAiInitialized && selectedAIModel) {
+            aiService.setModel(selectedAIModel);
+        }
+    }, [isAiInitialized, selectedAIModel]);
+
+    const toggleSettings = () => {
+        if (isAIChatActive) {
+            setShowAISettings(!showAISettings);
+        } else {
+            setShowSettings(!showSettings);
+        }
+    };
+
+    const handleSettingsChange = (category, setting, value) => {
+        setSettings(prev => ({
+            ...prev,
+            [category]: {
+                ...prev[category],
+                [setting]: value
+            }
+        }));
+
+        // Apply immediate effects
+        if (category === 'appearance' && setting === 'theme') {
+            setTheme(value);
+        }
+    };
+
     const [settings, setSettings] = useState({
-        notifications: true,
-        soundEffects: true,
-        messagePreview: true,
-        chatBackground: 'default',
-        fontSize: 'medium',
-        bubbleStyle: 'modern',
-        enterToSend: true,
-        autoScroll: true,
-        readReceipts: true,
-        typingIndicator: true
+        notifications: {
+            enabled: true,
+            sound: true,
+            desktop: true,
+            preview: true
+        },
+        appearance: {
+            theme: theme,
+            chatBackground: 'default',
+            fontSize: 'medium',
+            bubbleStyle: 'modern',
+            messageAlignment: 'right'
+        },
+        chat: {
+            enterToSend: true,
+            autoScroll: true,
+            readReceipts: true,
+            typingIndicator: true,
+            messageTranslation: true,
+            smartReplies: true
+        },
+        ai: {
+            provider: 'openai',
+            apiKey: '',
+            model: 'gpt-3.5-turbo',
+            personality: 'default',
+            autoComplete: true,
+            smartReplies: true
+        },
+        privacy: {
+            encryptMessages: true,
+            autoDeleteMessages: false,
+            deleteAfter: '24h',
+            blockList: []
+        }
     });
     const [batchSize] = useState(50);
-    const [visibleMessages, setVisibleMessages] = useState([]);
-    const [completionSuggestion, setCompletionSuggestion] = useState('');
-    const [isUsingCompletion, setIsUsingCompletion] = useState(false);
+    const [visibleMessages] = useState([]);
+    const [completionSuggestion] = useState('');
+    const [isUsingCompletion] = useState(false);
+
+    const [isAIChatEnabled, setIsAIChatEnabled] = useState(isAIChatActive);
+    const [useBasicChatbot, setUseBasicChatbot] = useState(true);
+
+    // Basic chatbot responses
+    const basicChatbotResponses = {
+        "hello": "Hello! I'm a basic chatbot. I can help you with simple tasks. Type 'help' to see what I can do.",
+        "hi": "Hi there! Need any help? Type 'help' to see what I can do.",
+        "help": "I can help you with:\n- Basic chat features\n- File sharing\n- Code sharing\n- Voice messages\nTo enable AI features, click the settings icon and configure your API key.",
+        "how are you": "I'm functioning well! How can I assist you today?",
+        "bye": "Goodbye! Have a great day!",
+        "features": "Current features:\n- Real-time messaging\n- File sharing\n- Code sharing\n- Voice messages\n- Reactions\nEnable AI for more advanced features!",
+        "ai": "To enable AI features, click the settings icon (⚙️) and configure your API key. This will unlock:\n- Smart replies\n- Message completion\n- Sentiment analysis\n- Language translation"
+    };
+
+    // Basic chatbot response handler
+    const getBasicChatbotResponse = (message) => {
+        const lowercaseMessage = message.toLowerCase().trim();
+        for (const [key, response] of Object.entries(basicChatbotResponses)) {
+            if (lowercaseMessage.includes(key)) {
+                return response;
+            }
+        }
+        return "I'm a basic chatbot. I can only understand simple commands. Type 'help' to see what I can do.";
+    };
 
     // Effects
     useEffect(() => {
         // Handle chat mode changes
-        setIsAIChatEnabled(isAIChatActive);
         setMessages([]);
 
         // Cleanup function
@@ -119,7 +196,7 @@ const Chat = ({
         if (selectedPeer) {
             setMessages([]);
         }
-    }, [selectedPeer]);
+    }, [selectedPeer, setMessages]);
 
     // WebRTC message handling effect
     useEffect(() => {
@@ -165,7 +242,7 @@ const Chat = ({
             if (typingTimeout) clearTimeout(typingTimeout);
             if (completionTimeout.current) clearTimeout(completionTimeout.current);
         };
-    }, []);
+    }, [typingTimeout, setMessages, setPeers, setTypingStatus]);
 
     // AI chat cleanup effect
     useEffect(() => {
@@ -218,64 +295,56 @@ const Chat = ({
         if (e) e.preventDefault();
         if (!newMessage.trim()) return;
 
+        const messageId = uuidv4();
+        const timestamp = new Date().toISOString();
+
         const messageData = {
-            id: uuidv4(),
+            id: messageId,
             text: newMessage,
             sender: currentUser.id,
-            timestamp: new Date().toISOString(),
+            timestamp: timestamp,
             type: 'CHAT'
         };
 
         if (isAIChatActive) {
             setMessages(prev => [...prev, messageData]);
+            setNewMessage('');
 
-            try {
-                if (!isAiInitialized) {
-                    throw new Error('AI is not initialized. Please configure AI in settings (⚙️).');
-                }
-
-                const aiResponse = await aiService.chatWithAI(newMessage);
-                if (aiResponse) {
-                    const aiMessage = {
+            if (!isAiInitialized) {
+                if (useBasicChatbot) {
+                    const botResponse = {
                         type: 'CHAT',
-                        text: aiResponse.text,
-                        timestamp: aiResponse.timestamp,
+                        text: getBasicChatbotResponse(newMessage),
+                        timestamp: new Date().toISOString(),
                         sender: 'AI_ASSISTANT',
                         id: uuidv4(),
                         isAI: true
                     };
-                    setMessages(prev => [...prev, aiMessage]);
-                    scrollToBottom();
+                    setMessages(prev => [...prev, botResponse]);
+                } else {
+                    addNotification('Please configure AI settings first', 'error');
+                    setShowAISettings(true);
                 }
+                return;
+            }
+
+            try {
+                const response = await aiService.handleHelpQuery(newMessage);
+                setMessages(prev => [...prev, response]);
             } catch (error) {
                 console.error('Error getting AI response:', error);
-                setMessages(prev => [...prev, {
-                    type: 'CHAT',
-                    text: error.message || 'Sorry, I encountered an error. Please try again.',
-                    timestamp: new Date().toISOString(),
-                    sender: 'AI_ASSISTANT',
-                    id: uuidv4(),
-                    isAI: true,
-                    isError: true
-                }]);
-
+                addNotification('Failed to get AI response', 'error');
                 if (error.message.includes('API key')) {
-                    addNotification('API key is invalid. Please update it in settings.', 'error');
+                    setShowAISettings(true);
                 }
             }
         } else if (selectedPeer) {
-            if (isAiInitialized) {
-                const [messageSentiment, messageLanguage] = await Promise.all([
-                    aiService.getSentiment(newMessage),
-                    aiService.detectLanguage(newMessage)
-                ]);
-
-                messageData.sentiment = messageSentiment;
-                messageData.language = messageLanguage;
-            }
-
             setMessages(prev => [...prev, messageData]);
             webrtcService.sendMessage(messageData, selectedPeer);
+            setNewMessage('');
+            if (selectedPeer) {
+                webrtcService.setTypingStatus(false, selectedPeer);
+            }
         }
 
         setNewMessage('');
@@ -309,10 +378,11 @@ const Chat = ({
     // Message row renderer for virtualization
     const MessageRow = ({ index, style }) => {
         const message = filteredMessages[index];
+        const isAIMessage = isAIChatActive && message.sender === 'AI_ASSISTANT';
         return (
             <div style={style}>
                 <div
-                    className={`message ${message.sender === currentUser.id ? 'sent' : 'received'}`}
+                    className={`message ${message.sender === currentUser.id ? 'sent' : 'received'} ${isAIMessage ? 'ai-message' : ''}`}
                     data-sender={message.sender}
                 >
                     <div className="message-content">
@@ -410,15 +480,151 @@ const Chat = ({
         );
     };
 
+    const renderSettingsPanel = () => {
+        if (!showSettings) return null;
+        
+        return (
+            <div className="settings-panel">
+                <div className="settings-header">
+                    <h2>Settings</h2>
+                    <button className="close-button" onClick={() => setShowSettings(false)}>×</button>
+                </div>
+                <div className="settings-content">
+                    <div className="settings-section">
+                        <h3>Notifications</h3>
+                        <div className="settings-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.notifications.enabled}
+                                    onChange={(e) => handleSettingsChange('notifications', 'enabled', e.target.checked)}
+                                />
+                                Enable Notifications
+                            </label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.notifications.sound}
+                                    onChange={(e) => handleSettingsChange('notifications', 'sound', e.target.checked)}
+                                />
+                                Sound Effects
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div className="settings-section">
+                        <h3>Appearance</h3>
+                        <div className="settings-group">
+                            <label>Theme</label>
+                            <select
+                                value={settings.appearance.theme}
+                                onChange={(e) => handleSettingsChange('appearance', 'theme', e.target.value)}
+                            >
+                                <option value="light">Light</option>
+                                <option value="dark">Dark</option>
+                            </select>
+                            
+                            <label>Font Size</label>
+                            <select
+                                value={settings.appearance.fontSize}
+                                onChange={(e) => handleSettingsChange('appearance', 'fontSize', e.target.value)}
+                            >
+                                <option value="small">Small</option>
+                                <option value="medium">Medium</option>
+                                <option value="large">Large</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div className="settings-section">
+                        <h3>Chat</h3>
+                        <div className="settings-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.chat.enterToSend}
+                                    onChange={(e) => handleSettingsChange('chat', 'enterToSend', e.target.checked)}
+                                />
+                                Press Enter to Send
+                            </label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.chat.readReceipts}
+                                    onChange={(e) => handleSettingsChange('chat', 'readReceipts', e.target.checked)}
+                                />
+                                Read Receipts
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div className="settings-section">
+                        <h3>AI Settings</h3>
+                        <div className="settings-group">
+                            <label>Provider</label>
+                            <select
+                                value={settings.ai.provider}
+                                onChange={(e) => handleSettingsChange('ai', 'provider', e.target.value)}
+                            >
+                                <option value="openai">OpenAI</option>
+                                <option value="gemini">Google Gemini</option>
+                                <option value="ollama">Ollama (Local)</option>
+                            </select>
+                            
+                            <label>API Key</label>
+                            <input
+                                type="password"
+                                value={settings.ai.apiKey}
+                                onChange={(e) => handleSettingsChange('ai', 'apiKey', e.target.value)}
+                                placeholder="Enter your API key"
+                            />
+                            
+                            <label>Model</label>
+                            <select
+                                value={settings.ai.model}
+                                onChange={(e) => handleSettingsChange('ai', 'model', e.target.value)}
+                            >
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="gpt-4">GPT-4</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div className="settings-section">
+                        <h3>Privacy</h3>
+                        <div className="settings-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.privacy.encryptMessages}
+                                    onChange={(e) => handleSettingsChange('privacy', 'encryptMessages', e.target.checked)}
+                                />
+                                Encrypt Messages
+                            </label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.privacy.autoDeleteMessages}
+                                    onChange={(e) => handleSettingsChange('privacy', 'autoDeleteMessages', e.target.checked)}
+                                />
+                                Auto Delete Messages
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="chat-container">
             <div className="chat-header">
                 <div className="chat-user-info">
                     <div className={`avatar ${isAIChatActive ? 'ai-avatar' : ''}`}>
-                        {isAIChatActive ? '🤖' : selectedPeer?.charAt(0).toUpperCase()}
+                        {isAIChatActive ? '🤖' : selectedPeer?.name?.charAt(0)?.toUpperCase()}
                     </div>
                     <div className="user-details">
-                        <h3>{isAIChatActive ? 'AI Assistant' : selectedPeer}</h3>
+                        <h3>{isAIChatActive ? 'AI Assistant' : selectedPeer?.name}</h3>
                         <span className="status">Online</span>
                     </div>
                 </div>
@@ -432,20 +638,12 @@ const Chat = ({
                     </button>
                     <button
                         className="settings-button"
-                        onClick={() => setShowSettings(true)}
-                        title="Open Settings"
+                        onClick={toggleSettings}
+                        title="Settings"
                     >
                         ⚙️
                     </button>
-                    {isAIChatActive && (
-                        <button 
-                            className="ai-settings-button"
-                            onClick={() => setShowAISettings(true)}
-                            title="Configure AI Settings"
-                        >
-                            🤖
-                        </button>
-                    )}
+                    {renderSettingsPanel()}
                 </div>
             </div>
 
@@ -516,6 +714,43 @@ const Chat = ({
                     onClose={() => setShowAISettings(false)}
                     addNotification={addNotification}
                 />
+            )}
+
+            {showSettings && (
+                <div className="settings-panel">
+                    <div className="settings-header">
+                        <h2>Chat Settings</h2>
+                        <button className="close-button" onClick={() => setShowSettings(false)}>×</button>
+                    </div>
+                    <div className="settings-content">
+                        <div className="settings-group">
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.notifications}
+                                    onChange={(e) => setSettings({...settings, notifications: e.target.checked})}
+                                />
+                                Enable Notifications
+                            </label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.soundEffects}
+                                    onChange={(e) => setSettings({...settings, soundEffects: e.target.checked})}
+                                />
+                                Sound Effects
+                            </label>
+                            <label>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.enterToSend}
+                                    onChange={(e) => setSettings({...settings, enterToSend: e.target.checked})}
+                                />
+                                Press Enter to Send
+                            </label>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

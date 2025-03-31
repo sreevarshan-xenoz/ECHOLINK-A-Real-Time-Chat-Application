@@ -10,18 +10,59 @@ const AISettings = ({ onClose, addNotification }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
+    useEffect(() => {
+        // Load saved API key from localStorage
+        const savedApiKey = localStorage.getItem(`${provider}_api_key`);
+        if (savedApiKey) {
+            setApiKey(savedApiKey);
+        }
+    }, [provider]);
+
     const providers = [
-        { id: 'openai', name: 'OpenAI', models: ['gpt-3.5-turbo', 'gpt-4'] },
-        { id: 'gemini', name: 'Google Gemini', models: ['gemini-pro'] },
-        { id: 'ollama', name: 'Ollama (Local)', models: [] }
+        { 
+            id: 'openai', 
+            name: 'OpenAI', 
+            models: [
+                'gpt-4-1106-preview',
+                'gpt-4',
+                'gpt-4-32k',
+                'gpt-3.5-turbo-1106',
+                'gpt-3.5-turbo',
+                'gpt-3.5-turbo-16k',
+                'text-davinci-003',
+                'text-davinci-002'
+            ]
+        },
+        { 
+            id: 'gemini', 
+            name: 'Google Gemini', 
+            models: [
+                'gemini-pro',
+                'gemini-pro-vision',
+                'gemini-ultra'
+            ]
+        },
+        { 
+            id: 'ollama', 
+            name: 'Ollama (Local)', 
+            models: [] 
+        }
     ];
 
     useEffect(() => {
-        if (provider === 'ollama') {
-            fetchOllamaModels();
-        } else {
-            setAvailableModels(providers.find(p => p.id === provider).models);
-        }
+        const updateModels = async () => {
+            if (provider === 'ollama') {
+                await fetchOllamaModels();
+            } else {
+                const selectedProvider = providers.find(p => p.id === provider);
+                const providerModels = selectedProvider ? selectedProvider.models : [];
+                setAvailableModels(providerModels);
+                if (providerModels.length > 0) {
+                    setSelectedModel(providerModels[0]);
+                }
+            }
+        };
+        updateModels();
     }, [provider]);
 
     const fetchOllamaModels = async () => {
@@ -38,8 +79,10 @@ const AISettings = ({ onClose, addNotification }) => {
     };
 
     const handleProviderChange = (e) => {
-        setProvider(e.target.value);
-        setApiKey('');
+        const newProvider = e.target.value;
+        setProvider(newProvider);
+        const savedApiKey = localStorage.getItem(`${newProvider}_api_key`);
+        setApiKey(savedApiKey || '');
         setSelectedModel('');
         setError('');
     };
@@ -53,6 +96,9 @@ const AISettings = ({ onClose, addNotification }) => {
             await aiService.initialize(provider === 'ollama' ? 'ollama' : apiKey);
             if (selectedModel) {
                 aiService.setModel(selectedModel);
+            }
+            if (provider !== 'ollama' && apiKey) {
+                localStorage.setItem(`${provider}_api_key`, apiKey);
             }
             addNotification('AI settings updated successfully', 'success');
             onClose();
@@ -97,9 +143,11 @@ const AISettings = ({ onClose, addNotification }) => {
                     </div>
                 )}
 
-                {availableModels.length > 0 && (
-                    <div className="form-group">
-                        <label>Select Model:</label>
+                <div className="form-group">
+                    <label>Select Model:</label>
+                    {provider === 'ollama' && availableModels.length === 0 ? (
+                        <div className="no-models-message">No models found locally. Please install Ollama models first.</div>
+                    ) : (
                         <select
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
@@ -111,8 +159,8 @@ const AISettings = ({ onClose, addNotification }) => {
                                 <option key={model} value={model}>{model}</option>
                             ))}
                         </select>
-                    </div>
-                )}
+                    )}
+                </div>
 
                 {error && <div className="error-message">{error}</div>}
 
