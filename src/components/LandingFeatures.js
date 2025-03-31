@@ -82,7 +82,10 @@ export const StatsSection = () => {
     const [stats, setStats] = useState({
         users: 0,
         messages: 0,
-        uptime: 0
+        uptime: 0,
+        aiInteractions: 0,
+        dataEncrypted: 0,
+        responseTime: 0
     });
 
     useEffect(() => {
@@ -91,7 +94,10 @@ export const StatsSection = () => {
             setStats(prev => ({
                 users: prev.users < 1000 ? prev.users + 5 : 1000,
                 messages: prev.messages < 5000 ? prev.messages + 25 : 5000,
-                uptime: prev.uptime < 99 ? prev.uptime + 1 : 99
+                uptime: prev.uptime < 99 ? prev.uptime + 1 : 99,
+                aiInteractions: prev.aiInteractions < 2000 ? prev.aiInteractions + 10 : 2000,
+                dataEncrypted: prev.dataEncrypted < 10 ? prev.dataEncrypted + 0.05 : 10,
+                responseTime: prev.responseTime < 100 ? prev.responseTime + 1 : 100
             }));
         }, 50);
 
@@ -111,6 +117,18 @@ export const StatsSection = () => {
             <div className="stat-card">
                 <div className="stat-number">{stats.uptime}%</div>
                 <div className="stat-label">Uptime</div>
+            </div>
+            <div className="stat-card">
+                <div className="stat-number">{stats.aiInteractions.toLocaleString()}+</div>
+                <div className="stat-label">AI Interactions</div>
+            </div>
+            <div className="stat-card">
+                <div className="stat-number">{stats.dataEncrypted.toFixed(1)}TB</div>
+                <div className="stat-label">Data Encrypted</div>
+            </div>
+            <div className="stat-card">
+                <div className="stat-number">{stats.responseTime}ms</div>
+                <div className="stat-label">Avg Response Time</div>
             </div>
         </div>
     );

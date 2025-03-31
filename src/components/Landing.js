@@ -163,6 +163,41 @@ const Landing = () => {
                 
 
                 
+                <div className="ai-features-section scroll-animate">
+                    <h2>AI-Powered Features</h2>
+                    <div className="ai-features-grid">
+                        <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.1s'}}>
+                            <div className="feature-icon">🧠</div>
+                            <h3>Smart Replies</h3>
+                            <p>Get intelligent response suggestions based on conversation context</p>
+                        </div>
+                        <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.3s'}}>
+                            <div className="feature-icon">😊</div>
+                            <h3>Sentiment Analysis</h3>
+                            <p>Understand the emotional tone of messages in real-time</p>
+                        </div>
+                        <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.5s'}}>
+                            <div className="feature-icon">🌍</div>
+                            <h3>Language Translation</h3>
+                            <p>Break language barriers with instant message translation</p>
+                        </div>
+                        <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.7s'}}>
+                            <div className="feature-icon">📝</div>
+                            <h3>Message Completion</h3>
+                            <p>Intelligent text completion as you type</p>
+                        </div>
+                    </div>
+                </div>
+
+                <StatsSection />
+                
+                <div className="comparison-section scroll-animate">
+                    <h2>Why Choose ECHOLINK?</h2>
+                    <FeatureComparison />
+                </div>
+
+                <FloatingChatPreview />
+
                 <div className="landing-footer scroll-animate">
                     <p>© 2024 ECHOLINK - Secure Communications</p>
                 </div>
