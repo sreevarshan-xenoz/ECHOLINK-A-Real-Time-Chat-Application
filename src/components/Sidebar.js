@@ -27,7 +27,15 @@ const Sidebar = ({
     const [selectedPeerId, setSelectedPeerId] = useState(null);
     const [connectInput, setConnectInput] = useState('');
     const [copied, setCopied] = useState(false);
-    const [activeTab, setActiveTab] = useState('peers'); // 'peers' or 'ai'
+    const [activeTab, setActiveTab] = useState('peers'); // 'peers', 'ai', or 'settings'
+    const [settings, setSettings] = useState({
+        appearance: {
+            theme: theme || 'dark',
+            messageDensity: 'comfortable',
+            bubbleStyle: 'modern',
+            animationLevel: 'full'
+        }
+    });
 
     useEffect(() => {
         const unsubscribe = webrtcService.onMessage((message) => {
@@ -54,6 +62,15 @@ const Sidebar = ({
     };
 
     const handleAIChatSelect = () => {
+        // Add a small visual feedback before switching tabs
+        const aiTab = document.querySelector('.tab-button:nth-child(2)');
+        if (aiTab) {
+            aiTab.classList.add('pulse-effect');
+            setTimeout(() => {
+                aiTab.classList.remove('pulse-effect');
+            }, 500);
+        }
+        
         if (onAISelect) {
             onAISelect();
         }
@@ -62,6 +79,25 @@ const Sidebar = ({
             onPeerSelect(null);
         }
         setActiveTab('ai');
+    };
+
+    const handleSettingsSelect = () => {
+        setActiveTab('settings');
+    };
+
+    const handleSettingsChange = (category, setting, value) => {
+        setSettings(prev => ({
+            ...prev,
+            [category]: {
+                ...prev[category],
+                [setting]: value
+            }
+        }));
+        
+        // Update theme if that's what changed
+        if (category === 'appearance' && setting === 'theme') {
+            setTheme(value);
+        }
     };
 
     const handleConnect = async (e) => {
@@ -133,6 +169,12 @@ const Sidebar = ({
                     onClick={handleAIChatSelect}
                 >
                     🤖 AI Chat
+                </button>
+                <button 
+                    className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
+                    onClick={handleSettingsSelect}
+                >
+                    ⚙️ Settings
                 </button>
             </div>
 
@@ -212,7 +254,7 @@ const Sidebar = ({
                         </div>
                     )}
                 </>
-            ) : (
+            ) : activeTab === 'ai' ? (
                 <div className="ai-chat-section">
                     <div className="ai-chat-info">
                         <div className="ai-avatar">
@@ -246,6 +288,65 @@ const Sidebar = ({
                             <p>Get personalized recommendations</p>
                         </div>
                     </div>
+                </div>
+            ) : (
+                <div className="settings-content">
+                    <div className="setting-item">
+                        <label>Theme Style</label>
+                        <select 
+                            value={settings.appearance.theme}
+                            onChange={(e) => handleSettingsChange('appearance', 'theme', e.target.value)}
+                        >
+                            <option value="dark">Dark Mode</option>
+                            <option value="light">Light Mode</option>
+                            <option value="high-contrast">High Contrast</option>
+                        </select>
+                    </div>
+                    <div className="setting-item">
+                        <label>Message Density</label>
+                        <select
+                            value={settings.appearance.messageDensity}
+                            onChange={(e) => handleSettingsChange('appearance', 'messageDensity', e.target.value)}
+                        >
+                            <option value="compact">Compact</option>
+                            <option value="comfortable">Comfortable</option>
+                            <option value="relaxed">Relaxed</option>
+                        </select>
+                    </div>
+                    <div className="setting-item">
+                        <label>Bubble Style</label>
+                        <select
+                            value={settings.appearance.bubbleStyle}
+                            onChange={(e) => handleSettingsChange('appearance', 'bubbleStyle', e.target.value)}
+                        >
+                            <option value="modern">Modern</option>
+                            <option value="classic">Classic</option>
+                            <option value="rounded">Rounded</option>
+                        </select>
+                    </div>
+                    <div className="setting-item">
+                        <label>Animations</label>
+                        <select
+                            value={settings.appearance.animationLevel}
+                            onChange={(e) => handleSettingsChange('appearance', 'animationLevel', e.target.value)}
+                        >
+                            <option value="full">Full Animations</option>
+                            <option value="minimal">Minimal Animations</option>
+                            <option value="none">No Animations</option>
+                        </select>
+                    </div>
+                    {!isAiInitialized && (
+                        <div className="ai-setup-section">
+                            <h3>AI Chat Setup</h3>
+                            <p>Configure your AI provider to enable AI chat features</p>
+                            <button 
+                                className="setup-ai-button"
+                                onClick={() => setShowSettings(true)}
+                            >
+                                Configure AI Settings
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

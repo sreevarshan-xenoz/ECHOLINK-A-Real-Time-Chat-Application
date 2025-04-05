@@ -280,16 +280,40 @@
     justify-content: center;
     gap: 6px;
     font-size: 14px;
+    position: relative;
+    overflow: hidden;
 }
 
 .tab-button:hover {
     background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .tab-button.active {
     background: rgba(0, 247, 255, 0.1);
     border-color: rgba(0, 247, 255, 0.3);
     color: #00f7ff;
+    box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+}
+
+.tab-button::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(0, 247, 255, 0.4) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0);
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+.tab-button:active::after {
+    opacity: 0.6;
+    transform: scale(2);
+    transition: 0s;
 }
 
 .tab-button:disabled {
@@ -297,11 +321,100 @@
     cursor: not-allowed;
 }
 
+.pulse-effect {
+    animation: tabPulse 0.5s ease;
+}
+
+@keyframes tabPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+        background: rgba(0, 247, 255, 0.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
 .ai-chat-section {
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    animation: fadeInScale 0.4s ease-out forwards;
+    transform-origin: center;
+}
+
+/* Settings panel styles */
+.settings-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.setting-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.setting-item label {
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.setting-item select {
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    width: 100%;
+}
+
+.ai-setup-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(0, 247, 255, 0.05);
+    border-radius: 10px;
+    border: 1px dashed rgba(0, 247, 255, 0.3);
+    text-align: center;
+}
+
+.ai-setup-section h3 {
+    color: #00f7ff;
+    margin-bottom: 10px;
+}
+
+.ai-setup-section p {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.setup-ai-button {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 198, 255, 0.3);
+}
+
+.setup-ai-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 198, 255, 0.4);
 }
 
 .ai-chat-info {
@@ -312,6 +425,15 @@
     background: rgba(0, 247, 255, 0.05);
     border-radius: 12px;
     border: 1px solid rgba(0, 247, 255, 0.2);
+    transition: all 0.3s ease;
+    animation: pulseGlow 3s infinite;
+    cursor: pointer;
+}
+
+.ai-chat-info:hover {
+    background: rgba(0, 247, 255, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .ai-avatar {
@@ -363,11 +485,35 @@
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
 }
 
 .feature-item:hover {
     background: rgba(255, 255, 255, 0.05);
     transform: translateX(5px);
+    border-color: rgba(0, 247, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.feature-item:active {
+    transform: translateX(2px) scale(0.98);
+}
+
+.feature-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.feature-item:hover::before {
+    left: 100%;
 }
 
 .feature-item span {
@@ -387,9 +533,33 @@
     color: rgba(255, 255, 255, 0.8);
 }
 
+/* Animations */
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 5px rgba(0, 247, 255, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(0, 247, 255, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(0, 247, 255, 0.3);
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .sidebar {
         width: 280px;
     }
-} 
+}

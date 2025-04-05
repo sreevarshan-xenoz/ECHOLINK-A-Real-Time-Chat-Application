@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import aiService from '../services/ai-service';
+import { saveAISettings } from '../services/supabase-service';
 import './AISettings.css';
 
-const AISettings = ({ onClose, addNotification }) => {
+const AISettings = ({ onClose, addNotification, currentUser }) => {
     const [provider, setProvider] = useState('openai');
     const [apiKey, setApiKey] = useState('');
     const [selectedModel, setSelectedModel] = useState('');
@@ -97,9 +98,23 @@ const AISettings = ({ onClose, addNotification }) => {
             if (selectedModel) {
                 aiService.setModel(selectedModel);
             }
+            
+            // Save to localStorage as a fallback
             if (provider !== 'ollama' && apiKey) {
                 localStorage.setItem(`${provider}_api_key`, apiKey);
             }
+            
+            // Save to Supabase if user is logged in
+            if (currentUser?.id) {
+                const aiSettings = {
+                    provider,
+                    apiKey: provider === 'ollama' ? 'ollama' : apiKey,
+                    model: selectedModel
+                };
+                
+                await saveAISettings(currentUser.id, aiSettings);
+            }
+            
             addNotification('AI settings updated successfully', 'success');
             onClose();
         } catch (error) {

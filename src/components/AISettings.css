@@ -13,6 +13,18 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     color: #ffffff;
+    animation: aiSettingsSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes aiSettingsSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .ai-settings-container::before {

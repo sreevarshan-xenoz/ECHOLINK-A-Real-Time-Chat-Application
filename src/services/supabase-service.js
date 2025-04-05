@@ -60,3 +60,133 @@ export const resetPassword = async (email) => {
     return { data: null, error };
   }
 };
+
+// Save user profile data to Supabase
+export const saveUserProfile = async (userId, profileData) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .upsert({
+        user_id: userId,
+        display_name: profileData.displayName,
+        avatar_url: profileData.avatarUrl,
+        updated_at: new Date().toISOString()
+      })
+      .select();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error saving user profile:', error);
+    return { data: null, error };
+  }
+};
+
+// Get user profile data from Supabase
+export const getUserProfile = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error; // PGRST116 is the error code for no rows returned
+
+    // Convert from snake_case to camelCase
+    const profileData = data ? {
+      displayName: data.display_name,
+      avatarUrl: data.avatar_url
+    } : null;
+
+    return { profile: profileData, error: null };
+  } catch (error) {
+    console.error('Error getting user profile:', error);
+    return { profile: null, error };
+  }
+};
+
+// Save AI settings to Supabase
+export const saveAISettings = async (userId, aiSettings) => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_settings')
+      .upsert({
+        user_id: userId,
+        provider: aiSettings.provider,
+        api_key: aiSettings.apiKey, // Note: In a production app, you should encrypt this
+        model: aiSettings.model,
+        updated_at: new Date().toISOString()
+      })
+      .select();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error saving AI settings:', error);
+    return { data: null, error };
+  }
+};
+
+// Get AI settings from Supabase
+export const getAISettings = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('ai_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    // Convert from snake_case to camelCase
+    const aiSettings = data ? {
+      provider: data.provider,
+      apiKey: data.api_key,
+      model: data.model
+    } : null;
+
+    return { settings: aiSettings, error: null };
+  } catch (error) {
+    console.error('Error getting AI settings:', error);
+    return { settings: null, error };
+  }
+};
+
+// Save user settings to Supabase
+export const saveUserSettings = async (userId, settings) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_settings')
+      .upsert({
+        user_id: userId,
+        settings_data: settings, // Store the entire settings object as JSON
+        updated_at: new Date().toISOString()
+      })
+      .select();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error saving user settings:', error);
+    return { data: null, error };
+  }
+};
+
+// Get user settings from Supabase
+export const getUserSettings = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_settings')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    return { settings: data?.settings_data || null, error: null };
+  } catch (error) {
+    console.error('Error getting user settings:', error);
+    return { settings: null, error };
+  }
+};
