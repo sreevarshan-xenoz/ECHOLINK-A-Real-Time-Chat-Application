@@ -113,16 +113,7 @@ const Landing = () => {
                 <div className="landing-header scroll-animate">
                     <h1>ECHOLINK</h1>
                     <p className="tagline">Secure, Real-Time Communication</p>
-                    {user ? (
-                        <div className="auth-buttons">
-                            <Link to="/chat" className="cta-button">Start Chatting</Link>
-                            <button onClick={handleSignOut} className="auth-button">Sign Out</button>
-                        </div>
-                    ) : (
-                        <div className="auth-buttons">
-                            <button onClick={() => setShowAuth(true)} className="cta-button">Get Started</button>
-                        </div>
-                    )}
+                </div>
                 </div>
                 {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
                 
@@ -159,6 +150,22 @@ const Landing = () => {
                         </div>
                         {showPreview && <ChatPreview />}
                     </div>
+                </div>
+
+                <div className="navigation-section scroll-animate">
+                    {user ? (
+                        <div className="nav-buttons">
+                            <Link to="/chat" className="nav-button primary">Start Chatting in Web</Link>
+                            <Link to="/dashboard" className="nav-button">Dashboard</Link>
+                            <Link to="/download" className="nav-button">Download App</Link>
+                            <button onClick={handleSignOut} className="nav-button secondary">Sign Out</button>
+                        </div>
+                    ) : (
+                        <div className="nav-buttons">
+                            <button onClick={() => setShowAuth(true)} className="nav-button primary">Get Started</button>
+                            <Link to="/download" className="nav-button">Download App</Link>
+                        </div>
+                    )}
                 </div>
 
                 <div className="about-section scroll-animate">

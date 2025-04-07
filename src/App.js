@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
-import Chat from './components/Chat';
 import Landing from './components/Landing';
 import { webrtcService } from './services/webrtc-service';
 import { fileService } from './services/file-service';
 import aiService from './services/ai-service';
+
 import './App.css';
+
+const Chat = lazy(() => import('./components/Chat'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
 
 const MainApp = () => {
     const [selectedPeer, setSelectedPeer] = useState(null);
@@ -298,7 +301,16 @@ const App = () => {
         <Router>
             <Routes>
                 <Route path="/" element={<Landing />} />
-                <Route path="/chat" element={<MainApp />} />
+                <Route path="/chat" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading chat...</div>}>
+                        <MainApp />
+                    </Suspense>
+                } />
+                <Route path="/dashboard" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading dashboard...</div>}>
+                        <Dashboard />
+                    </Suspense>
+                } />
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Router>

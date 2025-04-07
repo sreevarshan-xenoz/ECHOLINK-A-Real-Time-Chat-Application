@@ -1,0 +1,193 @@
+.download-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    color: var(--text-primary);
+}
+
+.download-header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.download-header h1 {
+    font-size: 3rem;
+    margin: 0;
+    background: linear-gradient(135deg, #00b7ff, #00f7ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 700;
+}
+
+.download-header p {
+    color: var(--text-secondary);
+    margin-top: 1rem;
+    font-size: 1.2rem;
+}
+
+.download-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 4rem;
+}
+
+.download-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.download-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 32px rgba(0, 247, 255, 0.15);
+    border-color: rgba(0, 247, 255, 0.3);
+}
+
+.platform-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.download-card h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.version {
+    color: var(--text-secondary);
+    margin: 0.5rem 0 1.5rem;
+}
+
+.download-button {
+    background: linear-gradient(135deg, #00b7ff, #00f7ff);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.download-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 247, 255, 0.3);
+}
+
+.features-section {
+    margin: 4rem 0;
+    text-align: center;
+}
+
+.features-section h2 {
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+}
+
+.feature-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.feature-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 20px rgba(0, 247, 255, 0.1);
+    border-color: rgba(0, 247, 255, 0.2);
+}
+
+.feature-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.feature-card h3 {
+    margin: 0 0 0.5rem;
+    color: var(--text-primary);
+}
+
+.feature-card p {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.system-requirements {
+    margin-top: 4rem;
+}
+
+.system-requirements h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.requirements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.requirement-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.requirement-item h3 {
+    margin: 0 0 1rem;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+}
+
+.requirement-item ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+}
+
+.requirement-item li {
+    margin: 0.5rem 0;
+}
+
+@media (max-width: 768px) {
+    .download-container {
+        padding: 1rem;
+    }
+
+    .download-header h1 {
+        font-size: 2rem;
+    }
+
+    .download-options,
+    .features-grid,
+    .requirements-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .download-card,
+    .feature-card,
+    .requirement-item {
+        padding: 1.5rem;
+    }
+}
