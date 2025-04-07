@@ -136,12 +136,7 @@ const Dashboard = () => {
     return (
         <div className="dashboard-container">
             <div className="dashboard-nav">
-                <div className="nav-left">
-                    <Link to="/chat" className="nav-link">← Back to Chat</Link>
-                </div>
-                <div className="nav-right">
-                    <Link to="/download" className="nav-link download-link">Download App</Link>
-                </div>
+                <Link to="/chat" className="nav-link">← Back to Chat</Link>
             </div>
             
             <div className="dashboard-header">
