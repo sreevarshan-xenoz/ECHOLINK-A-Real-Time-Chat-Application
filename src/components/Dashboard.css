@@ -440,7 +440,243 @@
 
 /* GitHub section specific styles */
 .github-section {
+    order: -1; /* Move to the top of the grid */
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, rgba(41, 98, 255, 0.1), rgba(0, 209, 255, 0.08));
+    border-width: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+.github-section::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 100px;
+    height: 100px;
+    background: var(--primary-gradient);
+    filter: blur(60px);
+    opacity: 0.2;
+    z-index: 0;
+    border-radius: 50%;
+}
+
+/* GitHub feature components */
+.github-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.github-feature-card {
+    background: var(--surface-bg);
+    border-radius: 10px;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.github-feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px var(--shadow-color);
+    border-color: rgba(0, 209, 255, 0.3);
+}
+
+.github-feature-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.github-feature-card p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+.github-feature-icon {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    background: rgba(41, 98, 255, 0.1);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+/* Repository browser styles */
+.repo-browser {
+    background: var(--surface-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
     margin-top: 1rem;
+    overflow: hidden;
+}
+
+.repo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    background: rgba(41, 98, 255, 0.05);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.repo-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.repo-item {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    transition: background-color var(--transition-smooth);
+    cursor: pointer;
+}
+
+.repo-item:hover {
+    background-color: rgba(41, 98, 255, 0.05);
+}
+
+/* Pull request styles */
+.pr-list {
+    margin-top: 1rem;
+}
+
+.pr-item {
+    background: var(--surface-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    margin-bottom: 0.8rem;
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+}
+
+.pr-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px var(--shadow-color);
+}
+
+.pr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.pr-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.pr-status {
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.pr-status.open {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+}
+
+.pr-status.closed {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+}
+
+/* Commit history visualization */
+.commit-history {
+    margin-top: 1rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.commit-timeline {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--primary-gradient);
+    opacity: 0.5;
+}
+
+.commit-item {
+    position: relative;
+    padding: 0.8rem 0;
+    padding-left: 1.5rem;
+}
+
+.commit-item::before {
+    content: '';
+    position: absolute;
+    left: -0.35rem;
+    top: 1.2rem;
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 50%;
+    background: var(--primary-gradient);
+    z-index: 1;
+}
+
+.commit-message {
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+.commit-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Code review tools */
+.code-review-tools {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.review-tool {
+    flex: 1;
+    min-width: 150px;
+    background: var(--surface-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    text-align: center;
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth);
+    cursor: pointer;
+}
+
+.review-tool:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px var(--shadow-color);
+    border-color: rgba(0, 209, 255, 0.3);
+}
+
+.review-tool-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--primary-color);
 }
 
 @keyframes fadeInUp {
