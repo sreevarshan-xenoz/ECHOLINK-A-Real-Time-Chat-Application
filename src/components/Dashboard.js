@@ -3,6 +3,7 @@ import './Dashboard.css';
 import { supabase } from '../services/supabase-service';
 import { Link } from 'react-router-dom';
 import GitHubIntegration from './GitHubIntegration';
+import GitHubFeatureCards from './GitHubFeatureCards';
 import aiService from '../services/ai-service';
 
 const Dashboard = () => {
@@ -364,69 +365,7 @@ const Dashboard = () => {
                     <h2>Code Collaboration</h2>
                     <p>Connect with GitHub to collaborate on code, manage repositories, and review pull requests</p>
                     
-                    <div className="github-features-grid">
-                        <div className="github-feature-card">
-                            <div className="github-feature-icon">📁</div>
-                            <h3>Repository Browser</h3>
-                            <p>Browse and manage your GitHub repositories directly from EchoLink</p>
-                            <div className="repo-browser">
-                                <div className="repo-header">
-                                    <span>Recent Repositories</span>
-                                </div>
-                                <div className="repo-list">
-                                    <div className="repo-item">
-                                        <span>ECHOLINK</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="github-feature-card">
-                            <div className="github-feature-icon">🔄</div>
-                            <h3>Pull Requests</h3>
-                            <p>Review and manage pull requests from your team</p>
-                            <div className="pr-list">
-                                <div className="pr-item">
-                                    <div className="pr-header">
-                                        <span className="pr-title">Feature: Chat UI Improvements</span>
-                                        <span className="pr-status open">Open</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="github-feature-card">
-                            <div className="github-feature-icon">📊</div>
-                            <h3>Commit History</h3>
-                            <p>Visualize your project's commit history</p>
-                            <div className="commit-history">
-                                <div className="commit-timeline"></div>
-                                <div className="commit-item">
-                                    <div className="commit-message">Update Dashboard UI</div>
-                                    <div className="commit-meta">
-                                        <span>2 hours ago</span>
-                                        <span>user123</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div className="github-feature-card">
-                            <div className="github-feature-icon">🔍</div>
-                            <h3>Code Review Tools</h3>
-                            <p>Powerful tools for effective code reviews</p>
-                            <div className="code-review-tools">
-                                <div className="review-tool">
-                                    <div className="review-tool-icon">💬</div>
-                                    <span>Comments</span>
-                                </div>
-                                <div className="review-tool">
-                                    <div className="review-tool-icon">✓</div>
-                                    <span>Approve</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <GitHubFeatureCards />
                     
                     <GitHubIntegration />
                 </div>

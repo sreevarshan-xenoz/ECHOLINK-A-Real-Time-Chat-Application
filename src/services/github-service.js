@@ -292,6 +292,54 @@ class GitHubService {
     getUserData() {
         return this.userData;
     }
+
+    /**
+     * Get pull requests for a repository
+     */
+    async getPullRequests(owner, repo) {
+        if (!this.accessToken) return [];
+
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/pulls?state=all`, {
+                headers: {
+                    Authorization: `token ${this.accessToken}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch pull requests');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching pull requests:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Get commits for a repository
+     */
+    async getCommits(owner, repo) {
+        if (!this.accessToken) return [];
+
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/commits`, {
+                headers: {
+                    Authorization: `token ${this.accessToken}`,
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch commits');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching commits:', error);
+            return [];
+        }
+    }
 }
 
 export const githubService = new GitHubService();

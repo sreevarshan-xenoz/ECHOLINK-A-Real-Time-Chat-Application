@@ -600,6 +600,47 @@
     color: #e74c3c;
 }
 
+/* Loading and empty states for GitHub feature cards */
+.loading-indicator {
+    padding: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: center;
+    background-color: rgba(41, 98, 255, 0.05);
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
+.connect-message {
+    padding: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: center;
+    background-color: rgba(41, 98, 255, 0.05);
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
+.error-message {
+    padding: 1rem;
+    color: #e74c3c;
+    font-size: 0.9rem;
+    text-align: center;
+    background-color: rgba(231, 76, 60, 0.05);
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
+.empty-state {
+    padding: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: center;
+    background-color: rgba(41, 98, 255, 0.05);
+    border-radius: 6px;
+    margin-top: 0.5rem;
+}
+
 /* Commit history visualization */
 .commit-history {
     margin-top: 1rem;
