@@ -6,6 +6,9 @@
     --border-color: rgba(255, 255, 255, 0.1);
     --shadow-color: rgba(41, 98, 255, 0.15);
     --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    --glow-color: rgba(0, 209, 255, 0.6);
+    --hover-scale: 1.03;
 }
 
 .dashboard-container {
@@ -36,6 +39,30 @@
     animation: gradientShift 8s ease-in-out infinite;
 }
 
+.dashboard-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(41, 98, 255, 0.15) 0%, transparent 8%),
+        radial-gradient(circle at 75% 15%, rgba(0, 209, 255, 0.15) 0%, transparent 10%),
+        radial-gradient(circle at 40% 80%, rgba(41, 98, 255, 0.1) 0%, transparent 15%),
+        radial-gradient(circle at 80% 60%, rgba(0, 209, 255, 0.1) 0%, transparent 12%);
+    z-index: -1;
+    opacity: 0.5;
+    pointer-events: none;
+    animation: particleFloat 20s ease-in-out infinite alternate;
+}
+
+@keyframes particleFloat {
+    0% {
+        background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%;
+    }
+    100% {
+        background-position: 5% 10%, -10% 5%, 15% -5%, -5% 15%;
+    }
+}
+
 .dashboard-nav {
     margin-bottom: 1.5rem;
 }
@@ -47,10 +74,28 @@
     align-items: center;
     font-weight: 500;
     transition: color var(--transition-smooth);
+    position: relative;
+    padding: 0.5rem 0;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-gradient);
+    transition: width var(--transition-smooth);
+    border-radius: 2px;
 }
 
 .nav-link:hover {
     color: var(--secondary-color);
+}
+
+.nav-link:hover::after {
+    width: 100%;
 }
 
 .dashboard-header {
@@ -64,9 +109,20 @@
     font-size: clamp(2rem, 5vw, 2.5rem);
     margin: 0;
     background: var(--primary-gradient);
+    background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     font-weight: 700;
+    animation: textGradientShift 5s ease infinite alternate;
+}
+
+@keyframes textGradientShift {
+    0% {
+        background-position: 0% center;
+    }
+    100% {
+        background-position: 100% center;
+    }
 }
 
 .dashboard-header p {
@@ -90,6 +146,48 @@
     padding: 2rem;
     border-radius: 12px;
     border: 1px solid var(--border-color);
+    transition: transform var(--transition-smooth), box-shadow var(--transition-smooth), border-color var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.profile-section:hover,
+.preferences-section:hover,
+.ai-settings-section:hover,
+.accessibility-section:hover,
+.github-section:hover {
+    transform: translateY(-5px) scale(var(--hover-scale));
+    box-shadow: 0 15px 30px var(--shadow-color);
+    border-color: rgba(0, 209, 255, 0.3);
+}
+
+.profile-section::after,
+.preferences-section::after,
+.ai-settings-section::after,
+.accessibility-section::after,
+.github-section::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, var(--glow-color) 0%, transparent 70%);
+    opacity: 0;
+    transform: scale(0.5);
+    z-index: -1;
+    transition: opacity 0.8s ease, transform 0.8s ease;
+    pointer-events: none;
+}
+
+.profile-section:hover::after,
+.preferences-section:hover::after,
+.ai-settings-section:hover::after,
+.accessibility-section:hover::after,
+.github-section:hover::after {
+    opacity: 0.15;
+    transform: scale(1);
 }
 
 .profile-section h2,
@@ -152,8 +250,16 @@
 
 .upload-button:hover,
 .save-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px var(--shadow-color);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 20px var(--shadow-color);
+    background-position: right center;
+}
+
+.upload-button:active,
+.save-button:active:not(:disabled) {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 2px 8px var(--shadow-color);
+    transition-duration: 0.1s;
 }
 
 .save-button {
@@ -186,24 +292,62 @@
     background: var(--surface-bg);
     color: var(--text-primary);
     font-size: 1rem;
-    transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
+    transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth), transform var(--transition-smooth);
+    position: relative;
+    z-index: 1;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
     border-color: rgba(0, 247, 255, 0.5);
-    box-shadow: 0 0 0 2px rgba(0, 247, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 247, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.form-group input:hover,
+.form-group select:hover {
+    border-color: rgba(0, 247, 255, 0.3);
+    box-shadow: 0 4px 8px rgba(0, 209, 255, 0.1);
 }
 
 .checkbox-group {
     display: flex;
     align-items: center;
+    margin-bottom: 0.8rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: background-color var(--transition-smooth);
+}
+
+.checkbox-group:hover {
+    background-color: rgba(41, 98, 255, 0.05);
 }
 
 .checkbox-group input[type="checkbox"] {
     width: auto;
     margin-right: 0.5rem;
+    cursor: pointer;
+    position: relative;
+    transform: scale(1.1);
+    transition: transform var(--transition-bounce);
+}
+
+.checkbox-group input[type="checkbox"]:checked {
+    accent-color: var(--primary-color);
+}
+
+.checkbox-group input[type="checkbox"]:hover {
+    transform: scale(1.2);
+}
+
+.checkbox-group label {
+    cursor: pointer;
+    transition: color var(--transition-smooth);
+}
+
+.checkbox-group:hover label {
+    color: var(--primary-color);
 }
 
 .range-value {
@@ -218,11 +362,15 @@
     bottom: 2rem;
     right: 2rem;
     padding: 1rem 2rem;
-    border-radius: 8px;
+    border-radius: 12px;
     color: white;
     will-change: transform, opacity;
-    animation: slideIn var(--transition-smooth);
+    animation: notificationPop 0.5s var(--transition-bounce);
     z-index: 1000;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    transform-origin: bottom right;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 .notification.success {
@@ -231,6 +379,20 @@
 
 .notification.error {
     background: linear-gradient(135deg, #ff3b3b, #ff0000);
+}
+
+@keyframes notificationPop {
+    0% {
+        transform: scale(0.5) translateY(20px);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 .dashboard-loading {
@@ -248,8 +410,32 @@
     border-radius: 50%;
     border-top-color: var(--primary-color);
     will-change: transform;
-    animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
     margin-bottom: 1rem;
+    box-shadow: 0 0 15px rgba(41, 98, 255, 0.2);
+    position: relative;
+}
+
+.loading-spinner::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    right: -8px;
+    bottom: -8px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    border-top-color: rgba(0, 209, 255, 0.5);
+    animation: spin 1.5s linear reverse infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(41, 98, 255, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 209, 255, 0.4);
+    }
 }
 
 /* GitHub section specific styles */
