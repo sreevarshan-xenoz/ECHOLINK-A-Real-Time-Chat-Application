@@ -24,6 +24,14 @@ const GitHubIntegration = () => {
     const initializeGitHub = async () => {
         try {
             setLoading(true);
+            
+            // Check if GitHub is configured
+            if (!githubService.isConfigured) {
+                showNotification('GitHub integration is not configured. Please set up your GitHub credentials in the .env file.', 'error');
+                setLoading(false);
+                return;
+            }
+            
             const initialized = await githubService.initialize();
             setIsConnected(initialized);
             

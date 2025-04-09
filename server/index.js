@@ -2,9 +2,35 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
+const axios = require('axios');
+const bodyParser = require('body-parser');
 
 const app = express();
 app.use(cors());
+app.use(bodyParser.json());
+
+// GitHub OAuth endpoint
+app.post('/api/github/oauth/token', async (req, res) => {
+    try {
+        const { code } = req.body;
+        
+        // Exchange code for access token with GitHub
+        const response = await axios.post('https://github.com/login/oauth/access_token', {
+            client_id: process.env.REACT_APP_GITHUB_CLIENT_ID,
+            client_secret: process.env.REACT_APP_GITHUB_CLIENT_SECRET,
+            code: code
+        }, {
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+        
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error exchanging GitHub code for token:', error);
+        res.status(500).json({ error: 'Failed to exchange code for token' });
+    }
+});
 
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -75,4 +101,4 @@ const HOST = '0.0.0.0';
 
 server.listen(PORT, HOST, () => {
     console.log(`Server running on http://${HOST}:${PORT}`);
-}); 
+});

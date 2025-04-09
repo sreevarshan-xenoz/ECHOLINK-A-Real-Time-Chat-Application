@@ -3,11 +3,12 @@ import { supabase } from './supabase-service';
 
 class GitHubService {
     constructor() {
-        this.clientId = process.env.REACT_APP_GITHUB_CLIENT_ID || 'your_github_client_id';
+        this.clientId = process.env.REACT_APP_GITHUB_CLIENT_ID || '';
         this.redirectUri = `${window.location.origin}/dashboard`;
         this.scope = 'repo user';
         this.accessToken = null;
         this.userData = null;
+        this.isConfigured = !!this.clientId;
     }
 
     /**
@@ -15,6 +16,12 @@ class GitHubService {
      */
     async initialize() {
         try {
+            // Check if GitHub integration is properly configured
+            if (!this.isConfigured) {
+                console.error('GitHub integration is not configured. Please set REACT_APP_GITHUB_CLIENT_ID in your .env file.');
+                return false;
+            }
+            
             // Check if we have a stored token in localStorage or Supabase
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
@@ -41,6 +48,11 @@ class GitHubService {
      * Get the OAuth authorization URL
      */
     getAuthUrl() {
+        if (!this.isConfigured) {
+            console.error('GitHub integration is not configured. Please set REACT_APP_GITHUB_CLIENT_ID in your .env file.');
+            return '#';
+        }
+        
         const params = new URLSearchParams({
             client_id: this.clientId,
             redirect_uri: this.redirectUri,
