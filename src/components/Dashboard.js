@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import { supabase } from '../services/supabase-service';
 import { Link } from 'react-router-dom';
+import GitHubIntegration from './GitHubIntegration';
 import aiService from '../services/ai-service';
 
 const Dashboard = () => {
@@ -357,6 +358,11 @@ const Dashboard = () => {
                             <option value="x-large">Extra Large</option>
                         </select>
                     </div>
+                </div>
+
+                <div className="github-section">
+                    <h2>Code Collaboration</h2>
+                    <GitHubIntegration />
                 </div>
 
                 <button

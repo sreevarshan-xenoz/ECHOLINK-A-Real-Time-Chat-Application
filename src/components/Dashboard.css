@@ -36,6 +36,23 @@
     animation: gradientShift 8s ease-in-out infinite;
 }
 
+.dashboard-nav {
+    margin-bottom: 1.5rem;
+}
+
+.nav-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    transition: color var(--transition-smooth);
+}
+
+.nav-link:hover {
+    color: var(--secondary-color);
+}
+
 .dashboard-header {
     text-align: center;
     margin-bottom: 3rem;
@@ -64,14 +81,22 @@
     grid-template-columns: 1fr;
 }
 
-.profile-section {
+.profile-section,
+.preferences-section,
+.ai-settings-section,
+.accessibility-section,
+.github-section {
     background: var(--surface-bg);
     padding: 2rem;
     border-radius: 12px;
     border: 1px solid var(--border-color);
 }
 
-.profile-section h2 {
+.profile-section h2,
+.preferences-section h2,
+.ai-settings-section h2,
+.accessibility-section h2,
+.github-section h2 {
     margin: 0 0 1.5rem;
     font-size: 1.5rem;
     color: var(--text-primary);
@@ -171,6 +196,23 @@
     box-shadow: 0 0 0 2px rgba(0, 247, 255, 0.1);
 }
 
+.checkbox-group {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 0.5rem;
+}
+
+.range-value {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
 .notification {
     position: fixed;
     bottom: 2rem;
@@ -210,6 +252,11 @@
     margin-bottom: 1rem;
 }
 
+/* GitHub section specific styles */
+.github-section {
+    margin-top: 1rem;
+}
+
 @keyframes fadeInUp {
     from {
         opacity: 0;
@@ -246,7 +293,11 @@
         padding: 1rem;
     }
 
-    .profile-section {
+    .profile-section,
+    .preferences-section,
+    .ai-settings-section,
+    .accessibility-section,
+    .github-section {
         padding: 1.5rem;
     }
 }
