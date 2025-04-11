@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import './Dashboard.css';
 import { supabase } from '../services/supabase-service';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import GitHubIntegration from './GitHubIntegration';
 import GitHubFeatureCards from './GitHubFeatureCards';
 import aiService from '../services/ai-service';
+import { githubService } from '../services/github-service';
 
 const Dashboard = () => {
     const [user, setUser] = useState(null);
@@ -13,6 +14,7 @@ const Dashboard = () => {
     const [avatar, setAvatar] = useState(null);
     const [theme, setTheme] = useState('light');
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+    const location = useLocation();
     const [chatPreferences, setChatPreferences] = useState({
         messageDensity: 'comfortable',
         fontSize: 'medium',
@@ -33,8 +35,40 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchUserProfile();
-    }, []);
+        handleGitHubCallback();
+    }, [location]);
 
+    const handleGitHubCallback = async () => {
+        try {
+            // Check if this is a GitHub OAuth callback
+            const searchParams = new URLSearchParams(location.search);
+            const code = searchParams.get('code');
+            const state = searchParams.get('state');
+            
+            if (code && state) {
+                setLoading(true);
+                showNotification('Processing GitHub authorization...', 'info');
+                
+                // Handle the GitHub OAuth callback
+                const success = await githubService.handleCallback(code, state);
+                
+                if (success) {
+                    showNotification('GitHub account connected successfully!', 'success');
+                    // Clear the URL parameters without refreshing the page
+                    window.history.replaceState({}, document.title, '/dashboard');
+                } else {
+                    showNotification('Failed to connect GitHub account. Please try again.', 'error');
+                }
+                
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error('Error handling GitHub callback:', error);
+            showNotification('Error connecting to GitHub: ' + error.message, 'error');
+            setLoading(false);
+        }
+    };
+    
     const fetchUserProfile = async () => {
         try {
             const { data: { user } } = await supabase.auth.getUser();
