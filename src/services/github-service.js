@@ -123,6 +123,7 @@ class GitHubService {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user && this.accessToken) {
+                // First save to profiles table for backward compatibility
                 await supabase
                     .from('profiles')
                     .upsert({
@@ -130,6 +131,18 @@ class GitHubService {
                         github_access_token: this.accessToken,
                         updated_at: new Date()
                     });
+                
+                // Then save to the dedicated github_info table if we have user data
+                if (this.userData) {
+                    const { saveGitHubInfo } = await import('./supabase-service');
+                    await saveGitHubInfo(user.id, {
+                        accessToken: this.accessToken,
+                        username: this.userData.login,
+                        avatarUrl: this.userData.avatar_url,
+                        name: this.userData.name,
+                        email: this.userData.email
+                    });
+                }
             }
         } catch (error) {
             console.error('Error saving GitHub token:', error);

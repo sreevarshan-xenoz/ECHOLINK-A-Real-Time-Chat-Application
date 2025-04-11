@@ -8,6 +8,8 @@ const AISettings = ({ onClose, addNotification, currentUser }) => {
     const [apiKey, setApiKey] = useState('');
     const [selectedModel, setSelectedModel] = useState('');
     const [availableModels, setAvailableModels] = useState([]);
+    const [temperature, setTemperature] = useState(0.7);
+    const [maxTokens, setMaxTokens] = useState(2048);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -109,7 +111,9 @@ const AISettings = ({ onClose, addNotification, currentUser }) => {
                 const aiSettings = {
                     provider,
                     apiKey: provider === 'ollama' ? 'ollama' : apiKey,
-                    model: selectedModel
+                    model: selectedModel,
+                    temperature,
+                    maxTokens
                 };
                 
                 await saveAISettings(currentUser.id, aiSettings);
@@ -175,6 +179,36 @@ const AISettings = ({ onClose, addNotification, currentUser }) => {
                             ))}
                         </select>
                     )}
+                </div>
+
+                <div className="form-group">
+                    <label>Temperature: {temperature}</label>
+                    <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={temperature}
+                        onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                        className="slider"
+                    />
+                    <div className="slider-labels">
+                        <span>More Precise</span>
+                        <span>More Creative</span>
+                    </div>
+                </div>
+
+                <div className="form-group">
+                    <label>Max Tokens: {maxTokens}</label>
+                    <input
+                        type="range"
+                        min="256"
+                        max="8192"
+                        step="256"
+                        value={maxTokens}
+                        onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                        className="slider"
+                    />
                 </div>
 
                 {error && <div className="error-message">{error}</div>}
