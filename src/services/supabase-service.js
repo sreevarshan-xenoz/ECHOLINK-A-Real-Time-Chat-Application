@@ -116,6 +116,8 @@ export const saveAISettings = async (userId, aiSettings) => {
         provider: aiSettings.provider,
         api_key: aiSettings.apiKey, // Note: In a production app, you should encrypt this
         model: aiSettings.model,
+        temperature: aiSettings.temperature || 0.7,
+        max_tokens: aiSettings.maxTokens || 2048,
         updated_at: new Date().toISOString()
       })
       .select();
@@ -143,7 +145,9 @@ export const getAISettings = async (userId) => {
     const aiSettings = data ? {
       provider: data.provider,
       apiKey: data.api_key,
-      model: data.model
+      model: data.model,
+      temperature: data.temperature || 0.7,
+      maxTokens: data.max_tokens || 2048
     } : null;
 
     return { settings: aiSettings, error: null };
@@ -188,5 +192,56 @@ export const getUserSettings = async (userId) => {
   } catch (error) {
     console.error('Error getting user settings:', error);
     return { settings: null, error };
+  }
+};
+
+// Save GitHub account information to Supabase
+export const saveGitHubInfo = async (userId, githubInfo) => {
+  try {
+    const { data, error } = await supabase
+      .from('github_info')
+      .upsert({
+        user_id: userId,
+        access_token: githubInfo.accessToken,
+        username: githubInfo.username,
+        avatar_url: githubInfo.avatarUrl,
+        name: githubInfo.name,
+        email: githubInfo.email,
+        updated_at: new Date().toISOString()
+      })
+      .select();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error saving GitHub info:', error);
+    return { data: null, error };
+  }
+};
+
+// Get GitHub account information from Supabase
+export const getGitHubInfo = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('github_info')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+
+    // Convert from snake_case to camelCase
+    const githubInfo = data ? {
+      accessToken: data.access_token,
+      username: data.username,
+      avatarUrl: data.avatar_url,
+      name: data.name,
+      email: data.email
+    } : null;
+
+    return { githubInfo, error: null };
+  } catch (error) {
+    console.error('Error getting GitHub info:', error);
+    return { githubInfo: null, error };
   }
 };
