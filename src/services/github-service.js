@@ -84,9 +84,9 @@ class GitHubService {
             }
 
             // Exchange code for access token using a backend proxy
-            // In a real app, you would use a server endpoint to exchange the code
-            // For demo purposes, we'll simulate this
-            const response = await fetch('/api/github/oauth/token', {
+            // Make sure to use the full URL including hostname to reach the server
+            const serverUrl = process.env.REACT_APP_API_URL || window.location.origin;
+            const response = await fetch(`${serverUrl}/api/github/oauth/token`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

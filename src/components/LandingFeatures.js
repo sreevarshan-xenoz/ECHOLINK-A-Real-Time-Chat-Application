@@ -167,12 +167,25 @@ export const FeatureComparison = () => {
                         <td><span className="feature-check">✓</span></td>
                     </tr>
                     <tr>
+                        <td>GitHub Integration</td>
+                        <td><span className="feature-check">✓</span></td>
+                        <td><span className="feature-cross">✗</span></td>
+                    </tr>
+                    <tr>
+                        <td>Code Collaboration</td>
+                        <td><span className="feature-check">✓</span></td>
+                        <td><span className="feature-cross">✗</span></td>
+                    </tr>
+                    <tr>
                         <td>Open Source</td>
                         <td><span className="feature-check">✓</span></td>
                         <td><span className="feature-cross">✗</span></td>
                     </tr>
                 </tbody>
             </table>
+            <div className="comparison-note">
+                <p>EchoLink is the only chat platform that seamlessly integrates with GitHub, allowing developers to discuss code, review pull requests, and collaborate in real-time.</p>
+            </div>
         </div>
     );
 };
