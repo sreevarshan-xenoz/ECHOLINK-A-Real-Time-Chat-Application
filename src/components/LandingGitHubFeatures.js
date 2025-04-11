@@ -6,7 +6,7 @@ const LandingGitHubFeatures = () => {
         <div className="github-features-section scroll-animate">
             <h2>Code Collaboration</h2>
             <p className="section-description">
-                Seamlessly integrate your GitHub repositories with ECHOLINK for enhanced code collaboration and real-time discussions.
+                Seamlessly integrate your GitHub repositories with ECHOLINK for enhanced code collaboration and real-time discussions. Our GitHub integration transforms how development teams communicate about code.
             </p>
             
             <div className="github-features-grid">
@@ -49,6 +49,24 @@ const LandingGitHubFeatures = () => {
                     <h3>Issue Tracking</h3>
                     <p>Track and discuss GitHub issues directly within your chat conversations</p>
                 </div>
+            </div>
+            
+            <div className="why-choose-github scroll-animate" style={{marginTop: '30px'}}>
+                <h3>Why Choose EchoLink for GitHub?</h3>
+                <ul className="github-benefits-list">
+                    <li>
+                        <strong>Seamless Integration:</strong> Connect your GitHub account with just one click
+                    </li>
+                    <li>
+                        <strong>Real-time Code Discussions:</strong> Chat about code changes as they happen
+                    </li>
+                    <li>
+                        <strong>Enhanced Collaboration:</strong> Review pull requests directly within your chat
+                    </li>
+                    <li>
+                        <strong>Developer-Focused:</strong> Built by developers, for developers
+                    </li>
+                </ul>
             </div>
             
             <div className="github-cta scroll-animate">
