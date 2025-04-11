@@ -4,6 +4,8 @@ import { supabase } from '../services/supabase-service';
 import { Link, useLocation } from 'react-router-dom';
 import GitHubIntegration from './GitHubIntegration';
 import GitHubFeatureCards from './GitHubFeatureCards';
+import GitHubHome from './GitHubHome';
+import './GitHubHome.css';
 import aiService from '../services/ai-service';
 import { githubService } from '../services/github-service';
 
@@ -14,6 +16,7 @@ const Dashboard = () => {
     const [avatar, setAvatar] = useState(null);
     const [theme, setTheme] = useState('light');
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
+    const [activeView, setActiveView] = useState('github'); // 'github' or 'profile'
     const location = useLocation();
     const [chatPreferences, setChatPreferences] = useState({
         messageDensity: 'comfortable',
@@ -169,18 +172,40 @@ const Dashboard = () => {
         );
     }
 
+    const toggleView = (view) => {
+        setActiveView(view);
+    };
+
     return (
         <div className="dashboard-container">
             <div className="dashboard-nav">
                 <Link to="/chat" className="nav-link">← Back to Chat</Link>
+                <div className="view-toggle">
+                    <button 
+                        className={`toggle-button ${activeView === 'github' ? 'active' : ''}`}
+                        onClick={() => toggleView('github')}
+                    >
+                        GitHub Home
+                    </button>
+                    <button 
+                        className={`toggle-button ${activeView === 'profile' ? 'active' : ''}`}
+                        onClick={() => toggleView('profile')}
+                    >
+                        Profile Settings
+                    </button>
+                </div>
             </div>
             
-            <div className="dashboard-header">
-                <h1>User Dashboard</h1>
-                <p>Manage your profile and preferences</p>
-            </div>
+            {activeView === 'github' ? (
+                <GitHubHome />
+            ) : (
+                <>
+                    <div className="dashboard-header">
+                        <h1>User Dashboard</h1>
+                        <p>Manage your profile and preferences</p>
+                    </div>
 
-            <div className="dashboard-content">
+                    <div className="dashboard-content">
                 <div className="profile-section">
                     <h2>Profile Settings</h2>
                     <div className="avatar-upload">
@@ -395,29 +420,22 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <div className="github-section">
-                    <h2>Code Collaboration</h2>
-                    <p>Connect with GitHub to collaborate on code, manage repositories, and review pull requests</p>
-                    
-                    <GitHubFeatureCards />
-                    
-                    <GitHubIntegration />
-                </div>
-
-                <button
-                    className="save-button"
-                    onClick={updateProfile}
-                    disabled={loading}
-                >
-                    {loading ? 'Saving...' : 'Save All Changes'}
-                </button>
-
-                {notification.show && (
-                    <div className={`notification ${notification.type}`}>
-                        {notification.message}
+                        <button
+                            className="save-button"
+                            onClick={updateProfile}
+                            disabled={loading}
+                        >
+                            {loading ? 'Saving...' : 'Save All Changes'}
+                        </button>
                     </div>
-                )}
-            </div>
+                </>
+            )}
+
+            {notification.show && (
+                <div className={`notification ${notification.type}`}>
+                    {notification.message}
+                </div>
+            )}
         </div>
     );
 };

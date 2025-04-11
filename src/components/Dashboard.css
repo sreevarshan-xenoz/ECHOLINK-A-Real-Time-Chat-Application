@@ -65,6 +65,9 @@
 
 .dashboard-nav {
     margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .nav-link {
@@ -76,6 +79,27 @@
     transition: color var(--transition-smooth);
     position: relative;
     padding: 0.5rem 0;
+}
+
+.view-toggle {
+    display: flex;
+    gap: 10px;
+}
+
+.toggle-button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--surface-bg);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all var(--transition-smooth);
+}
+
+.toggle-button.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
 }
 
 .nav-link::after {
