@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Landing.css';
 import { ParticleBackground, StatsSection, FeatureComparison, FloatingChatPreview } from './LandingFeatures';
+import LandingGitHubFeatures from './LandingGitHubFeatures';
 import Auth from './Auth';
 import { getCurrentUser, signOut } from '../services/supabase-service';
 
@@ -224,6 +225,8 @@ const Landing = () => {
                         </div>
                     </div>
                 </div>
+
+                <LandingGitHubFeatures />
 
                 <StatsSection />
                 

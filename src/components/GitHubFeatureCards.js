@@ -9,6 +9,8 @@ const GitHubFeatureCards = () => {
     const [pullRequests, setPullRequests] = useState([]);
     const [commits, setCommits] = useState([]);
     const [error, setError] = useState(null);
+    const [repoCount, setRepoCount] = useState(0);
+    const [projectCount, setProjectCount] = useState(0);
 
     useEffect(() => {
         initializeGitHub();
@@ -32,7 +34,8 @@ const GitHubFeatureCards = () => {
                 await Promise.all([
                     loadRepositories(),
                     loadPullRequests(),
-                    loadCommits()
+                    loadCommits(),
+                    loadProjects()
                 ]);
             }
         } catch (error) {
@@ -47,9 +50,20 @@ const GitHubFeatureCards = () => {
         try {
             const repos = await githubService.getRepositories();
             setRepositories(repos.slice(0, 3)); // Get the 3 most recent repositories
+            setRepoCount(repos.length); // Set the total count of repositories
         } catch (error) {
             console.error('Error loading repositories:', error);
             setError('Failed to load repositories');
+        }
+    };
+    
+    const loadProjects = async () => {
+        try {
+            const projects = await githubService.getProjects();
+            setProjectCount(projects.length); // Set the total count of projects
+        } catch (error) {
+            console.error('Error loading projects:', error);
+            // Don't set error here to avoid disrupting the UI if projects can't be loaded
         }
     };
 
@@ -116,6 +130,16 @@ const GitHubFeatureCards = () => {
                 <div className="repo-browser">
                     <div className="repo-header">
                         <span>Recent Repositories</span>
+                        <div className="repo-stats">
+                            <div className="stat-item">
+                                <span className="stat-value">{repoCount}</span>
+                                <span className="stat-label">Repositories</span>
+                            </div>
+                            <div className="stat-item">
+                                <span className="stat-value">{projectCount}</span>
+                                <span className="stat-label">Projects</span>
+                            </div>
+                        </div>
                     </div>
                     <div className="repo-list">
                         {repositories.map(repo => (

@@ -352,6 +352,31 @@ class GitHubService {
             return [];
         }
     }
+
+    /**
+     * Get user's projects
+     */
+    async getProjects() {
+        if (!this.accessToken) return [];
+
+        try {
+            const response = await fetch('https://api.github.com/user/projects', {
+                headers: {
+                    Authorization: `token ${this.accessToken}`,
+                    Accept: 'application/vnd.github.inertia-preview+json' // Projects API requires this preview header
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch projects');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching projects:', error);
+            return [];
+        }
+    }
 }
 
 export const githubService = new GitHubService();
