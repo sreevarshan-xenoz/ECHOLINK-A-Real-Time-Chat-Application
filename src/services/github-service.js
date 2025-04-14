@@ -62,6 +62,50 @@ class GitHubService {
 
         return `https://github.com/login/oauth/authorize?${params.toString()}`;
     }
+    
+    /**
+     * Get commit activity for a repository
+     */
+    async getCommitActivity(owner, repo) {
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/stats/commit_activity`, {
+                headers: {
+                    Authorization: `token ${this.accessToken}`,
+                },
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch commit activity');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching commit activity:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get contributor statistics for a repository
+     */
+    async getContributorStats(owner, repo) {
+        try {
+            const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/stats/contributors`, {
+                headers: {
+                    Authorization: `token ${this.accessToken}`,
+                },
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to fetch contributor stats');
+            }
+            
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching contributor stats:', error);
+            throw error;
+        }
+    }
 
     /**
      * Generate a random state string for OAuth security

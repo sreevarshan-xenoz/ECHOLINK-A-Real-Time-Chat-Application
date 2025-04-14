@@ -1,0 +1,124 @@
+.repo-analytics-dashboard {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.analytics-section {
+  margin-bottom: 24px;
+}
+
+.chart-container {
+  display: flex;
+  align-items: flex-end;
+  height: 120px;
+  gap: 8px;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.chart-bar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.chart-bar {
+  width: 100%;
+  background-color: #4078c0;
+  border-radius: 2px 2px 0 0;
+  min-height: 1px;
+}
+
+.chart-label {
+  font-size: 10px;
+  margin-top: 4px;
+  color: #666;
+}
+
+.chart-legend {
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.contributors-list {
+  margin-top: 16px;
+}
+
+.contributor-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  position: relative;
+  padding: 8px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.contributor-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+
+.contributor-info {
+  z-index: 1;
+}
+
+.contributor-name {
+  font-weight: 500;
+}
+
+.contributor-commits {
+  font-size: 12px;
+  color: #666;
+}
+
+.contributor-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background-color: rgba(64, 120, 192, 0.1);
+  border-radius: 4px;
+  z-index: 0;
+}
+
+.loading-indicator {
+  padding: 16px;
+  text-align: center;
+  color: #666;
+}
+
+.error-message {
+  padding: 16px;
+  text-align: center;
+  color: #d73a49;
+}
+
+/* Dark mode support */
+.dark .repo-analytics-dashboard {
+  background-color: #2d2d2d;
+  color: #e0e0e0;
+}
+
+.dark .chart-label,
+.dark .chart-legend,
+.dark .contributor-commits {
+  color: #aaa;
+}
+
+.dark .contributor-item {
+  background-color: #333;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.dark .contributor-bar {
+  background-color: rgba(64, 120, 192, 0.2);
+}

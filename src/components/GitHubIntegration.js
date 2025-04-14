@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { githubService } from '../services/github-service';
 import Editor from '@monaco-editor/react';
+import CollaborativeCodeEditor from './CollaborativeCodeEditor';
+import RepoAnalyticsDashboard from './RepoAnalyticsDashboard';
 import './GitHubIntegration.css';
 
 const GitHubIntegration = () => {
@@ -16,6 +18,8 @@ const GitHubIntegration = () => {
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
     const [breadcrumbs, setBreadcrumbs] = useState([]);
     const [currentPath, setCurrentPath] = useState('');
+    const [collaborativeMode, setCollaborativeMode] = useState(false);
+    const [showAnalytics, setShowAnalytics] = useState(false);
 
     useEffect(() => {
         initializeGitHub();
@@ -96,6 +100,8 @@ const GitHubIntegration = () => {
             setRepoContent(content);
             setSelectedFile(null);
             setFileContent('');
+            setCollaborativeMode(false);
+            setShowAnalytics(false);
         } catch (error) {
             console.error('Error loading repository content:', error);
             showNotification('Failed to load repository content', 'error');
@@ -374,7 +380,9 @@ const GitHubIntegration = () => {
                                         </div>
                                     ) : (
                                         <div className="repo-browser">
-                                            {repoContent.length > 0 ? (
+                                            {showAnalytics ? (
+                                                <RepoAnalyticsDashboard repo={selectedRepo} />
+                                            ) : repoContent.length > 0 ? (
                                                 <div className="repo-items">
                                                     {repoContent
                                                         .sort((a, b) => {
