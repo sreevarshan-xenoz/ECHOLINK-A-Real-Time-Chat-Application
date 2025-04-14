@@ -339,6 +339,14 @@ const GitHubIntegration = () => {
                                 <>
                                     <div className="repo-header">
                                         <h3>{selectedRepo.name}</h3>
+                                        <div className="repo-actions">
+                                            <button 
+                                                className={`analytics-toggle ${showAnalytics ? 'active' : ''}`}
+                                                onClick={() => setShowAnalytics(!showAnalytics)}
+                                            >
+                                                {showAnalytics ? 'Hide Analytics' : 'Show Analytics'}
+                                            </button>
+                                        </div>
                                         <div className="breadcrumbs">
                                             {breadcrumbs.map((breadcrumb, index) => (
                                                 <span key={index}>
@@ -361,21 +369,36 @@ const GitHubIntegration = () => {
                                                 <button className="save-file-button" onClick={saveFile}>
                                                     Save Changes
                                                 </button>
+                                                <button 
+                                                    className={`mode-toggle ${collaborativeMode ? 'active' : ''}`}
+                                                    onClick={() => setCollaborativeMode(!collaborativeMode)}
+                                                >
+                                                    {collaborativeMode ? 'Collaborative Mode' : 'Solo Mode'}
+                                                </button>
                                             </div>
                                             <div className="monaco-editor-container">
-                                                <Editor
-                                                    height="500px"
-                                                    language={language}
-                                                    value={fileContent}
-                                                    onChange={handleEditorChange}
-                                                    theme="vs-dark"
-                                                    options={{
-                                                        minimap: { enabled: true },
-                                                        scrollBeyondLastLine: false,
-                                                        fontSize: 14,
-                                                        wordWrap: 'on'
-                                                    }}
-                                                />
+                                                {collaborativeMode ? (
+                                                    <CollaborativeCodeEditor
+                                                        roomId={`${selectedRepo.owner.login}-${selectedRepo.name}-${currentPath}-${selectedFile.name}`}
+                                                        language={language}
+                                                        initialContent={fileContent}
+                                                        onContentChange={handleEditorChange}
+                                                    />
+                                                ) : (
+                                                    <Editor
+                                                        height="500px"
+                                                        language={language}
+                                                        value={fileContent}
+                                                        onChange={handleEditorChange}
+                                                        theme="vs-dark"
+                                                        options={{
+                                                            minimap: { enabled: true },
+                                                            scrollBeyondLastLine: false,
+                                                            fontSize: 14,
+                                                            wordWrap: 'on'
+                                                        }}
+                                                    />
+                                                )}
                                             </div>
                                         </div>
                                     ) : (
