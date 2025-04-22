@@ -1,6 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import Sidebar from './components/Sidebar';
 import Landing from './components/Landing';
 import { webrtcService } from './services/webrtc-service';
@@ -13,50 +12,8 @@ const Chat = lazy(() => import('./components/Chat'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const GitHubHome = lazy(() => import('./components/GitHubHome'));
 const GitHubIntegration = lazy(() => import('./components/GitHubIntegration'));
-const AIChat = lazy(() => import('./components/AIChat'));
 
-// Create a Chakra UI theme
-const theme = extendTheme({
-  config: {
-    initialColorMode: 'dark',
-    useSystemColorMode: false,
-  },
-  colors: {
-    primary: {
-      50: '#e6ffff',
-      100: '#b3ffff',
-      200: '#80ffff',
-      300: '#4dffff',
-      400: '#1affff',
-      500: '#00f7ff',
-      600: '#00c3ff',
-      700: '#0088cc',
-      800: '#006699',
-      900: '#004466',
-    },
-  },
-});
-
-// Wrap a standalone component with ChakraProvider to ensure theme consistency
-const ChakraTheme = ({ children }) => (
-  <ChakraProvider theme={theme}>
-    {children}
-  </ChakraProvider>
-);
-
-const ErrorScreen = ({ error, onRetry }) => {
-    return (
-        <div className="error-container">
-            <div className="error-message">
-                <h2>Connection Error</h2>
-                <p>{error}</p>
-                <button onClick={onRetry} className="retry-button">Retry Connection</button>
-            </div>
-        </div>
-    );
-};
-
-const MainApp = ({ initialView }) => {
+const MainApp = () => {
     const [selectedPeer, setSelectedPeer] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -72,15 +29,15 @@ const MainApp = ({ initialView }) => {
         encryption: false
     });
     const [showSettings, setShowSettings] = useState(false);
-    const [isAIChatActive, setIsAIChatActive] = useState(initialView === 'ai');
-    const [showPeerConnect, setShowPeerConnect] = useState(initialView === 'peer-chat');
+    const [isAIChatActive, setIsAIChatActive] = useState(false);
+    const [theme, setTheme] = useState('dark');
     const [notifications, setNotifications] = useState([]);
     const [showTutorial, setShowTutorial] = useState(true);
 
     useEffect(() => {
-        document.body.className = theme.config.initialColorMode;
-        document.documentElement.setAttribute('data-theme', theme.config.initialColorMode);
-    }, [theme.config.initialColorMode]);
+        document.body.className = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+    }, [theme]);
 
     const initializeServices = async () => {
         try {
@@ -126,18 +83,10 @@ const MainApp = ({ initialView }) => {
 
     useEffect(() => {
         initializeServices();
-        
-        // Set initial view based on prop
-        if (initialView === 'peer-chat') {
-            setShowPeerConnect(true);
-        } else if (initialView === 'ai') {
-            setIsAIChatActive(true);
-        }
-        
         return () => {
             webrtcService.disconnect();
         };
-    }, [initialView]);
+    }, []);
 
     const handleRetry = () => {
         initializeServices();
@@ -210,7 +159,7 @@ const MainApp = ({ initialView }) => {
         const progress = (Object.values(networkStatus).filter(Boolean).length / 3) * 100;
         
         return (
-            <div className={`app loading ${theme.config.initialColorMode}`}>
+            <div className={`app loading ${theme}`}>
                 <div className="loading-container">
                     <div className="particles">
                         {particles.map(particle => (
@@ -295,7 +244,13 @@ const MainApp = ({ initialView }) => {
 
     if (error) {
         return (
-            <ErrorScreen error={error} onRetry={handleRetry} />
+            <div className="error-container">
+                <div className="error-message">
+                    <h2>Connection Error</h2>
+                    <p>{error}</p>
+                    <button onClick={handleRetry} className="retry-button">Retry Connection</button>
+                </div>
+            </div>
         );
     }
 
@@ -304,113 +259,73 @@ const MainApp = ({ initialView }) => {
     }
 
     return (
-        <div className={`app ${theme.config.initialColorMode}`}>
-            {isLoading ? (
-                <LoadingScreen networkStatus={networkStatus} />
-            ) : error ? (
-                <ErrorScreen error={error} onRetry={handleRetry} />
-            ) : (
-                <div className="app-container">
-                    <Sidebar
-                        currentUser={currentUser}
-                        onPeerSelect={handlePeerSelect}
-                        onAIChatSelect={handleAIChatSelect}
-                        isAIChatActive={isAIChatActive}
-                        theme={theme.config.initialColorMode}
-                        onShowSettings={() => setShowSettings(true)}
-                        showTutorial={showTutorial}
-                        setShowTutorial={setShowTutorial}
-                        showPeerConnect={showPeerConnect}
-                    />
-                    <div className="main-content">
-                        <Suspense fallback={<div className="loading-container"><div className="loading-spinner"></div></div>}>
-                            <Routes>
-                                <Route path="/" element={<Dashboard currentUser={currentUser} />} />
-                                <Route path="/chat" element={
-                                    selectedPeer ? (
-                                        <Chat currentUser={currentUser} selectedPeer={selectedPeer} />
-                                    ) : isAIChatActive ? (
-                                        <AIChat />
-                                    ) : (
-                                        <Navigate to="/app" />
-                                    )
-                                } />
-                                <Route path="/ai" element={<AIChat />} />
-                                <Route path="/github" element={<GitHubHome />} />
-                                <Route path="/github/integration" element={<GitHubIntegration />} />
-                            </Routes>
-                        </Suspense>
-                        
-                        {/* Peer Connect Modal */}
-                        {showPeerConnect && !selectedPeer && !isAIChatActive && (
-                            <div className="peer-connect-modal">
-                                <div className="peer-connect-content">
-                                    <h2>Connect with Peers</h2>
-                                    <p>Your Peer ID: <strong>{currentUser?.id || 'Not available'}</strong></p>
-                                    <p>Share your Peer ID with others to let them connect with you.</p>
-                                    
-                                    <div className="peer-connect-form">
-                                        <input 
-                                            type="text" 
-                                            placeholder="Enter Peer ID to connect" 
-                                            className="peer-id-input" 
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handlePeerSelect(e.target.value);
-                                                    setShowPeerConnect(false);
-                                                }
-                                            }}
-                                        />
-                                        <button 
-                                            className="connect-button"
-                                            onClick={(e) => {
-                                                const peerIdInput = e.target.previousSibling;
-                                                if (peerIdInput && peerIdInput.value) {
-                                                    handlePeerSelect(peerIdInput.value);
-                                                    setShowPeerConnect(false);
-                                                }
-                                            }}
-                                        >
-                                            Connect
-                                        </button>
-                                    </div>
-                                    
-                                    <button 
-                                        className="cancel-button"
-                                        onClick={() => setShowPeerConnect(false)}
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+        <div className={`app-container ${theme}`}>
+            <Sidebar
+                currentUser={currentUser}
+                onPeerSelect={handlePeerSelect}
+                onAISelect={handleAIChatSelect}
+                selectedPeer={selectedPeer}
+                isAIChatActive={isAIChatActive}
+                onAIModelSelect={handleModelSelect}
+                selectedAIModel={selectedAIModel}
+                showApiInput={showApiInput}
+                apiKey={apiKey}
+                setApiKey={setApiKey}
+                onVerifyKey={verifyAndInitializeAI}
+                isVerifying={isVerifying}
+                isAiInitialized={isAiInitialized}
+                setShowSettings={setShowSettings}
+                theme={theme}
+                setTheme={setTheme}
+                notifications={notifications}
+                setShowTutorial={setShowTutorial}
+            />
+            <Chat
+                selectedPeer={selectedPeer}
+                currentUser={currentUser}
+                isAIChatActive={isAIChatActive}
+                selectedAIModel={selectedAIModel}
+                isAiInitialized={isAiInitialized}
+                showSettings={showSettings}
+                setShowSettings={setShowSettings}
+                showTutorial={showTutorial}
+                setShowTutorial={setShowTutorial}
+                addNotification={addNotification}
+                theme={theme}
+                setTheme={setTheme}
+            />
         </div>
     );
 };
 
 const App = () => {
     return (
-        <ChakraProvider theme={theme}>
-            <Router>
-                <Routes>
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/app/*" element={<MainApp />} />
-                    <Route path="/chat" element={
-                        <Suspense fallback={<div className="loading-container"><div className="loading-spinner"></div></div>}>
-                            <AIChat />
-                        </Suspense>
-                    } />
-                    <Route path="/peer-chat" element={
-                        <Suspense fallback={<div className="loading-container"><div className="loading-spinner"></div></div>}>
-                            <MainApp initialView="peer-chat" />
-                        </Suspense>
-                    } />
-                </Routes>
-            </Router>
-        </ChakraProvider>
+        <Router>
+            <Routes>
+                <Route path="/" element={<Landing />} />
+                <Route path="/chat" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading chat...</div>}>
+                        <MainApp />
+                    </Suspense>
+                } />
+                <Route path="/dashboard" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading dashboard...</div>}>
+                        <Dashboard />
+                    </Suspense>
+                } />
+                <Route path="/github" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading GitHub integration...</div>}>
+                        <GitHubHome />
+                    </Suspense>
+                } />
+                <Route path="/github/repository/:owner/:repo/*" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading repository...</div>}>
+                        <GitHubIntegration />
+                    </Suspense>
+                } />
+                <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+        </Router>
     );
 };
 

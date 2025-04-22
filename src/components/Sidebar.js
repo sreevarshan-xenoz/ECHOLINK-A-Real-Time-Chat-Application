@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { webrtcService } from '../services/webrtc-service';
-import { Link, useNavigate, NavLink } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
-import { FiHome, FiMessageSquare, FiCpu, FiGithub } from 'react-icons/fi';
-import { Icon, useColorMode } from '@chakra-ui/react';
 
 const Sidebar = ({ 
     onPeerSelect, 
@@ -21,12 +19,11 @@ const Sidebar = ({
     isAiInitialized,
     setShowSettings,
     theme,
+    setTheme,
     notifications,
-    setShowTutorial,
-    showTutorial
+    setShowTutorial
 }) => {
     const navigate = useNavigate();
-    const { colorMode, toggleColorMode } = useColorMode();
     const [searchQuery, setSearchQuery] = useState('');
     const [peers, setPeers] = useState([]);
     const [selectedPeerId, setSelectedPeerId] = useState(null);
@@ -35,23 +32,12 @@ const Sidebar = ({
     const [activeTab, setActiveTab] = useState('peers'); // 'peers', 'ai', 'github', or 'settings'
     const [settings, setSettings] = useState({
         appearance: {
-            theme: colorMode || 'dark',
+            theme: theme || 'dark',
             messageDensity: 'comfortable',
             bubbleStyle: 'modern',
             animationLevel: 'full'
         }
     });
-
-    // Update settings when colorMode changes
-    useEffect(() => {
-        setSettings(prev => ({
-            ...prev,
-            appearance: {
-                ...prev.appearance,
-                theme: colorMode
-            }
-        }));
-    }, [colorMode]);
 
     useEffect(() => {
         const unsubscribe = webrtcService.onMessage((message) => {
@@ -112,7 +98,7 @@ const Sidebar = ({
         
         // Update theme if that's what changed
         if (category === 'appearance' && setting === 'theme') {
-            toggleColorMode();
+            setTheme(value);
         }
     };
 
@@ -151,7 +137,7 @@ const Sidebar = ({
     };
 
     return (
-        <div className={`sidebar ${colorMode}`}>
+        <div className="sidebar glass-container">
             <div className="sidebar-header">
                 <div className="user-profile">
                     <div className="user-profile-info">
@@ -375,28 +361,6 @@ const Sidebar = ({
                     )}
                 </div>
             )}
-
-            <div className="sidebar-links">
-                <NavLink to="/app" className="sidebar-link" activeClassName="active" exact>
-                    <Icon as={FiHome} className="sidebar-icon" />
-                    <span>Dashboard</span>
-                </NavLink>
-                
-                <NavLink to="/app/chat" className="sidebar-link" activeClassName="active">
-                    <Icon as={FiMessageSquare} className="sidebar-icon" />
-                    <span>Chat</span>
-                </NavLink>
-                
-                <NavLink to="/app/ai" className="sidebar-link" activeClassName="active">
-                    <Icon as={FiCpu} className="sidebar-icon" />
-                    <span>AURA AI</span>
-                </NavLink>
-                
-                <NavLink to="/app/github" className="sidebar-link" activeClassName="active">
-                    <Icon as={FiGithub} className="sidebar-icon" />
-                    <span>GitHub</span>
-                </NavLink>
-            </div>
         </div>
     );
 };
