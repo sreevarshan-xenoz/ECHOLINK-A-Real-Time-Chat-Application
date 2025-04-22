@@ -10,6 +10,8 @@ import './App.css';
 
 const Chat = lazy(() => import('./components/Chat'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
+const GitHubHome = lazy(() => import('./components/GitHubHome'));
+const GitHubIntegration = lazy(() => import('./components/GitHubIntegration'));
 
 const MainApp = () => {
     const [selectedPeer, setSelectedPeer] = useState(null);
@@ -309,6 +311,16 @@ const App = () => {
                 <Route path="/dashboard" element={
                     <Suspense fallback={<div className="loading-spinner">Loading dashboard...</div>}>
                         <Dashboard />
+                    </Suspense>
+                } />
+                <Route path="/github" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading GitHub integration...</div>}>
+                        <GitHubHome />
+                    </Suspense>
+                } />
+                <Route path="/github/repository/:owner/:repo/*" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading repository...</div>}>
+                        <GitHubIntegration />
                     </Suspense>
                 } />
                 <Route path="*" element={<Navigate to="/" replace />} />

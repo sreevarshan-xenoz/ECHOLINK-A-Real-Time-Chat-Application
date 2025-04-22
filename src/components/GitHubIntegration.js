@@ -4,8 +4,11 @@ import Editor from '@monaco-editor/react';
 import CollaborativeCodeEditor from './CollaborativeCodeEditor';
 import RepoAnalyticsDashboard from './RepoAnalyticsDashboard';
 import './GitHubIntegration.css';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 
 const GitHubIntegration = () => {
+    const { owner, repo } = useParams();
+    const navigate = useNavigate();
     const [isConnected, setIsConnected] = useState(false);
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState(null);
@@ -23,7 +26,7 @@ const GitHubIntegration = () => {
 
     useEffect(() => {
         initializeGitHub();
-    }, []);
+    }, [owner, repo]);
 
     const initializeGitHub = async () => {
         try {
@@ -42,7 +45,13 @@ const GitHubIntegration = () => {
             if (initialized) {
                 const userData = githubService.getUserData();
                 setUserData(userData);
-                loadRepositories();
+                
+                // If we have owner and repo params, load that specific repository
+                if (owner && repo) {
+                    await loadSpecificRepository(owner, repo);
+                } else {
+                    await loadRepositories();
+                }
             }
         } catch (error) {
             console.error('Error initializing GitHub:', error);
@@ -91,6 +100,53 @@ const GitHubIntegration = () => {
         } catch (error) {
             console.error('Error loading repositories:', error);
             showNotification('Failed to load repositories', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadSpecificRepository = async (ownerParam, repoParam) => {
+        try {
+            setLoading(true);
+            const repos = await githubService.getRepositories();
+            
+            // Find the specific repository in the user's repositories
+            const targetRepo = repos.find(r => 
+                r.owner.login.toLowerCase() === ownerParam.toLowerCase() && 
+                r.name.toLowerCase() === repoParam.toLowerCase()
+            );
+            
+            if (targetRepo) {
+                setSelectedRepo(targetRepo);
+                setBreadcrumbs([{ name: targetRepo.name, path: '' }]);
+                const content = await githubService.getRepositoryContent(targetRepo.owner.login, targetRepo.name);
+                setRepoContent(content);
+                setSelectedFile(null);
+                setFileContent('');
+                setCurrentPath('');
+            } else {
+                // If the repo isn't in user's repos, try to fetch it directly
+                try {
+                    const content = await githubService.getRepositoryContent(ownerParam, repoParam);
+                    if (content) {
+                        // Create a minimal repo object
+                        const repoObject = {
+                            name: repoParam,
+                            owner: { login: ownerParam },
+                            id: `${ownerParam}/${repoParam}`
+                        };
+                        setSelectedRepo(repoObject);
+                        setBreadcrumbs([{ name: repoParam, path: '' }]);
+                        setRepoContent(content);
+                    }
+                } catch (repoError) {
+                    console.error('Error loading specific repository:', repoError);
+                    showNotification('Repository not found or access denied', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error loading repositories:', error);
+            showNotification('Failed to load repository information', 'error');
         } finally {
             setLoading(false);
         }
@@ -290,8 +346,21 @@ const GitHubIntegration = () => {
     return (
         <div className="github-integration-container">
             <div className="github-header">
-                <h2>GitHub Integration</h2>
-                <p>Connect your GitHub account to collaborate on code</p>
+                <div className="github-navigation">
+                    <Link to="/github" className="github-back-link">
+                        ← Back to GitHub Home
+                    </Link>
+                </div>
+                <h2>Repository Browser</h2>
+                {selectedRepo && (
+                    <div className="selected-repo-info">
+                        <h3>
+                            <span className="repo-owner">{selectedRepo.owner.login}</span>
+                            <span className="repo-separator">/</span>
+                            <span className="repo-name">{selectedRepo.name}</span>
+                        </h3>
+                    </div>
+                )}
             </div>
 
             {!isConnected ? (

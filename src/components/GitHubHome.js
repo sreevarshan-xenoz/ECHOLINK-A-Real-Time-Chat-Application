@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { githubService } from '../services/github-service';
-import { Link } from 'react-router-dom';
-import './GitHubIntegration.css';
+import { Link, useNavigate } from 'react-router-dom';
+import GitHubFeatureCards from './GitHubFeatureCards';
+import './GitHubHome.css';
 
 const GitHubHome = () => {
     const [isConnected, setIsConnected] = useState(false);
@@ -9,18 +10,60 @@ const GitHubHome = () => {
     const [userData, setUserData] = useState(null);
     const [repositories, setRepositories] = useState([]);
     const [filteredRepos, setFilteredRepos] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filters, setFilters] = useState({
-        language: '',
-        stars: '',
-        updatedDate: ''
-    });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filter, setFilter] = useState('all'); // all, sources, forks, private, public
+    const [sortBy, setSortBy] = useState('updated'); // updated, name, stars
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
-    const [languages, setLanguages] = useState([]);
+    const [stats, setStats] = useState({ totalRepos: 0, totalStars: 0, totalForks: 0 });
+    
+    const navigate = useNavigate();
 
     useEffect(() => {
         initializeGitHub();
     }, []);
+
+    // Filter repositories based on search and filters
+    useEffect(() => {
+        if (repositories.length === 0) {
+            setFilteredRepos([]);
+            return;
+        }
+
+        let results = [...repositories];
+        
+        // Apply search query
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            results = results.filter(repo => 
+                repo.name.toLowerCase().includes(query) ||
+                (repo.description && repo.description.toLowerCase().includes(query))
+            );
+        }
+        
+        // Apply filters
+        if (filter === 'sources') {
+            results = results.filter(repo => !repo.fork);
+        } else if (filter === 'forks') {
+            results = results.filter(repo => repo.fork);
+        } else if (filter === 'private') {
+            results = results.filter(repo => repo.private);
+        } else if (filter === 'public') {
+            results = results.filter(repo => !repo.private);
+        }
+        
+        // Apply sorting
+        results.sort((a, b) => {
+            if (sortBy === 'name') {
+                return a.name.localeCompare(b.name);
+            } else if (sortBy === 'stars') {
+                return b.stargazers_count - a.stargazers_count;
+            } else { // updated
+                return new Date(b.updated_at) - new Date(a.updated_at);
+            }
+        });
+        
+        setFilteredRepos(results);
+    }, [repositories, searchQuery, filter, sortBy]);
 
     const initializeGitHub = async () => {
         try {
@@ -49,24 +92,21 @@ const GitHubHome = () => {
         }
     };
 
-    const connectGitHub = () => {
-        const authUrl = githubService.getAuthUrl();
-        window.location.href = authUrl;
-    };
-
     const loadRepositories = async () => {
         try {
             setLoading(true);
             const repos = await githubService.getRepositories();
             setRepositories(repos);
-            setFilteredRepos(repos);
             
-            // Extract unique languages from repositories
-            const uniqueLanguages = new Set();
-            repos.forEach(repo => {
-                if (repo.language) uniqueLanguages.add(repo.language);
+            // Calculate stats
+            const totalStars = repos.reduce((sum, repo) => sum + repo.stargazers_count, 0);
+            const totalForks = repos.reduce((sum, repo) => sum + repo.forks_count, 0);
+            
+            setStats({
+                totalRepos: repos.length,
+                totalStars,
+                totalForks
             });
-            setLanguages(Array.from(uniqueLanguages));
         } catch (error) {
             console.error('Error loading repositories:', error);
             showNotification('Failed to load repositories', 'error');
@@ -75,94 +115,74 @@ const GitHubHome = () => {
         }
     };
 
-    const handleSearch = (e) => {
-        const term = e.target.value;
-        setSearchTerm(term);
-        applyFilters(term, filters);
+    const handleRepositoryClick = (repo) => {
+        navigate(`/github/repository/${repo.owner.login}/${repo.name}`);
     };
 
-    const handleFilterChange = (filterName, value) => {
-        const newFilters = { ...filters, [filterName]: value };
-        setFilters(newFilters);
-        applyFilters(searchTerm, newFilters);
+    const connectGitHub = () => {
+        try {
+            const authUrl = githubService.getAuthUrl();
+            console.log('Redirecting to GitHub auth URL:', authUrl);
+            window.location.href = authUrl;
+        } catch (error) {
+            console.error('Error initiating GitHub connection:', error);
+            showNotification('Failed to connect to GitHub: ' + error.message, 'error');
+        }
     };
 
-    const applyFilters = (term, currentFilters) => {
-        let filtered = repositories;
-
-        // Apply search term filter
-        if (term) {
-            const searchLower = term.toLowerCase();
-            filtered = filtered.filter(repo => 
-                repo.name.toLowerCase().includes(searchLower) || 
-                (repo.description && repo.description.toLowerCase().includes(searchLower))
-            );
+    const disconnectGitHub = async () => {
+        try {
+            await githubService.disconnect();
+            setIsConnected(false);
+            setUserData(null);
+            setRepositories([]);
+            setFilteredRepos([]);
+            showNotification('GitHub account disconnected successfully', 'success');
+        } catch (error) {
+            showNotification('Failed to disconnect GitHub account', 'error');
         }
-
-        // Apply language filter
-        if (currentFilters.language) {
-            filtered = filtered.filter(repo => 
-                repo.language === currentFilters.language
-            );
-        }
-
-        // Apply stars filter
-        if (currentFilters.stars) {
-            switch(currentFilters.stars) {
-                case 'asc':
-                    filtered = [...filtered].sort((a, b) => a.stargazers_count - b.stargazers_count);
-                    break;
-                case 'desc':
-                    filtered = [...filtered].sort((a, b) => b.stargazers_count - a.stargazers_count);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        // Apply updated date filter
-        if (currentFilters.updatedDate) {
-            switch(currentFilters.updatedDate) {
-                case 'newest':
-                    filtered = [...filtered].sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
-                    break;
-                case 'oldest':
-                    filtered = [...filtered].sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at));
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        setFilteredRepos(filtered);
     };
-
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
-        });
-    };
-
+    
     const showNotification = (message, type) => {
         setNotification({ show: true, message, type });
         setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
     };
 
-    const startPeerChat = (repoName) => {
-        // Generate a peer ID based on the repository name
-        const peerId = `${userData.login}-${repoName}`;
-        // Navigate to chat with the peer ID
-        window.location.href = `/chat?peer=${peerId}`;
+    const debugGitHubConnection = async () => {
+        try {
+            setLoading(true);
+            showNotification('Running GitHub connection diagnostics...', 'info');
+            
+            // Check if we have a GitHub code in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            console.log('GitHub Integration Debug:');
+            console.log('- URL has code param:', !!code);
+            console.log('- URL has state param:', !!state);
+            console.log('- GitHub service configured:', githubService.isConfigured);
+            console.log('- Client ID available:', !!process.env.REACT_APP_GITHUB_CLIENT_ID);
+            console.log('- Redirect URI:', githubService.redirectUri);
+            
+            // Try to initialize without relying on URL params
+            const initialized = await githubService.initialize();
+            console.log('- Service initialized:', initialized);
+            
+            showNotification('Diagnostic data logged to console', 'info');
+        } catch (error) {
+            console.error('Debug error:', error);
+            showNotification('Error during diagnostics: ' + error.message, 'error');
+        } finally {
+            setLoading(false);
+        }
     };
 
-    if (loading) {
+    if (loading && !isConnected) {
         return (
             <div className="github-home-loading">
                 <div className="loading-spinner"></div>
-                <p>Loading GitHub data...</p>
+                <p>Loading GitHub integration...</p>
             </div>
         );
     }
@@ -170,147 +190,164 @@ const GitHubHome = () => {
     return (
         <div className="github-home-container">
             <div className="github-home-header">
-                <h1>GitHub Projects</h1>
-                {userData && (
-                    <div className="user-info">
-                        <img src={userData.avatar_url} alt="Profile" className="user-avatar" />
-                        <span>{userData.login}</span>
+                <h1>GitHub Integration</h1>
+                <p>Connect your GitHub account to collaborate on code</p>
+                
+                {isConnected && userData && (
+                    <div className="github-user-summary">
+                        <img src={userData.avatar_url} alt="GitHub Avatar" className="github-avatar" />
+                        <div>
+                            <h3>{userData.name || userData.login}</h3>
+                            <p>@{userData.login}</p>
+                            
+                            <div className="github-stats">
+                                <div className="stat-item">
+                                    <span className="stat-value">{stats.totalRepos}</span>
+                                    <span className="stat-label">Repositories</span>
+                                </div>
+                                <div className="stat-item">
+                                    <span className="stat-value">{stats.totalStars}</span>
+                                    <span className="stat-label">Total Stars</span>
+                                </div>
+                                <div className="stat-item">
+                                    <span className="stat-value">{stats.totalForks}</span>
+                                    <span className="stat-label">Total Forks</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
 
             {!isConnected ? (
                 <div className="github-connect-section">
-                    <h2>Connect with GitHub</h2>
-                    <p>Connect your GitHub account to browse repositories, search projects, and collaborate with peers.</p>
-                    <button className="github-connect-button" onClick={connectGitHub}>
-                        <i className="fab fa-github"></i> Connect GitHub Account
-                    </button>
+                    <div className="github-connect-card">
+                        <div className="github-logo">
+                            <svg height="68" viewBox="0 0 16 16" width="68">
+                                <path fillRule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                            </svg>
+                        </div>
+                        <h3>Connect to GitHub</h3>
+                        <p>Link your GitHub account to access your repositories and collaborate on code directly from ECHOLINK.</p>
+                        <button className="github-connect-button" onClick={connectGitHub}>
+                            Connect GitHub Account
+                        </button>
+                        <button className="github-debug-button" onClick={debugGitHubConnection}>
+                            Diagnose Connection Issues
+                        </button>
+                    </div>
+                    
+                    <GitHubFeatureCards />
                 </div>
             ) : (
-                <div className="github-content">
-                    <div className="search-filter-section">
-                        <div className="search-bar">
-                            <input 
-                                type="text" 
-                                placeholder="Search repositories..." 
-                                value={searchTerm}
-                                onChange={handleSearch}
-                            />
-                        </div>
-                        <div className="filters">
-                            <div className="filter-group">
-                                <label>Language:</label>
-                                <select 
-                                    value={filters.language}
-                                    onChange={(e) => handleFilterChange('language', e.target.value)}
-                                >
-                                    <option value="">All Languages</option>
-                                    {languages.map(lang => (
-                                        <option key={lang} value={lang}>{lang}</option>
-                                    ))}
-                                </select>
+                <div className="github-connected-content">
+                    <div className="github-toolbar">
+                        <div className="search-and-filter">
+                            <div className="search-container">
+                                <input
+                                    type="text"
+                                    placeholder="Find a repository..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="repo-search-input"
+                                />
                             </div>
-                            <div className="filter-group">
-                                <label>Stars:</label>
+                            
+                            <div className="filter-container">
                                 <select 
-                                    value={filters.stars}
-                                    onChange={(e) => handleFilterChange('stars', e.target.value)}
+                                    value={filter} 
+                                    onChange={(e) => setFilter(e.target.value)}
+                                    className="repo-filter-select"
                                 >
-                                    <option value="">Default</option>
-                                    <option value="desc">Most Stars</option>
-                                    <option value="asc">Least Stars</option>
+                                    <option value="all">All</option>
+                                    <option value="sources">Sources</option>
+                                    <option value="forks">Forks</option>
+                                    <option value="private">Private</option>
+                                    <option value="public">Public</option>
                                 </select>
-                            </div>
-                            <div className="filter-group">
-                                <label>Updated:</label>
+                                
                                 <select 
-                                    value={filters.updatedDate}
-                                    onChange={(e) => handleFilterChange('updatedDate', e.target.value)}
+                                    value={sortBy} 
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="repo-sort-select"
                                 >
-                                    <option value="">Default</option>
-                                    <option value="newest">Recently Updated</option>
-                                    <option value="oldest">Least Recently Updated</option>
+                                    <option value="updated">Recently Updated</option>
+                                    <option value="name">Name</option>
+                                    <option value="stars">Stars</option>
                                 </select>
                             </div>
                         </div>
+                        
+                        <button className="github-disconnect-button" onClick={disconnectGitHub}>
+                            Disconnect from GitHub
+                        </button>
                     </div>
-
-                    <div className="repositories-grid">
+                    
+                    <div className="repositories-container">
                         {filteredRepos.length > 0 ? (
                             filteredRepos.map(repo => (
-                                <div key={repo.id} className="repository-card">
-                                    <div className="repo-header">
-                                        <h3>{repo.name}</h3>
-                                        {repo.private && <span className="private-badge">Private</span>}
+                                <div 
+                                    key={repo.id} 
+                                    className="repository-card"
+                                    onClick={() => handleRepositoryClick(repo)}
+                                >
+                                    <div className="repo-card-header">
+                                        <div className="repo-icon">{repo.fork ? '🍴' : '📁'}</div>
+                                        <h3 className="repo-name">{repo.name}</h3>
+                                        {repo.private && <span className="repo-private-badge">Private</span>}
                                     </div>
-                                    <p className="repo-description">{repo.description || 'No description available'}</p>
-                                    <div className="repo-stats">
+                                    
+                                    <p className="repo-description">
+                                        {repo.description || 'No description provided'}
+                                    </p>
+                                    
+                                    <div className="repo-card-footer">
                                         {repo.language && (
-                                            <span className="repo-language">
-                                                <span className="language-dot" style={{ backgroundColor: getLanguageColor(repo.language) }}></span>
+                                            <div className="repo-language">
+                                                <span className={`language-color ${repo.language.toLowerCase()}`}></span>
                                                 {repo.language}
-                                            </span>
+                                            </div>
                                         )}
-                                        <span className="repo-stars">
-                                            <i className="fas fa-star"></i> {repo.stargazers_count}
-                                        </span>
-                                        <span className="repo-forks">
-                                            <i className="fas fa-code-branch"></i> {repo.forks_count}
-                                        </span>
-                                    </div>
-                                    <div className="repo-updated">Updated on {formatDate(repo.updated_at)}</div>
-                                    <div className="repo-actions">
-                                        <a href={repo.html_url} target="_blank" rel="noopener noreferrer" className="repo-link-button">
-                                            View on GitHub
-                                        </a>
-                                        <button 
-                                            className="peer-chat-button"
-                                            onClick={() => startPeerChat(repo.name)}
-                                        >
-                                            Chat with Peer
-                                        </button>
+                                        
+                                        <div className="repo-stats">
+                                            <span className="repo-stat">
+                                                <span className="repo-stat-icon">⭐</span>
+                                                {repo.stargazers_count}
+                                            </span>
+                                            <span className="repo-stat">
+                                                <span className="repo-stat-icon">🍴</span>
+                                                {repo.forks_count}
+                                            </span>
+                                            <span className="repo-stat">
+                                                <span className="repo-stat-icon">📅</span>
+                                                {new Date(repo.updated_at).toLocaleDateString()}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             ))
+                        ) : repositories.length > 0 ? (
+                            <div className="no-results-message">
+                                <h3>No matching repositories found</h3>
+                                <p>Try adjusting your search or filters</p>
+                            </div>
                         ) : (
                             <div className="no-repos-message">
-                                <p>No repositories found matching your criteria.</p>
+                                <h3>No repositories found</h3>
+                                <p>You don't have any GitHub repositories yet or we couldn't access them</p>
                             </div>
                         )}
                     </div>
                 </div>
             )}
-
+            
             {notification.show && (
-                <div className={`notification ${notification.type}`}>
+                <div className={`github-notification ${notification.type}`}>
                     {notification.message}
                 </div>
             )}
         </div>
     );
-};
-
-// Helper function to get language color
-const getLanguageColor = (language) => {
-    const colors = {
-        JavaScript: '#f1e05a',
-        TypeScript: '#2b7489',
-        Python: '#3572A5',
-        Java: '#b07219',
-        HTML: '#e34c26',
-        CSS: '#563d7c',
-        Ruby: '#701516',
-        Go: '#00ADD8',
-        PHP: '#4F5D95',
-        C: '#555555',
-        'C++': '#f34b7d',
-        'C#': '#178600',
-        Swift: '#ffac45',
-        Kotlin: '#F18E33',
-        Rust: '#dea584'
-    };
-    return colors[language] || '#858585';
 };
 
 export default GitHubHome;

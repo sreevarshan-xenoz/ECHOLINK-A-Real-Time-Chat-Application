@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { webrtcService } from '../services/webrtc-service';
+import { Link, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 
 const Sidebar = ({ 
@@ -22,12 +23,13 @@ const Sidebar = ({
     notifications,
     setShowTutorial
 }) => {
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
     const [peers, setPeers] = useState([]);
     const [selectedPeerId, setSelectedPeerId] = useState(null);
     const [connectInput, setConnectInput] = useState('');
     const [copied, setCopied] = useState(false);
-    const [activeTab, setActiveTab] = useState('peers'); // 'peers', 'ai', or 'settings'
+    const [activeTab, setActiveTab] = useState('peers'); // 'peers', 'ai', 'github', or 'settings'
     const [settings, setSettings] = useState({
         appearance: {
             theme: theme || 'dark',
@@ -130,6 +132,10 @@ const Sidebar = ({
         peerId.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const handleGitHubSelect = () => {
+        navigate('/github');
+    };
+
     return (
         <div className="sidebar glass-container">
             <div className="sidebar-header">
@@ -169,6 +175,12 @@ const Sidebar = ({
                     onClick={handleAIChatSelect}
                 >
                     🤖 AI Chat
+                </button>
+                <button 
+                    className={`tab-button ${activeTab === 'github' ? 'active' : ''}`}
+                    onClick={handleGitHubSelect}
+                >
+                    <span className="github-icon">🔗</span> GitHub
                 </button>
                 <button 
                     className={`tab-button ${activeTab === 'settings' ? 'active' : ''}`}
