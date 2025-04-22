@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { webrtcService } from '../services/webrtc-service';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, NavLink } from 'react-router-dom';
 import './Sidebar.css';
+import { FiHome, FiMessageSquare, FiCpu, FiGithub } from 'react-icons/fi';
+import { Icon } from '@chakra-ui/react';
 
 const Sidebar = ({ 
     onPeerSelect, 
@@ -21,7 +23,8 @@ const Sidebar = ({
     theme,
     setTheme,
     notifications,
-    setShowTutorial
+    setShowTutorial,
+    showTutorial
 }) => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState('');
@@ -137,7 +140,7 @@ const Sidebar = ({
     };
 
     return (
-        <div className="sidebar glass-container">
+        <div className={`sidebar ${theme}`}>
             <div className="sidebar-header">
                 <div className="user-profile">
                     <div className="user-profile-info">
@@ -361,6 +364,28 @@ const Sidebar = ({
                     )}
                 </div>
             )}
+
+            <div className="sidebar-links">
+                <NavLink to="/app" className="sidebar-link" activeClassName="active" exact>
+                    <Icon as={FiHome} className="sidebar-icon" />
+                    <span>Dashboard</span>
+                </NavLink>
+                
+                <NavLink to="/app/chat" className="sidebar-link" activeClassName="active">
+                    <Icon as={FiMessageSquare} className="sidebar-icon" />
+                    <span>Chat</span>
+                </NavLink>
+                
+                <NavLink to="/app/ai" className="sidebar-link" activeClassName="active">
+                    <Icon as={FiCpu} className="sidebar-icon" />
+                    <span>AURA AI</span>
+                </NavLink>
+                
+                <NavLink to="/app/github" className="sidebar-link" activeClassName="active">
+                    <Icon as={FiGithub} className="sidebar-icon" />
+                    <span>GitHub</span>
+                </NavLink>
+            </div>
         </div>
     );
 };

@@ -12,6 +12,19 @@ const Chat = lazy(() => import('./components/Chat'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const GitHubHome = lazy(() => import('./components/GitHubHome'));
 const GitHubIntegration = lazy(() => import('./components/GitHubIntegration'));
+const AIChat = lazy(() => import('./components/AIChat'));
+
+const ErrorScreen = ({ error, onRetry }) => {
+    return (
+        <div className="error-container">
+            <div className="error-message">
+                <h2>Connection Error</h2>
+                <p>{error}</p>
+                <button onClick={onRetry} className="retry-button">Retry Connection</button>
+            </div>
+        </div>
+    );
+};
 
 const MainApp = () => {
     const [selectedPeer, setSelectedPeer] = useState(null);
@@ -244,13 +257,7 @@ const MainApp = () => {
 
     if (error) {
         return (
-            <div className="error-container">
-                <div className="error-message">
-                    <h2>Connection Error</h2>
-                    <p>{error}</p>
-                    <button onClick={handleRetry} className="retry-button">Retry Connection</button>
-                </div>
-            </div>
+            <ErrorScreen error={error} onRetry={handleRetry} />
         );
     }
 
@@ -259,41 +266,45 @@ const MainApp = () => {
     }
 
     return (
-        <div className={`app-container ${theme}`}>
-            <Sidebar
-                currentUser={currentUser}
-                onPeerSelect={handlePeerSelect}
-                onAISelect={handleAIChatSelect}
-                selectedPeer={selectedPeer}
-                isAIChatActive={isAIChatActive}
-                onAIModelSelect={handleModelSelect}
-                selectedAIModel={selectedAIModel}
-                showApiInput={showApiInput}
-                apiKey={apiKey}
-                setApiKey={setApiKey}
-                onVerifyKey={verifyAndInitializeAI}
-                isVerifying={isVerifying}
-                isAiInitialized={isAiInitialized}
-                setShowSettings={setShowSettings}
-                theme={theme}
-                setTheme={setTheme}
-                notifications={notifications}
-                setShowTutorial={setShowTutorial}
-            />
-            <Chat
-                selectedPeer={selectedPeer}
-                currentUser={currentUser}
-                isAIChatActive={isAIChatActive}
-                selectedAIModel={selectedAIModel}
-                isAiInitialized={isAiInitialized}
-                showSettings={showSettings}
-                setShowSettings={setShowSettings}
-                showTutorial={showTutorial}
-                setShowTutorial={setShowTutorial}
-                addNotification={addNotification}
-                theme={theme}
-                setTheme={setTheme}
-            />
+        <div className={`app ${theme}`}>
+            {isLoading ? (
+                <LoadingScreen networkStatus={networkStatus} />
+            ) : error ? (
+                <ErrorScreen error={error} onRetry={handleRetry} />
+            ) : (
+                <div className="app-container">
+                    <Sidebar
+                        currentUser={currentUser}
+                        onPeerSelect={handlePeerSelect}
+                        onAIChatSelect={handleAIChatSelect}
+                        isAIChatActive={isAIChatActive}
+                        theme={theme}
+                        setTheme={setTheme}
+                        onShowSettings={() => setShowSettings(true)}
+                        showTutorial={showTutorial}
+                        setShowTutorial={setShowTutorial}
+                    />
+                    <div className="main-content">
+                        <Suspense fallback={<div className="loading-container"><div className="loading-spinner"></div></div>}>
+                            <Routes>
+                                <Route path="/" element={<Dashboard currentUser={currentUser} />} />
+                                <Route path="/chat" element={
+                                    selectedPeer ? (
+                                        <Chat currentUser={currentUser} selectedPeer={selectedPeer} />
+                                    ) : isAIChatActive ? (
+                                        <AIChat />
+                                    ) : (
+                                        <Navigate to="/app" />
+                                    )
+                                } />
+                                <Route path="/ai" element={<AIChat />} />
+                                <Route path="/github" element={<GitHubHome />} />
+                                <Route path="/github/integration" element={<GitHubIntegration />} />
+                            </Routes>
+                        </Suspense>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -303,27 +314,7 @@ const App = () => {
         <Router>
             <Routes>
                 <Route path="/" element={<Landing />} />
-                <Route path="/chat" element={
-                    <Suspense fallback={<div className="loading-spinner">Loading chat...</div>}>
-                        <MainApp />
-                    </Suspense>
-                } />
-                <Route path="/dashboard" element={
-                    <Suspense fallback={<div className="loading-spinner">Loading dashboard...</div>}>
-                        <Dashboard />
-                    </Suspense>
-                } />
-                <Route path="/github" element={
-                    <Suspense fallback={<div className="loading-spinner">Loading GitHub integration...</div>}>
-                        <GitHubHome />
-                    </Suspense>
-                } />
-                <Route path="/github/repository/:owner/:repo/*" element={
-                    <Suspense fallback={<div className="loading-spinner">Loading repository...</div>}>
-                        <GitHubIntegration />
-                    </Suspense>
-                } />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="/app/*" element={<MainApp />} />
             </Routes>
         </Router>
     );

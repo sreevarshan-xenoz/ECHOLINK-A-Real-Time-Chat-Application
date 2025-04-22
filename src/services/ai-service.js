@@ -10,13 +10,20 @@ class AIService {
         this.openai = null;
         this.gemini = null;
         this.ollamaEndpoint = 'http://localhost:11434';
-        this.apiType = null; // 'openai', 'gemini', or 'ollama'
+        this.huggingFaceToken = process.env.REACT_APP_HUGGINGFACE_TOKEN || '';
+        this.apiType = null; // 'openai', 'gemini', 'ollama', or 'huggingface'
         this.messageHistory = [];
         this.maxHistoryLength = 10;
         this.isInitialized = false;
         this.aiChatHistory = [];
-        this.aiPersonality = "You are Echo, a friendly and helpful AI assistant. You're knowledgeable but concise in your responses.";
+        this.aiPersonality = "You are AURA, the default AI assistant for EchoLink. You're helpful, friendly, and designed to assist users with their communication needs.";
         this.selectedModel = null;
+        this.huggingFaceClient = null;
+        this.huggingFaceEndpoints = {
+            defaultModel: "Qwen/QwQ-32B-Demo",
+            chat: "/submit",
+            newChat: "/new_chat"
+        };
         this.helpResponses = {
             'how to use': 'To use EchoLink, start by connecting with others using their peer ID. You can share files, send messages, and even use AI features for smart replies and translations.',
             'how to connect': 'To connect with others: 1) Share your Peer ID with them 2) Enter their Peer ID in the connection dialog 3) Click connect to establish a secure P2P connection.',
@@ -45,7 +52,12 @@ class AIService {
             this.isInitialized = false;
 
             // Detect API type based on key format
-            if (apiKey.toLowerCase() === 'ollama') {
+            if (apiKey === 'huggingface' || apiKey.startsWith('hf_')) {
+                if (apiKey !== 'huggingface') {
+                    this.huggingFaceToken = apiKey;
+                }
+                await this.initializeHuggingFace();
+            } else if (apiKey.toLowerCase() === 'ollama') {
                 await this.initializeOllama();
             } else if (apiKey.startsWith('sk-')) {
                 await this.initializeOpenAI(apiKey);
@@ -128,6 +140,31 @@ class AIService {
         }
     }
 
+    async initializeHuggingFace() {
+        try {
+            // Verify token is valid by making a test API call
+            const response = await fetch(`https://api-inference.huggingface.co/models/${this.huggingFaceEndpoints.defaultModel}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.huggingFaceToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ inputs: "Test message" })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to initialize Hugging Face API');
+            }
+
+            this.apiType = 'huggingface';
+            console.log('Hugging Face API initialized successfully');
+        } catch (error) {
+            console.error('Hugging Face initialization error:', error);
+            throw new Error(`Hugging Face initialization failed: ${error.message}`);
+        }
+    }
+
     async handleHelpQuery(query) {
         query = query.toLowerCase();
         let response = "I'm here to help! Ask me about how to use the app, connect with others, or explore features.";
@@ -147,8 +184,6 @@ class AIService {
             id: Math.random().toString(36).substr(2, 9)
         };
     }
-
-
 
     addToHistory(message) {
         this.messageHistory.push({
@@ -370,25 +405,68 @@ class AIService {
 
     async chatWithAI(message, contextLength = 5) {
         if (!this.isInitialized) {
-            throw new Error('AI service not initialized. Please check your API key.');
+            throw new Error('AI service is not initialized');
         }
 
+        // Get recent chat history
+        const recentHistory = this.aiChatHistory
+            .slice(-contextLength)
+            .map(msg => ({
+                role: msg.sender === 'AI_ASSISTANT' ? 'assistant' : 'user',
+                content: msg.content
+            }));
+
+        // Create a new message object
+        const newMessage = {
+            type: 'CHAT',
+            content: message,
+            sender: 'USER',
+            timestamp: new Date().toISOString(),
+            id: Math.random().toString(36).substr(2, 9)
+        };
+
+        // Add to history
+        this.aiChatHistory.push(newMessage);
+
         try {
-            if (!message || message.trim() === '') {
-                throw new Error('Message cannot be empty');
-            }
+            let response;
 
-            console.log('Sending message to AI:', message);
-            
-            // Add user message to history
-            this.aiChatHistory.push({ role: "user", content: message });
+            if (this.apiType === 'huggingface') {
+                response = await this.sendHuggingFaceMessage(message, recentHistory);
+            } else if (this.apiType === 'openai') {
+                const response = await this.openai.chat.completions.create({
+                    model: "gpt-3.5-turbo",
+                    messages: [
+                        { role: "system", content: this.aiPersonality },
+                        ...recentHistory
+                    ],
+                    max_tokens: 150,
+                    temperature: 0.7,
+                    presence_penalty: 0.6
+                });
 
-            // Keep only recent messages for context
-            const recentHistory = this.aiChatHistory.slice(-contextLength);
+                response = response.choices[0].message.content.trim();
+            } else if (this.apiType === 'gemini') {
+                const model = this.gemini.getGenerativeModel({ model: "gemini-pro" });
+                const chat = model.startChat({
+                    history: recentHistory.map(msg => ({
+                        role: msg.role === "user" ? "user" : "model",
+                        parts: [{ text: msg.content }]
+                    })),
+                    generationConfig: {
+                        maxOutputTokens: 150,
+                        temperature: 0.7
+                    }
+                });
 
-            let aiResponse;
-
-            if (this.apiType === 'ollama') {
+                const result = await chat.sendMessage(message);
+                const response = await result.response;
+                response = response.text();
+                
+                if (!response) {
+                    throw new Error('Empty response from Gemini API');
+                }
+            } else if (this.apiType === 'ollama') {
                 const response = await fetch(`${this.ollamaEndpoint}/api/chat`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -422,64 +500,83 @@ class AIService {
                     }
                 }
 
-                aiResponse = streamedResponse.trim();
-            } else if (this.apiType === 'openai') {
-                const response = await this.openai.chat.completions.create({
-                    model: "gpt-3.5-turbo",
-                    messages: [
-                        { role: "system", content: this.aiPersonality },
-                        ...recentHistory
-                    ],
-                    max_tokens: 150,
-                    temperature: 0.7,
-                    presence_penalty: 0.6
-                });
-
-                aiResponse = response.choices[0].message.content.trim();
+                response = streamedResponse.trim();
             } else {
-                // Gemini API
-                try {
-                    const model = this.gemini.getGenerativeModel({ model: "gemini-pro" });
-                    const chat = model.startChat({
-                        history: recentHistory.map(msg => ({
-                            role: msg.role === "user" ? "user" : "model",
-                            parts: [{ text: msg.content }]
-                        })),
-                        generationConfig: {
-                            maxOutputTokens: 150,
-                            temperature: 0.7
-                        }
-                    });
-
-                    const result = await chat.sendMessage(message);
-                    const response = await result.response;
-                    aiResponse = response.text();
-                    
-                    if (!aiResponse) {
-                        throw new Error('Empty response from Gemini API');
-                    }
-                } catch (geminiError) {
-                    console.error('Gemini chat error:', geminiError);
-                    throw new Error('Failed to get response from Gemini. Please check your API key and try again.');
-                }
+                throw new Error('No valid AI service configured');
             }
 
-            // Add AI response to history
-            this.aiChatHistory.push({ role: "assistant", content: aiResponse });
-
-            return {
-                text: aiResponse,
-                timestamp: new Date().toISOString()
+            // Create AI response message
+            const aiResponse = {
+                type: 'CHAT',
+                content: response,
+                sender: 'AI_ASSISTANT',
+                timestamp: new Date().toISOString(),
+                id: Math.random().toString(36).substr(2, 9)
             };
+
+            // Add to history
+            this.aiChatHistory.push(aiResponse);
+
+            return aiResponse;
         } catch (error) {
-            console.error('Error in AI chat:', error.message);
-            if (error.message.includes('API key')) {
-                throw new Error('Invalid API key. Please check your API key.');
-            } else if (error.message.includes('quota') || error.message.includes('limit')) {
-                throw new Error('API quota exceeded. Please check your usage limits.');
-            } else {
-                throw new Error(`AI chat error: ${error.message}`);
+            console.error('AI chat error:', error);
+            
+            // Create error message
+            const errorResponse = {
+                type: 'CHAT',
+                content: `Sorry, I encountered an error: ${error.message}`,
+                sender: 'AI_ASSISTANT',
+                timestamp: new Date().toISOString(),
+                id: Math.random().toString(36).substr(2, 9),
+                error: true
+            };
+            
+            // Add to history
+            this.aiChatHistory.push(errorResponse);
+            
+            return errorResponse;
+        }
+    }
+
+    async sendHuggingFaceMessage(message, messageHistory) {
+        try {
+            // For new conversations, create a new chat session
+            if (messageHistory.length === 0) {
+                await fetch(`https://api-inference.huggingface.co/models/${this.huggingFaceEndpoints.defaultModel}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.huggingFaceToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        api_name: this.huggingFaceEndpoints.newChat
+                    })
+                });
             }
+
+            // Send the actual message
+            const response = await fetch(`https://api-inference.huggingface.co/models/${this.huggingFaceEndpoints.defaultModel}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.huggingFaceToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sender_value: message,
+                    api_name: this.huggingFaceEndpoints.chat
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to get response from Hugging Face API');
+            }
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error('Hugging Face chat error:', error);
+            throw error;
         }
     }
 
@@ -492,5 +589,4 @@ class AIService {
     }
 }
 
-const aiService = new AIService();
-export default aiService;
+export default new AIService();
