@@ -13,7 +13,9 @@ import {
   Spinner,
   Badge,
   Tooltip,
-  IconButton
+  IconButton,
+  useColorMode,
+  useColorModeValue
 } from '@chakra-ui/react';
 import { 
   FiSend, 
@@ -35,10 +37,14 @@ import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import './Chat.css';
 
 const AIChatMessage = ({ message, onRegenerate, onEdit, onDelete }) => {
-  // Use CSS instead of useColorModeValue for theming
-  const bgColor = message.sender === 'USER' ? 'var(--user-msg-bg, #ebf8ff)' : 'var(--ai-msg-bg, #f8f9fa)';
-  const textColor = 'var(--msg-text, #1a202c)';
-  const borderColor = message.sender === 'USER' ? 'var(--user-border, #bee3f8)' : 'var(--ai-border, #e2e8f0)';
+  const { colorMode } = useColorMode();
+  const bgColor = message.sender === 'USER' 
+    ? colorMode === 'dark' ? '#2a4365' : '#ebf8ff'
+    : colorMode === 'dark' ? '#2d3748' : '#f8f9fa';
+  const textColor = colorMode === 'dark' ? 'white' : '#1a202c';
+  const borderColor = message.sender === 'USER'
+    ? colorMode === 'dark' ? '#3182ce' : '#bee3f8'
+    : colorMode === 'dark' ? '#4a5568' : '#e2e8f0';
   
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -169,31 +175,24 @@ const AIChatMessage = ({ message, onRegenerate, onEdit, onDelete }) => {
 };
 
 const AIChat = () => {
+  const { colorMode } = useColorMode();
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
   const [error, setError] = useState(null);
   const [editMessage, setEditMessage] = useState(null);
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   
-  // Use CSS variables instead of useColorModeValue
-  const bgColor = 'var(--bg-color, white)';
-  const borderColor = 'var(--border-color, #e2e8f0)';
+  // Use proper Chakra UI color hooks
+  const bgColor = useColorModeValue('white', '#1a202c');
+  const borderColor = useColorModeValue('#e2e8f0', '#4a5568');
   
   useEffect(() => {
     checkAIInitialization();
-    
-    // Add theme-based CSS variables
-    document.documentElement.style.setProperty('--user-msg-bg', document.body.classList.contains('dark') ? '#2a4365' : '#ebf8ff');
-    document.documentElement.style.setProperty('--ai-msg-bg', document.body.classList.contains('dark') ? '#2d3748' : '#f8f9fa');
-    document.documentElement.style.setProperty('--msg-text', document.body.classList.contains('dark') ? 'white' : '#1a202c');
-    document.documentElement.style.setProperty('--user-border', document.body.classList.contains('dark') ? '#3182ce' : '#bee3f8');
-    document.documentElement.style.setProperty('--ai-border', document.body.classList.contains('dark') ? '#4a5568' : '#e2e8f0');
-    document.documentElement.style.setProperty('--bg-color', document.body.classList.contains('dark') ? '#1a202c' : 'white');
-    document.documentElement.style.setProperty('--border-color', document.body.classList.contains('dark') ? '#4a5568' : '#e2e8f0');
   }, []);
   
   useEffect(() => {
@@ -207,8 +206,10 @@ const AIChat = () => {
         // Try to initialize with AURA as default if token is available
         if (process.env.REACT_APP_HUGGINGFACE_TOKEN) {
           try {
+            setIsInitializing(true);
             await aiService.initialize('huggingface');
             setIsInitialized(true);
+            setIsInitializing(false);
             
             // Add welcome message
             const welcomeMsg = {
@@ -221,6 +222,7 @@ const AIChat = () => {
             setMessages([welcomeMsg]);
           } catch (err) {
             console.error('Failed to initialize with default token:', err);
+            setIsInitializing(false);
           }
         }
       } else {
@@ -241,6 +243,7 @@ const AIChat = () => {
       }
     } catch (err) {
       console.error('Error checking AI initialization:', err);
+      setIsInitializing(false);
     }
   };
   
@@ -523,8 +526,15 @@ const AIChat = () => {
       <Box p={4} borderTopWidth="1px" borderColor={borderColor}>
         {!isInitialized ? (
           <Box p={4} bg="yellow.50" color="yellow.700" borderRadius="md" mb={4}>
-            <Text fontWeight="bold">AI assistant is not initialized</Text>
-            <Text>Please configure your AI settings to chat with AURA.</Text>
+            <Text fontWeight="bold">AI assistant is being initialized</Text>
+            {isInitializing && (
+              <HStack mt={2}>
+                <Spinner size="sm" color="yellow.500" />
+                <Text>Connecting to AI services...</Text>
+              </HStack>
+            )}
+            <Text mt={2}>AURA is connecting to its AI services. You can start typing your message and click Send once it's ready.</Text>
+            <Text mt={2} fontSize="sm">If initialization continues to fail, try refreshing the page or come back later.</Text>
           </Box>
         ) : (
           <Flex>

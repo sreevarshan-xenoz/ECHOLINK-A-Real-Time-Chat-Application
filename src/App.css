@@ -895,3 +895,116 @@ body.light {
     background-color: var(--bg-light);
     color: var(--text-light);
 }
+
+/* Peer Connect Modal */
+.peer-connect-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.peer-connect-content {
+    background-color: var(--bg-color, #1a202c);
+    color: var(--text-color, #e2e8f0);
+    padding: 2rem;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    animation: modalFadeIn 0.3s ease-out;
+    border: 1px solid rgba(74, 85, 104, 0.3);
+}
+
+.peer-connect-content h2 {
+    margin-bottom: 1rem;
+    color: #4299e1;
+    text-align: center;
+}
+
+.peer-connect-content p {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.peer-connect-form {
+    display: flex;
+    margin: 1.5rem 0;
+}
+
+.peer-id-input {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 4px 0 0 4px;
+    border: 1px solid #4a5568;
+    background-color: rgba(255, 255, 255, 0.05);
+    color: inherit;
+    font-size: 1rem;
+}
+
+.connect-button {
+    padding: 0.75rem 1.5rem;
+    background-color: #4299e1;
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.connect-button:hover {
+    background-color: #3182ce;
+}
+
+.cancel-button {
+    display: block;
+    width: 100%;
+    padding: 0.75rem;
+    background-color: transparent;
+    color: #a0aec0;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: all 0.2s;
+}
+
+.cancel-button:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Dark mode adjustments */
+.dark .peer-connect-content {
+    background-color: #1a202c;
+    color: #e2e8f0;
+}
+
+.dark .peer-id-input {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+}
+
+.dark .cancel-button {
+    border-color: #4a5568;
+}

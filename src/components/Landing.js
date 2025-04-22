@@ -116,14 +116,17 @@ const Landing = () => {
                     <p className="tagline">Secure, Real-Time Communication</p>
                     {user ? (
                         <div className="auth-buttons">
-                            <Link to="/chat" className="cta-button">Start Chatting in Web</Link>
+                            <Link to="/chat" className="cta-button">Chat with AURA</Link>
+                            <Link to="/peer-chat" className="cta-button peer-button">Chat with Peers</Link>
                             <Link to="/download" className="auth-button">Download App</Link>
                             <Link to="/dashboard" className="auth-button">Dashboard</Link>
                             <button onClick={handleSignOut} className="auth-button">Sign Out</button>
                         </div>
                     ) : (
                         <div className="auth-buttons">
-                            <button onClick={() => setShowAuth(true)} className="cta-button">Get Started</button>
+                            <Link to="/chat" className="cta-button">Chat with AURA</Link>
+                            <Link to="/peer-chat" className="cta-button peer-button">Chat with Peers</Link>
+                            <button onClick={() => setShowAuth(true)} className="auth-button">Sign Up</button>
                             <Link to="/download" className="auth-button">Download App</Link>
                         </div>
                     )}
@@ -140,11 +143,13 @@ const Landing = () => {
                         <div className="feature-icon">⚡</div>
                         <h3>Real-Time Chat</h3>
                         <p>Instant messaging with no delays or interruptions</p>
+                        <Link to="/peer-chat" className="feature-button peer-feature-button">Chat with Peers</Link>
                     </div>
                     <div className="feature-card scroll-animate" style={{animationDelay: '0.4s'}}>
                         <div className="feature-icon">🤖</div>
-                        <h3>AI-Powered Assistant</h3>
-                        <p>Get help and answers with our integrated AI chat</p>
+                        <h3>AURA - AI Assistant</h3>
+                        <p>Get help and answers from our intelligent AI companion</p>
+                        <Link to="/chat" className="feature-button">Chat with AURA</Link>
                     </div>
                 </div>
                 
@@ -201,17 +206,18 @@ const Landing = () => {
 
                 
                 <div className="ai-features-section scroll-animate">
-                    <h2>AI-Powered Features</h2>
+                    <h2>Meet AURA - Your AI Assistant</h2>
+                    <p className="ai-description">AURA is EchoLink's built-in AI assistant, ready to help you with information, conversation, and more.</p>
                     <div className="ai-features-grid">
                         <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.1s'}}>
                             <div className="feature-icon">🧠</div>
-                            <h3>Smart Replies</h3>
-                            <p>Get intelligent response suggestions based on conversation context</p>
+                            <h3>Smart Conversations</h3>
+                            <p>Have natural, helpful conversations on any topic</p>
                         </div>
                         <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.3s'}}>
-                            <div className="feature-icon">😊</div>
-                            <h3>Sentiment Analysis</h3>
-                            <p>Understand the emotional tone of messages in real-time</p>
+                            <div className="feature-icon">❓</div>
+                            <h3>Questions & Answers</h3>
+                            <p>Get information and explanations on any subject</p>
                         </div>
                         <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.5s'}}>
                             <div className="feature-icon">🌍</div>
@@ -219,10 +225,13 @@ const Landing = () => {
                             <p>Break language barriers with instant message translation</p>
                         </div>
                         <div className="ai-feature-card scroll-animate" style={{animationDelay: '0.7s'}}>
-                            <div className="feature-icon">📝</div>
-                            <h3>Message Completion</h3>
-                            <p>Intelligent text completion as you type</p>
+                            <div className="feature-icon">💻</div>
+                            <h3>Coding Help</h3>
+                            <p>Get assistance with programming questions and problems</p>
                         </div>
+                    </div>
+                    <div className="ai-cta scroll-animate">
+                        <Link to="/chat" className="ai-cta-button">Start Chatting with AURA</Link>
                     </div>
                 </div>
 

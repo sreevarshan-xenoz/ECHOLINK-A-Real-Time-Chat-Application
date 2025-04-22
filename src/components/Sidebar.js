@@ -3,7 +3,7 @@ import { webrtcService } from '../services/webrtc-service';
 import { Link, useNavigate, NavLink } from 'react-router-dom';
 import './Sidebar.css';
 import { FiHome, FiMessageSquare, FiCpu, FiGithub } from 'react-icons/fi';
-import { Icon } from '@chakra-ui/react';
+import { Icon, useColorMode } from '@chakra-ui/react';
 
 const Sidebar = ({ 
     onPeerSelect, 
@@ -21,12 +21,12 @@ const Sidebar = ({
     isAiInitialized,
     setShowSettings,
     theme,
-    setTheme,
     notifications,
     setShowTutorial,
     showTutorial
 }) => {
     const navigate = useNavigate();
+    const { colorMode, toggleColorMode } = useColorMode();
     const [searchQuery, setSearchQuery] = useState('');
     const [peers, setPeers] = useState([]);
     const [selectedPeerId, setSelectedPeerId] = useState(null);
@@ -35,12 +35,23 @@ const Sidebar = ({
     const [activeTab, setActiveTab] = useState('peers'); // 'peers', 'ai', 'github', or 'settings'
     const [settings, setSettings] = useState({
         appearance: {
-            theme: theme || 'dark',
+            theme: colorMode || 'dark',
             messageDensity: 'comfortable',
             bubbleStyle: 'modern',
             animationLevel: 'full'
         }
     });
+
+    // Update settings when colorMode changes
+    useEffect(() => {
+        setSettings(prev => ({
+            ...prev,
+            appearance: {
+                ...prev.appearance,
+                theme: colorMode
+            }
+        }));
+    }, [colorMode]);
 
     useEffect(() => {
         const unsubscribe = webrtcService.onMessage((message) => {
@@ -101,7 +112,7 @@ const Sidebar = ({
         
         // Update theme if that's what changed
         if (category === 'appearance' && setting === 'theme') {
-            setTheme(value);
+            toggleColorMode();
         }
     };
 
@@ -140,7 +151,7 @@ const Sidebar = ({
     };
 
     return (
-        <div className={`sidebar ${theme}`}>
+        <div className={`sidebar ${colorMode}`}>
             <div className="sidebar-header">
                 <div className="user-profile">
                     <div className="user-profile-info">
