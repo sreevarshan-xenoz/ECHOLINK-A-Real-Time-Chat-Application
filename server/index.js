@@ -16,10 +16,29 @@ app.post('/api/github/oauth/token', async (req, res) => {
     try {
         const { code } = req.body;
         
+        console.log('Received GitHub OAuth code exchange request');
+        
+        if (!code) {
+            console.error('No code provided in request');
+            return res.status(400).json({ error: 'No code provided' });
+        }
+        
+        // Log the values being used (without exposing the full client secret)
+        const clientId = process.env.REACT_APP_GITHUB_CLIENT_ID;
+        const clientSecret = process.env.REACT_APP_GITHUB_CLIENT_SECRET;
+        console.log(`Using Client ID: ${clientId}`);
+        console.log(`Client Secret available: ${!!clientSecret}`);
+        
+        if (!clientId || !clientSecret) {
+            console.error('GitHub OAuth credentials missing in environment variables');
+            return res.status(500).json({ error: 'Server configuration error' });
+        }
+        
         // Exchange code for access token with GitHub
+        console.log('Making request to GitHub OAuth API');
         const response = await axios.post('https://github.com/login/oauth/access_token', {
-            client_id: process.env.REACT_APP_GITHUB_CLIENT_ID,
-            client_secret: process.env.REACT_APP_GITHUB_CLIENT_SECRET,
+            client_id: clientId,
+            client_secret: clientSecret,
             code: code
         }, {
             headers: {
@@ -27,10 +46,26 @@ app.post('/api/github/oauth/token', async (req, res) => {
             }
         });
         
-        res.json(response.data);
+        console.log('GitHub OAuth response received');
+        
+        // Check if we got an access token
+        if (response.data && response.data.access_token) {
+            console.log('Successfully received access token');
+            res.json(response.data);
+        } else {
+            console.error('GitHub response did not contain access token:', response.data);
+            res.status(400).json({ error: 'Invalid response from GitHub', details: response.data });
+        }
     } catch (error) {
         console.error('Error exchanging GitHub code for token:', error);
-        res.status(500).json({ error: 'Failed to exchange code for token' });
+        // Enhanced error reporting
+        const errorDetails = {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data
+        };
+        console.error('Error details:', errorDetails);
+        res.status(500).json({ error: 'Failed to exchange code for token', details: errorDetails });
     }
 });
 

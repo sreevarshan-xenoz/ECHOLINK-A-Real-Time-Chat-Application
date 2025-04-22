@@ -20,7 +20,10 @@
     "react-window": "^1.8.11",
     "socket.io-client": "^4.7.2",
     "tsparticles": "^1.42.4",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "y-monaco": "^0.1.6",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.26"
   },
   "scripts": {
     "start": "react-scripts start",

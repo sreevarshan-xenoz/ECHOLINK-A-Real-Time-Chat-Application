@@ -53,8 +53,14 @@ const GitHubIntegration = () => {
     };
 
     const connectGitHub = () => {
-        const authUrl = githubService.getAuthUrl();
-        window.location.href = authUrl;
+        try {
+            const authUrl = githubService.getAuthUrl();
+            console.log('Redirecting to GitHub auth URL:', authUrl);
+            window.location.href = authUrl;
+        } catch (error) {
+            console.error('Error initiating GitHub connection:', error);
+            showNotification('Failed to connect to GitHub: ' + error.message, 'error');
+        }
     };
 
     const disconnectGitHub = async () => {
@@ -241,6 +247,37 @@ const GitHubIntegration = () => {
         setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
     };
 
+    // Debug function to help diagnose GitHub connection issues
+    const debugGitHubConnection = async () => {
+        try {
+            setLoading(true);
+            showNotification('Running GitHub connection diagnostics...', 'info');
+            
+            // Check if we have a GitHub code in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            console.log('GitHub Integration Debug:');
+            console.log('- URL has code param:', !!code);
+            console.log('- URL has state param:', !!state);
+            console.log('- GitHub service configured:', githubService.isConfigured);
+            console.log('- Client ID available:', !!process.env.REACT_APP_GITHUB_CLIENT_ID);
+            console.log('- Redirect URI:', githubService.redirectUri);
+            
+            // Try to initialize without relying on URL params
+            const initialized = await githubService.initialize();
+            console.log('- Service initialized:', initialized);
+            
+            showNotification('Diagnostic data logged to console', 'info');
+        } catch (error) {
+            console.error('Debug error:', error);
+            showNotification('Error during diagnostics: ' + error.message, 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading && !isConnected) {
         return (
             <div className="github-loading">
@@ -269,6 +306,9 @@ const GitHubIntegration = () => {
                         <p>Link your GitHub account to access your repositories and collaborate on code directly from ECHOLINK.</p>
                         <button className="github-connect-button" onClick={connectGitHub}>
                             Connect GitHub Account
+                        </button>
+                        <button className="github-debug-button" onClick={debugGitHubConnection}>
+                            Diagnose Connection Issues
                         </button>
                     </div>
                     <div className="github-features">

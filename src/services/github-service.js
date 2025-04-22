@@ -5,6 +5,7 @@ class GitHubService {
     constructor() {
         this.clientId = process.env.REACT_APP_GITHUB_CLIENT_ID || '';
         this.redirectUri = `${window.location.origin}/dashboard`;
+        console.log('GitHub redirect URI:', this.redirectUri);
         this.scope = 'repo user';
         this.accessToken = null;
         this.userData = null;
@@ -19,6 +20,25 @@ class GitHubService {
             // Check if GitHub integration is properly configured
             if (!this.isConfigured) {
                 console.error('GitHub integration is not configured. Please set REACT_APP_GITHUB_CLIENT_ID in your .env file.');
+                return false;
+            }
+            
+            // Check if we have a GitHub code in the URL (callback from GitHub OAuth)
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            
+            if (code && state) {
+                console.log('Detected GitHub OAuth callback in URL');
+                // Handle the OAuth callback
+                const success = await this.handleCallback(code, state);
+                
+                if (success) {
+                    // Remove the code and state from URL to prevent repeated auth attempts
+                    const newUrl = window.location.pathname;
+                    window.history.replaceState({}, document.title, newUrl);
+                    return true;
+                }
                 return false;
             }
             
@@ -128,8 +148,11 @@ class GitHubService {
             }
 
             // Exchange code for access token using a backend proxy
-            // Make sure to use the full URL including hostname to reach the server
-            const serverUrl = process.env.REACT_APP_API_URL || window.location.origin;
+            // Always use the server port 5000 regardless of where the frontend is running
+            const hostname = window.location.hostname;
+            const serverUrl = `http://${hostname}:5000`;
+            console.log('Using server URL for GitHub OAuth:', serverUrl);
+            
             const response = await fetch(`${serverUrl}/api/github/oauth/token`, {
                 method: 'POST',
                 headers: {
@@ -139,7 +162,9 @@ class GitHubService {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to exchange code for token');
+                const errorText = await response.text();
+                console.error('Token exchange response:', errorText);
+                throw new Error('Failed to exchange code for token: ' + errorText);
             }
 
             const data = await response.json();
