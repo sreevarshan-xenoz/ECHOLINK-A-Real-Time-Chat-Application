@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { webrtcService } from '../services/webrtc-service';
 import aiService from '../services/ai-service';
+import * as supabaseService from '../services/supabase-service';
 import AISettings from './AISettings';
 import Profile from './Profile';
 import './Chat.css';
@@ -10,15 +11,55 @@ import { v4 as uuidv4 } from 'uuid';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 
-const MessageItem = memo(({ message, onReaction }) => {
+const MessageStatus = memo(({ status, timestamp }) => {
+    return (
+        <div className="message-status">
+            {status === 'sending' && <span className="status-icon sending">●</span>}
+            {status === 'sent' && <span className="status-icon sent">✓</span>}
+            {status === 'delivered' && <span className="status-icon delivered">✓✓</span>}
+            {status === 'read' && <span className="status-icon read">✓✓</span>}
+            {status === 'error' && <span className="status-icon error">!</span>}
+            {status === 'queued' && <span className="status-icon queued">⏱</span>}
+            {timestamp && <span className="status-time">{new Date(timestamp).toLocaleTimeString()}</span>}
+        </div>
+    );
+});
+
+const MessageItem = memo(({ message, onReaction, onRetry, onMarkAsRead, onDelete }) => {
+    const handleRetry = (e) => {
+        e.stopPropagation();
+        onRetry(message);
+    };
+    
+    const handleDelete = (e) => {
+        e.stopPropagation();
+        onDelete(message);
+    };
+    
+    useEffect(() => {
+        // Send read receipt when message is visible
+        if (message.sender !== 'user' && message.status !== 'read') {
+            onMarkAsRead(message);
+        }
+    }, [message, onMarkAsRead]);
+    
     return (
         <div className={`message ${message.sender === 'user' ? 'sent' : 'received'}`}>
             <div className="message-content">{message.text}</div>
-            <div className="message-timestamp">{new Date(message.timestamp).toLocaleTimeString()}</div>
-            <div className="message-reactions">
-                {message.reactions?.map((reaction, index) => (
-                    <span key={index} className="reaction">{reaction}</span>
-                ))}
+            <div className="message-meta">
+                <MessageStatus status={message.status} timestamp={message.timestamp} />
+                {message.offline && <span className="offline-indicator">offline</span>}
+                <div className="message-reactions">
+                    {message.reactions?.map((reaction, index) => (
+                        <span key={index} className="reaction">{reaction}</span>
+                    ))}
+                </div>
+                {message.status === 'error' && (
+                    <div className="message-actions">
+                        <button className="retry-button" onClick={handleRetry}>Retry</button>
+                        <button className="delete-button" onClick={handleDelete}>Delete</button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -59,6 +100,12 @@ const Chat = ({
     const [userLanguage, setUserLanguage] = useState(navigator.language.split('-')[0]);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [userProfile, setUserProfile] = useState(null);
+    const [persistenceEnabled, setPersistenceEnabled] = useState(true);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [activeGroups, setActiveGroups] = useState([]);
+    const [selectedGroup, setSelectedGroup] = useState(null);
+    const [connectionState, setConnectionState] = useState('connected');
+    const [offlineMode, setOfflineMode] = useState(false);
 
     // Load user profile from localStorage on component mount
     useEffect(() => {
@@ -302,6 +349,174 @@ const Chat = ({
         return "I'm a basic chatbot. I can only understand simple commands. Type 'help' to see what I can do.";
     };
 
+    // Load message history from Supabase if persistence is enabled
+    const loadMessageHistory = useCallback(async () => {
+        if (!persistenceEnabled || !currentUser?.id || (!selectedPeer && !selectedGroup)) return;
+        
+        setIsLoadingHistory(true);
+        try {
+            let historyResult;
+            
+            if (selectedGroup) {
+                // Load group messages
+                historyResult = await supabaseService.getGroupMessages(selectedGroup.id);
+            } else {
+                // Load direct messages
+                historyResult = await supabaseService.getDirectMessages(currentUser.id, selectedPeer);
+            }
+            
+            if (historyResult.error) {
+                throw historyResult.error;
+            }
+            
+            // Process messages
+            const decryptedMessages = await Promise.all(
+                historyResult.messages.map(async (msg) => {
+                    try {
+                        // Decrypt message content
+                        const decrypted = await webrtcService.decryptMessage({
+                            data: JSON.parse(msg.encrypted_content),
+                            iv: JSON.parse(msg.encryption_iv)
+                        });
+                        
+                        return {
+                            id: msg.id,
+                            text: decrypted.text,
+                            sender: msg.sender_id,
+                            timestamp: msg.created_at,
+                            status: msg.read ? 'read' : (msg.delivered ? 'delivered' : 'sent'),
+                            type: msg.message_type || 'CHAT',
+                            persisted: true
+                        };
+                    } catch (error) {
+                        console.error('Error decrypting message:', error);
+                        return null;
+                    }
+                })
+            );
+            
+            // Filter out failed decryptions
+            const validMessages = decryptedMessages.filter(msg => msg !== null);
+            
+            // Merge with existing messages, avoiding duplicates by ID
+            setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                const newMessages = validMessages.filter(m => !existingIds.has(m.id));
+                return [...prev, ...newMessages].sort((a, b) => 
+                    new Date(a.timestamp) - new Date(b.timestamp)
+                );
+            });
+            
+            // Mark messages as read
+            validMessages.forEach(msg => {
+                if (msg.sender !== currentUser.id && !msg.read) {
+                    supabaseService.markMessageRead(msg.id);
+                    webrtcService.sendReadReceipt(msg.id, msg.sender);
+                }
+            });
+            
+        } catch (error) {
+            console.error('Error loading message history:', error);
+            addNotification('Failed to load message history', 'error');
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    }, [currentUser?.id, selectedPeer, selectedGroup, persistenceEnabled, addNotification]);
+
+    // Effect to load history when peer or group changes
+    useEffect(() => {
+        if (persistenceEnabled && (selectedPeer || selectedGroup)) {
+            loadMessageHistory();
+        }
+    }, [selectedPeer, selectedGroup, persistenceEnabled, loadMessageHistory]);
+
+    // Effect to handle connection state changes
+    useEffect(() => {
+        const unsubscribe = webrtcService.onConnectionState((state) => {
+            console.log('Connection state change:', state);
+            
+            if (state.type === 'error' && state.fatal) {
+                setConnectionState('error');
+                setOfflineMode(true);
+                addNotification('Connection lost. Working in offline mode.', 'error');
+            } else if (state.type === 'connectionState' && state.state === 'connected') {
+                setConnectionState('connected');
+                if (offlineMode) {
+                    setOfflineMode(false);
+                    addNotification('Connection restored.', 'success');
+                    
+                    // Check for offline messages
+                    webrtcService.checkOfflineMessages()
+                        .then(result => {
+                            if (result.delivered > 0) {
+                                addNotification(`Received ${result.delivered} offline messages`, 'info');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error checking offline messages:', error);
+                        });
+                }
+            } else if (state.type === 'reconnecting') {
+                setConnectionState('reconnecting');
+                addNotification(`Reconnecting... Attempt ${state.attempt} of ${state.maxAttempts}`, 'warning');
+            }
+        });
+        
+        return unsubscribe;
+    }, [addNotification, offlineMode]);
+
+    // Function to handle message retry
+    const handleRetry = useCallback((message) => {
+        // Update status to sending
+        setMessages(prev => prev.map(msg => 
+            msg.id === message.id ? { ...msg, status: 'sending', error: null } : msg
+        ));
+        
+        // Attempt to send again
+        const success = webrtcService.sendMessage(message, selectedPeer);
+        
+        if (success) {
+            // Update status to sent
+            setMessages(prev => prev.map(msg => 
+                msg.id === message.id ? { ...msg, status: 'sent' } : msg
+            ));
+        } else if (offlineMode && persistenceEnabled) {
+            // Queue for offline delivery
+            setMessages(prev => prev.map(msg => 
+                msg.id === message.id ? { ...msg, status: 'queued', offline: true } : msg
+            ));
+        } else {
+            // Still failed
+            setMessages(prev => prev.map(msg => 
+                msg.id === message.id ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
+            ));
+        }
+    }, [selectedPeer, offlineMode, persistenceEnabled]);
+
+    // Function to handle message deletion
+    const handleDeleteMessage = useCallback((message) => {
+        setMessages(prev => prev.filter(msg => msg.id !== message.id));
+    }, []);
+
+    // Function to mark message as read
+    const handleMarkAsRead = useCallback((message) => {
+        if (message.persisted) {
+            // Update in database
+            supabaseService.markMessageRead(message.id)
+                .catch(error => console.error('Error marking message as read:', error));
+        }
+        
+        // Send read receipt
+        if (message.sender !== currentUser.id) {
+            webrtcService.sendReadReceipt(message.id, message.sender);
+        }
+        
+        // Update local state
+        setMessages(prev => prev.map(msg => 
+            msg.id === message.id ? { ...msg, status: 'read' } : msg
+        ));
+    }, [currentUser]);
+
     // Effects
     useEffect(() => {
         // Handle chat mode changes
@@ -415,12 +630,89 @@ const Chat = ({
                         return newMap;
                     });
                     break;
+                case 'DELIVERY_RECEIPT':
+                    setMessages(prev => prev.map(msg => 
+                        msg.id === message.messageId 
+                            ? { ...msg, status: 'delivered' } 
+                            : msg
+                    ));
+                    break;
+                    
+                case 'READ_RECEIPT':
+                    setMessages(prev => prev.map(msg => 
+                        msg.id === message.messageId 
+                            ? { ...msg, status: 'read' } 
+                            : msg
+                    ));
+                    break;
+                    
+                case 'GROUP_CREATED':
+                    addNotification(`You were added to group: ${message.groupName}`, 'info');
+                    setActiveGroups(prev => [...prev, {
+                        id: message.groupId,
+                        name: message.groupName,
+                        createdBy: message.createdBy,
+                        members: message.members
+                    }]);
+                    break;
+                    
+                case 'MEMBER_JOINED':
+                    if (selectedGroup && selectedGroup.id === message.groupId) {
+                        addNotification(`${message.userDisplayName || 'A new member'} joined the group`, 'info');
+                        
+                        // Update members list
+                        setSelectedGroup(prev => ({
+                            ...prev,
+                            members: [...prev.members, message.peerId]
+                        }));
+                    }
+                    break;
+                    
+                case 'MEMBER_LEFT':
+                    if (selectedGroup && selectedGroup.id === message.groupId) {
+                        addNotification(`${message.userDisplayName || 'A member'} left the group`, 'info');
+                        
+                        // Update members list
+                        setSelectedGroup(prev => ({
+                            ...prev,
+                            members: prev.members.filter(id => id !== message.peerId)
+                        }));
+                    }
+                    break;
                 default:
                     break;
             }
         });
 
         setPeers(webrtcService.getConnectedPeers());
+        
+        // Load active groups if authenticated
+        if (currentUser?.id) {
+            webrtcService.setUserId(currentUser.id);
+            webrtcService.enablePersistence(persistenceEnabled);
+            
+            // Get user groups
+            webrtcService.getGroups()
+                .then(result => {
+                    if (result.groups) {
+                        setActiveGroups(result.groups);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching groups:', error);
+                });
+            
+            // Check for offline messages
+            webrtcService.checkOfflineMessages()
+                .then(result => {
+                    if (result.delivered > 0) {
+                        addNotification(`Received ${result.delivered} offline messages`, 'info');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking offline messages:', error);
+                });
+        }
         
         return () => {
             unsubscribe();
@@ -430,7 +722,7 @@ const Chat = ({
             if (typingTimeout) clearTimeout(typingTimeout);
             if (completionTimeout.current) clearTimeout(completionTimeout.current);
         };
-    }, [typingTimeout, setMessages, setPeers, setTypingStatus]);
+    }, [typingTimeout, setMessages, setPeers, setTypingStatus, currentUser, persistenceEnabled, addNotification, selectedGroup]);
 
     // AI chat cleanup effect
     useEffect(() => {
@@ -493,7 +785,8 @@ const Chat = ({
             text: newMessage,
             sender: currentUser.id,
             timestamp: timestamp,
-            type: 'CHAT'
+            type: 'CHAT',
+            status: 'sending'
         };
 
         // Add message to the UI immediately for better user experience
@@ -534,9 +827,53 @@ const Chat = ({
         } 
         // Handle peer chat mode
         else if (selectedPeer) {
-            webrtcService.sendMessage(messageData, selectedPeer);
+            const success = webrtcService.sendMessage(messageData, selectedPeer);
+            
+            // Update message status based on sending result
+            if (success) {
+                setMessages(prev => prev.map(msg => 
+                    msg.id === messageId ? { ...msg, status: 'sent' } : msg
+                ));
+            } else if (offlineMode && persistenceEnabled) {
+                // When offline and persistence enabled, queue the message
+                setMessages(prev => prev.map(msg => 
+                    msg.id === messageId ? { ...msg, status: 'queued', offline: true } : msg
+                ));
+            } else {
+                // Message failed to send
+                setMessages(prev => prev.map(msg => 
+                    msg.id === messageId ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
+                ));
+            }
+            
             if (selectedPeer) {
                 webrtcService.setTypingStatus(false, selectedPeer);
+            }
+        }
+        // Handle group chat
+        else if (selectedGroup) {
+            const groupMessageData = {
+                ...messageData,
+                groupId: selectedGroup.id
+            };
+            
+            const success = webrtcService.sendMessage(groupMessageData);
+            
+            // Update message status based on sending result
+            if (success) {
+                setMessages(prev => prev.map(msg => 
+                    msg.id === messageId ? { ...msg, status: 'sent' } : msg
+                ));
+            } else if (offlineMode && persistenceEnabled) {
+                // When offline and persistence enabled, queue the message
+                setMessages(prev => prev.map(msg => 
+                    msg.id === messageId ? { ...msg, status: 'queued', offline: true } : msg
+                ));
+            } else {
+                // Message failed to send
+                setMessages(prev => prev.map(msg => 
+                    msg.id === messageId ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
+                ));
             }
         }
 
@@ -620,6 +957,27 @@ const Chat = ({
                                         {translatedMessages.get(message.id)}
                                     </p>
                                 )}
+                                <MessageStatus 
+                                    status={message.status} 
+                                    timestamp={message.timestamp} 
+                                />
+                                {message.status === 'error' && (
+                                    <div className="message-actions">
+                                        <button 
+                                            className="retry-button"
+                                            onClick={() => handleRetry(message)}
+                                        >
+                                            Retry
+                                        </button>
+                                        <button 
+                                            className="delete-button"
+                                            onClick={() => handleDeleteMessage(message)}
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                )}
+                                {message.offline && <span className="offline-indicator">offline</span>}
                                 <div className="message-actions">
                                     <button 
                                         className="translate-button"
@@ -880,12 +1238,40 @@ const Chat = ({
                 key={message.id}
                 message={message}
                 onReaction={(reaction) => handleReaction(message.id, reaction)}
+                onRetry={handleRetry}
+                onMarkAsRead={handleMarkAsRead}
+                onDelete={handleDeleteMessage}
             />
         ))}
     </div>
-), [filteredMessages, handleReaction]);
+), [filteredMessages, handleReaction, handleRetry, handleMarkAsRead, handleDeleteMessage]);
 
-return (
+    const createGroup = async (name, members) => {
+        try {
+            const result = await webrtcService.createGroup(name, members);
+            
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to create group');
+            }
+            
+            addNotification(`Group "${name}" created successfully`, 'success');
+            setActiveGroups(prev => [...prev, result.group]);
+            setSelectedGroup(result.group);
+            setSelectedPeer(null);
+        } catch (error) {
+            console.error('Error creating group:', error);
+            addNotification('Failed to create group', 'error');
+        }
+    };
+
+    const togglePersistence = () => {
+        const newValue = !persistenceEnabled;
+        setPersistenceEnabled(newValue);
+        webrtcService.enablePersistence(newValue);
+        addNotification(`Message persistence ${newValue ? 'enabled' : 'disabled'}`, 'info');
+    };
+
+    return (
         <div className={`chat-container ${theme} ${isAIChatActive ? 'ai-mode-active' : 'peer-mode-active'}`} data-chat-mode={isAIChatActive ? 'ai' : 'peer'}>
             <div className="chat-header">
                 <div className="chat-user-info">
@@ -1011,6 +1397,35 @@ return (
             )}
 
             {renderSettingsPanel()}
+
+            {/* Add persistence toggle in settings */}
+            <div className="settings-toggle">
+                <div className="setting-item">
+                    <label>Message Persistence</label>
+                    <button 
+                        className={`toggle-button ${persistenceEnabled ? 'active' : ''}`}
+                        onClick={togglePersistence}
+                    >
+                        {persistenceEnabled ? 'Enabled' : 'Disabled'}
+                    </button>
+                </div>
+            </div>
+            
+            {/* Add a connection status indicator */}
+            {connectionState !== 'connected' && (
+                <div className={`connection-status ${connectionState}`}>
+                    {connectionState === 'reconnecting' && 'Reconnecting...'}
+                    {connectionState === 'error' && 'Connection error. Working offline.'}
+                </div>
+            )}
+            
+            {/* Add a loading indicator for message history */}
+            {isLoadingHistory && (
+                <div className="loading-history">
+                    <div className="loading-spinner"></div>
+                    <p>Loading message history...</p>
+                </div>
+            )}
         </div>
     );
 };

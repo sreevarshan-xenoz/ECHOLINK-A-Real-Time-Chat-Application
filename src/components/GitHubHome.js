@@ -15,6 +15,16 @@ const GitHubHome = () => {
     const [sortBy, setSortBy] = useState('updated'); // updated, name, stars
     const [notification, setNotification] = useState({ show: false, message: '', type: '' });
     const [stats, setStats] = useState({ totalRepos: 0, totalStars: 0, totalForks: 0 });
+    const [searchMode, setSearchMode] = useState('local'); // local or global
+    const [searchResults, setSearchResults] = useState([]);
+    const [searchOptions, setSearchOptions] = useState({
+        language: '',
+        sort: 'stars',
+        order: 'desc',
+        page: 1,
+        per_page: 30
+    });
+    const [totalSearchResults, setTotalSearchResults] = useState(0);
     
     const navigate = useNavigate();
 
@@ -24,6 +34,11 @@ const GitHubHome = () => {
 
     // Filter repositories based on search and filters
     useEffect(() => {
+        if (searchMode === 'global') {
+            // Global search is handled by the searchGitHub function
+            return;
+        }
+
         if (repositories.length === 0) {
             setFilteredRepos([]);
             return;
@@ -63,7 +78,27 @@ const GitHubHome = () => {
         });
         
         setFilteredRepos(results);
-    }, [repositories, searchQuery, filter, sortBy]);
+    }, [repositories, searchQuery, filter, sortBy, searchMode]);
+
+    const searchGitHub = async () => {
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            setTotalSearchResults(0);
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const results = await githubService.searchRepositories(searchQuery, searchOptions);
+            setSearchResults(results.items);
+            setTotalSearchResults(results.total_count);
+        } catch (error) {
+            console.error('Error searching GitHub:', error);
+            showNotification('Failed to search GitHub repositories', 'error');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const initializeGitHub = async () => {
         try {
@@ -244,37 +279,100 @@ const GitHubHome = () => {
                     <div className="github-toolbar">
                         <div className="search-and-filter">
                             <div className="search-container">
-                                <input
-                                    type="text"
-                                    placeholder="Find a repository..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="repo-search-input"
-                                />
-                            </div>
-                            
-                            <div className="filter-container">
-                                <select 
-                                    value={filter} 
-                                    onChange={(e) => setFilter(e.target.value)}
-                                    className="repo-filter-select"
-                                >
-                                    <option value="all">All</option>
-                                    <option value="sources">Sources</option>
-                                    <option value="forks">Forks</option>
-                                    <option value="private">Private</option>
-                                    <option value="public">Public</option>
-                                </select>
-                                
-                                <select 
-                                    value={sortBy} 
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                    className="repo-sort-select"
-                                >
-                                    <option value="updated">Recently Updated</option>
-                                    <option value="name">Name</option>
-                                    <option value="stars">Stars</option>
-                                </select>
+                                <div className="search-mode-toggle">
+                                    <button 
+                                        className={`mode-button ${searchMode === 'local' ? 'active' : ''}`}
+                                        onClick={() => setSearchMode('local')}
+                                    >
+                                        My Repositories
+                                    </button>
+                                    <button 
+                                        className={`mode-button ${searchMode === 'global' ? 'active' : ''}`}
+                                        onClick={() => setSearchMode('global')}
+                                    >
+                                        Search GitHub
+                                    </button>
+                                </div>
+
+                                <div className="search-box">
+                                    <input
+                                        type="text"
+                                        placeholder={searchMode === 'local' ? "Search your repositories..." : "Search all GitHub repositories..."}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter' && searchMode === 'global') {
+                                                searchGitHub();
+                                            }
+                                        }}
+                                    />
+                                    {searchMode === 'global' && (
+                                        <button onClick={searchGitHub} className="search-button">
+                                            Search
+                                        </button>
+                                    )}
+                                </div>
+
+                                {searchMode === 'global' && (
+                                    <div className="search-options">
+                                        <select
+                                            value={searchOptions.language}
+                                            onChange={(e) => setSearchOptions({ ...searchOptions, language: e.target.value })}
+                                        >
+                                            <option value="">All Languages</option>
+                                            <option value="javascript">JavaScript</option>
+                                            <option value="python">Python</option>
+                                            <option value="java">Java</option>
+                                            <option value="typescript">TypeScript</option>
+                                            <option value="cpp">C++</option>
+                                            <option value="csharp">C#</option>
+                                            <option value="php">PHP</option>
+                                            <option value="ruby">Ruby</option>
+                                            <option value="go">Go</option>
+                                            <option value="rust">Rust</option>
+                                        </select>
+                                        <select
+                                            value={searchOptions.sort}
+                                            onChange={(e) => setSearchOptions({ ...searchOptions, sort: e.target.value })}
+                                        >
+                                            <option value="stars">Stars</option>
+                                            <option value="forks">Forks</option>
+                                            <option value="updated">Updated</option>
+                                        </select>
+                                        <select
+                                            value={searchOptions.order}
+                                            onChange={(e) => setSearchOptions({ ...searchOptions, order: e.target.value })}
+                                        >
+                                            <option value="desc">Descending</option>
+                                            <option value="asc">Ascending</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                {searchMode === 'local' && (
+                                    <div className="filter-container">
+                                        <select
+                                            value={filter}
+                                            onChange={(e) => setFilter(e.target.value)}
+                                            className="repo-filter-select"
+                                        >
+                                            <option value="all">All Repositories</option>
+                                            <option value="sources">Sources</option>
+                                            <option value="forks">Forks</option>
+                                            <option value="private">Private</option>
+                                            <option value="public">Public</option>
+                                        </select>
+                                        <select
+                                            value={sortBy}
+                                            onChange={(e) => setSortBy(e.target.value)}
+                                            className="repo-sort-select"
+                                        >
+                                            <option value="updated">Last Updated</option>
+                                            <option value="name">Name</option>
+                                            <option value="stars">Stars</option>
+                                        </select>
+                                    </div>
+                                )}
                             </div>
                         </div>
                         
@@ -284,60 +382,124 @@ const GitHubHome = () => {
                     </div>
                     
                     <div className="repositories-container">
-                        {filteredRepos.length > 0 ? (
-                            filteredRepos.map(repo => (
-                                <div 
-                                    key={repo.id} 
-                                    className="repository-card"
-                                    onClick={() => handleRepositoryClick(repo)}
-                                >
-                                    <div className="repo-card-header">
-                                        <div className="repo-icon">{repo.fork ? '🍴' : '📁'}</div>
-                                        <h3 className="repo-name">{repo.name}</h3>
-                                        {repo.private && <span className="repo-private-badge">Private</span>}
-                                    </div>
-                                    
-                                    <p className="repo-description">
-                                        {repo.description || 'No description provided'}
-                                    </p>
-                                    
-                                    <div className="repo-card-footer">
-                                        {repo.language && (
-                                            <div className="repo-language">
-                                                <span className={`language-color ${repo.language.toLowerCase()}`}></span>
-                                                {repo.language}
+                        {searchMode === 'global' ? (
+                            searchResults.length > 0 ? (
+                                searchResults.map(repo => (
+                                    <div 
+                                        key={repo.id} 
+                                        className="repository-card"
+                                        onClick={() => handleRepositoryClick(repo)}
+                                    >
+                                        <div className="repo-card-header">
+                                            <div className="repo-icon">{repo.fork ? '🍴' : '📁'}</div>
+                                            <h3 className="repo-name">{repo.name}</h3>
+                                            {repo.private && (
+                                                <span className="repo-private-badge">Private</span>
+                                            )}
+                                        </div>
+                                        <p className="repo-description">
+                                            {repo.description || 'No description provided'}
+                                        </p>
+                                        <div className="repo-card-footer">
+                                            {repo.language && (
+                                                <div className="repo-language">
+                                                    <span className={`language-color ${repo.language.toLowerCase()}`}></span>
+                                                    {repo.language}
+                                                </div>
+                                            )}
+                                            <div className="repo-stats">
+                                                <span className="repo-stat">
+                                                    <span className="repo-stat-icon">⭐</span>
+                                                    {repo.stargazers_count}
+                                                </span>
+                                                <span className="repo-stat">
+                                                    <span className="repo-stat-icon">🍴</span>
+                                                    {repo.forks_count}
+                                                </span>
+                                                <span className="repo-stat">
+                                                    <span className="repo-stat-icon">📅</span>
+                                                    {new Date(repo.updated_at).toLocaleDateString()}
+                                                </span>
                                             </div>
-                                        )}
-                                        
-                                        <div className="repo-stats">
-                                            <span className="repo-stat">
-                                                <span className="repo-stat-icon">⭐</span>
-                                                {repo.stargazers_count}
-                                            </span>
-                                            <span className="repo-stat">
-                                                <span className="repo-stat-icon">🍴</span>
-                                                {repo.forks_count}
-                                            </span>
-                                            <span className="repo-stat">
-                                                <span className="repo-stat-icon">📅</span>
-                                                {new Date(repo.updated_at).toLocaleDateString()}
-                                            </span>
                                         </div>
                                     </div>
+                                ))
+                            ) : searchQuery ? (
+                                <div className="no-results-message">
+                                    No repositories found matching your search
                                 </div>
-                            ))
-                        ) : repositories.length > 0 ? (
-                            <div className="no-results-message">
-                                <h3>No matching repositories found</h3>
-                                <p>Try adjusting your search or filters</p>
-                            </div>
+                            ) : null
                         ) : (
-                            <div className="no-repos-message">
-                                <h3>No repositories found</h3>
-                                <p>You don't have any GitHub repositories yet or we couldn't access them</p>
-                            </div>
+                            filteredRepos.length > 0 ? (
+                                filteredRepos.map(repo => (
+                                    <div 
+                                        key={repo.id} 
+                                        className="repository-card"
+                                        onClick={() => handleRepositoryClick(repo)}
+                                    >
+                                        <div className="repo-card-header">
+                                            <div className="repo-icon">{repo.fork ? '🍴' : '📁'}</div>
+                                            <h3 className="repo-name">{repo.name}</h3>
+                                            {repo.private && (
+                                                <span className="repo-private-badge">Private</span>
+                                            )}
+                                        </div>
+                                        <p className="repo-description">
+                                            {repo.description || 'No description provided'}
+                                        </p>
+                                        <div className="repo-card-footer">
+                                            {repo.language && (
+                                                <div className="repo-language">
+                                                    <span className={`language-color ${repo.language.toLowerCase()}`}></span>
+                                                    {repo.language}
+                                                </div>
+                                            )}
+                                            <div className="repo-stats">
+                                                <span className="repo-stat">
+                                                    <span className="repo-stat-icon">⭐</span>
+                                                    {repo.stargazers_count}
+                                                </span>
+                                                <span className="repo-stat">
+                                                    <span className="repo-stat-icon">🍴</span>
+                                                    {repo.forks_count}
+                                                </span>
+                                                <span className="repo-stat">
+                                                    <span className="repo-stat-icon">📅</span>
+                                                    {new Date(repo.updated_at).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : repositories.length > 0 ? (
+                                <div className="no-results-message">
+                                    No repositories match your filters
+                                </div>
+                            ) : (
+                                <div className="no-repos-message">
+                                    No repositories found
+                                </div>
+                            )
                         )}
                     </div>
+
+                    {searchMode === 'global' && totalSearchResults > searchOptions.per_page && (
+                        <div className="pagination">
+                            <button 
+                                onClick={() => setSearchOptions({ ...searchOptions, page: searchOptions.page - 1 })}
+                                disabled={searchOptions.page === 1}
+                            >
+                                Previous
+                            </button>
+                            <span>Page {searchOptions.page}</span>
+                            <button 
+                                onClick={() => setSearchOptions({ ...searchOptions, page: searchOptions.page + 1 })}
+                                disabled={searchResults.length < searchOptions.per_page}
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
             

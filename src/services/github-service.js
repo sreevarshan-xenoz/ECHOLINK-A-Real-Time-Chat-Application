@@ -459,6 +459,50 @@ class GitHubService {
             return [];
         }
     }
+
+    /**
+     * Search GitHub repositories
+     * @param {string} query - Search query
+     * @param {Object} options - Search options
+     * @param {string} options.language - Filter by programming language
+     * @param {string} options.sort - Sort by: stars, forks, updated
+     * @param {string} options.order - Order: asc or desc
+     * @param {number} options.per_page - Results per page (max 100)
+     * @param {number} options.page - Page number
+     */
+    async searchRepositories(query, options = {}) {
+        if (!this.accessToken) return { items: [], total_count: 0 };
+
+        try {
+            const params = new URLSearchParams({
+                q: query,
+                sort: options.sort || 'stars',
+                order: options.order || 'desc',
+                per_page: options.per_page || 30,
+                page: options.page || 1
+            });
+
+            if (options.language) {
+                params.append('q', `language:${options.language}`);
+            }
+
+            const response = await fetch(`https://api.github.com/search/repositories?${params.toString()}`, {
+                headers: {
+                    Authorization: `token ${this.accessToken}`,
+                    Accept: 'application/vnd.github.v3+json'
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to search repositories');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error searching repositories:', error);
+            return { items: [], total_count: 0 };
+        }
+    }
 }
 
 export const githubService = new GitHubService();

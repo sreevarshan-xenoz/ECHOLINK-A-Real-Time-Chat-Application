@@ -78,22 +78,99 @@ const io = socketIo(server, {
 });
 
 // Store connected users
-const connectedUsers = new Map();
+const connectedUsers = new Map(); // userId -> socketId
+const connectedPeers = new Map(); // peerId -> socketId
+const userIdToPeerId = new Map(); // userId -> peerId
+const peerIdToUserId = new Map(); // peerId -> userId
+const peerGroups = new Map(); // groupId -> Set of peerIds
 
+// Handle WebRTC signaling
 io.on('connection', (socket) => {
-    console.log('New client connected');
+    console.log('New client connected:', socket.id);
 
-    socket.on('user_connected', (userId) => {
-        connectedUsers.set(userId, socket.id);
-        io.emit('user_status_change', {
-            userId: userId,
-            status: 'online'
-        });
-        console.log(`User connected: ${userId}`);
+    socket.on('user_connected', (data) => {
+        const { peerId, userId } = data;
+        console.log(`User connected - peerId: ${peerId}, userId: ${userId || 'anonymous'}`);
+        
+        // Store mappings
+        connectedPeers.set(peerId, socket.id);
+        
+        if (userId) {
+            connectedUsers.set(userId, socket.id);
+            userIdToPeerId.set(userId, peerId);
+            peerIdToUserId.set(peerId, userId);
+            
+            // Broadcast user's online status
+            socket.broadcast.emit('user_status_change', {
+                userId: userId,
+                peerId: peerId,
+                status: 'online'
+            });
+        }
+        
+        // Send current online peers to the new user
+        const onlinePeers = [];
+        for (const [pid, sid] of connectedPeers.entries()) {
+            if (pid !== peerId) {
+                const uid = peerIdToUserId.get(pid);
+                onlinePeers.push({
+                    peerId: pid,
+                    userId: uid
+                });
+            }
+        }
+        
+        socket.emit('online_peers', onlinePeers);
     });
 
+    // WebRTC signaling
+    socket.on('offer', (data) => {
+        const { recipientId, senderId, offer } = data;
+        console.log(`Offer from ${senderId} to ${recipientId}`);
+        
+        const recipientSocketId = connectedPeers.get(recipientId);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('offer', {
+                offer,
+                senderId
+            });
+        } else {
+            // Recipient not connected
+            socket.emit('peer_unavailable', {
+                peerId: recipientId,
+                reason: 'disconnected'
+            });
+        }
+    });
+
+    socket.on('answer', (data) => {
+        const { recipientId, senderId, answer } = data;
+        console.log(`Answer from ${senderId} to ${recipientId}`);
+        
+        const recipientSocketId = connectedPeers.get(recipientId);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('answer', {
+                answer,
+                senderId
+            });
+        }
+    });
+
+    socket.on('ice_candidate', (data) => {
+        const { recipientId, senderId, candidate } = data;
+        
+        const recipientSocketId = connectedPeers.get(recipientId);
+        if (recipientSocketId) {
+            io.to(recipientSocketId).emit('ice_candidate', {
+                candidate,
+                senderId
+            });
+        }
+    });
+
+    // Message handling (only used if peers can't connect directly)
     socket.on('send_message', (data) => {
-        const recipientSocket = connectedUsers.get(data.recipientId);
+        const recipientSocket = connectedUsers.get(data.recipientId) || connectedPeers.get(data.recipientId);
         if (recipientSocket) {
             io.to(recipientSocket).emit('receive_message', {
                 senderId: data.senderId,
@@ -101,34 +178,163 @@ io.on('connection', (socket) => {
                 timestamp: new Date()
             });
             console.log(`Message sent from ${data.senderId} to ${data.recipientId}`);
-        }
-    });
-
-    socket.on('typing', (data) => {
-        const recipientSocket = connectedUsers.get(data.recipientId);
-        if (recipientSocket) {
-            io.to(recipientSocket).emit('user_typing', {
-                userId: data.senderId
+        } else {
+            // Queue for offline delivery
+            socket.emit('message_queued', {
+                messageId: data.messageId,
+                recipientId: data.recipientId,
+                timestamp: new Date()
             });
         }
     });
 
+    // Group chat functions
+    socket.on('create_group', (data) => {
+        const { groupId, name, createdBy, members } = data;
+        
+        // Track group members
+        if (!peerGroups.has(groupId)) {
+            peerGroups.set(groupId, new Set(members));
+        }
+        
+        // Notify all members
+        for (const memberId of members) {
+            if (memberId === createdBy) continue; // Creator already knows
+            
+            const memberSocket = connectedUsers.get(memberId) || connectedPeers.get(memberId);
+            if (memberSocket) {
+                io.to(memberSocket).emit('group_created', {
+                    groupId,
+                    name,
+                    createdBy,
+                    members
+                });
+            }
+        }
+    });
+
+    socket.on('join_group', (data) => {
+        const { groupId, userId, peerId } = data;
+        
+        if (peerGroups.has(groupId)) {
+            // Add to group
+            peerGroups.get(groupId).add(peerId);
+            
+            // Notify other members
+            for (const memberId of peerGroups.get(groupId)) {
+                if (memberId === peerId) continue;
+                
+                const memberSocket = connectedPeers.get(memberId);
+                if (memberSocket) {
+                    io.to(memberSocket).emit('member_joined', {
+                        groupId,
+                        peerId,
+                        userId
+                    });
+                }
+            }
+        }
+    });
+
+    socket.on('leave_group', (data) => {
+        const { groupId, peerId } = data;
+        
+        if (peerGroups.has(groupId)) {
+            // Remove from group
+            peerGroups.get(groupId).delete(peerId);
+            
+            // Notify other members
+            for (const memberId of peerGroups.get(groupId)) {
+                const memberSocket = connectedPeers.get(memberId);
+                if (memberSocket) {
+                    io.to(memberSocket).emit('member_left', {
+                        groupId,
+                        peerId
+                    });
+                }
+            }
+            
+            // Clean up empty groups
+            if (peerGroups.get(groupId).size === 0) {
+                peerGroups.delete(groupId);
+            }
+        }
+    });
+
+    socket.on('typing', (data) => {
+        const recipientSocket = connectedUsers.get(data.recipientId) || connectedPeers.get(data.recipientId);
+        if (recipientSocket) {
+            io.to(recipientSocket).emit('user_typing', {
+                userId: data.senderId,
+                peerId: data.peerId,
+                isTyping: data.isTyping
+            });
+        }
+    });
+
+    // Handle disconnections
     socket.on('disconnect', () => {
-        let disconnectedUserId;
+        // Find the disconnected user
+        let disconnectedPeerId = null;
+        let disconnectedUserId = null;
+        
+        for (const [peerId, socketId] of connectedPeers.entries()) {
+            if (socketId === socket.id) {
+                disconnectedPeerId = peerId;
+                break;
+            }
+        }
+        
         for (const [userId, socketId] of connectedUsers.entries()) {
             if (socketId === socket.id) {
                 disconnectedUserId = userId;
                 break;
             }
         }
-
+        
+        // Clean up
+        if (disconnectedPeerId) {
+            connectedPeers.delete(disconnectedPeerId);
+            peerIdToUserId.delete(disconnectedPeerId);
+            
+            console.log(`Peer disconnected: ${disconnectedPeerId}`);
+        }
+        
         if (disconnectedUserId) {
             connectedUsers.delete(disconnectedUserId);
+            userIdToPeerId.delete(disconnectedUserId);
+            
+            // Broadcast status change
             io.emit('user_status_change', {
                 userId: disconnectedUserId,
+                peerId: disconnectedPeerId,
                 status: 'offline'
             });
+            
             console.log(`User disconnected: ${disconnectedUserId}`);
+        }
+        
+        // Remove from groups
+        for (const [groupId, members] of peerGroups.entries()) {
+            if (disconnectedPeerId && members.has(disconnectedPeerId)) {
+                members.delete(disconnectedPeerId);
+                
+                // Notify remaining members
+                for (const memberId of members) {
+                    const memberSocket = connectedPeers.get(memberId);
+                    if (memberSocket) {
+                        io.to(memberSocket).emit('member_left', {
+                            groupId,
+                            peerId: disconnectedPeerId
+                        });
+                    }
+                }
+                
+                // Clean up empty groups
+                if (members.size === 0) {
+                    peerGroups.delete(groupId);
+                }
+            }
         }
     });
 });

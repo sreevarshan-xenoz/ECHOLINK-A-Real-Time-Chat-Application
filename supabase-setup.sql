@@ -48,6 +48,66 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create messages table for persistent chat
+CREATE TABLE IF NOT EXISTS messages (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  sender_id UUID NOT NULL,
+  recipient_id UUID,  -- NULL for group messages
+  group_id UUID,      -- NULL for direct messages
+  encrypted_content TEXT NOT NULL,
+  encryption_iv TEXT NOT NULL,  -- For E2E encryption
+  message_type VARCHAR(50) NOT NULL DEFAULT 'TEXT',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  delivered BOOLEAN DEFAULT FALSE,
+  read BOOLEAN DEFAULT FALSE,
+  parent_message_id UUID,
+  FOREIGN KEY (sender_id) REFERENCES auth.users(id) ON DELETE CASCADE,
+  FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+  FOREIGN KEY (parent_message_id) REFERENCES messages(id) ON DELETE SET NULL
+);
+
+-- Create chat groups table
+CREATE TABLE IF NOT EXISTS chat_groups (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name VARCHAR(255) NOT NULL,
+  created_by UUID NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+-- Create group members join table
+CREATE TABLE IF NOT EXISTS group_members (
+  group_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  joined_at TIMESTAMPTZ DEFAULT NOW(),
+  role VARCHAR(50) DEFAULT 'member',
+  PRIMARY KEY (group_id, user_id),
+  FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+-- Create offline message queue table
+CREATE TABLE IF NOT EXISTS offline_message_queue (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  message_id UUID NOT NULL,
+  recipient_id UUID NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  retry_count INT DEFAULT 0,
+  last_retry_at TIMESTAMPTZ,
+  FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE CASCADE,
+  FOREIGN KEY (recipient_id) REFERENCES auth.users(id) ON DELETE CASCADE
+);
+
+-- Create connection status tracking table
+CREATE TABLE IF NOT EXISTS connection_status (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  status VARCHAR(50) NOT NULL DEFAULT 'offline',
+  last_active TIMESTAMPTZ DEFAULT NOW(),
+  ip_address VARCHAR(45),
+  user_agent TEXT
+);
+
 -- Add Row Level Security (RLS) policies
 
 -- AI Settings policies
@@ -121,3 +181,22 @@ CREATE POLICY "Users can insert their own profile"
 CREATE POLICY "Users can update their own profile"
   ON profiles FOR UPDATE
   USING (auth.uid() = id);
+
+-- Create RLS policies for messages
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+
+-- Users can read messages sent to them or by them
+CREATE POLICY "Users can read their own messages" 
+  ON messages FOR SELECT 
+  USING (sender_id = auth.uid() OR recipient_id = auth.uid() OR 
+         group_id IN (SELECT group_id FROM group_members WHERE user_id = auth.uid()));
+
+-- Users can insert their own messages
+CREATE POLICY "Users can insert their own messages" 
+  ON messages FOR INSERT 
+  WITH CHECK (sender_id = auth.uid());
+
+-- Users can update only their own messages
+CREATE POLICY "Users can update their own messages" 
+  ON messages FOR UPDATE 
+  USING (sender_id = auth.uid());
