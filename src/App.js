@@ -2,6 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Landing from './components/Landing';
+import EchoAIPage from './components/EchoAIPage';
 import { webrtcService } from './services/webrtc-service';
 import { fileService } from './services/file-service';
 import aiService from './services/ai-service';
@@ -303,6 +304,7 @@ const App = () => {
         <Router>
             <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/ai" element={<EchoAIPage />} />
                 <Route path="/chat" element={
                     <Suspense fallback={<div className="loading-spinner">Loading chat...</div>}>
                         <MainApp />

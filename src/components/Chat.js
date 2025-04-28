@@ -1257,7 +1257,6 @@ const Chat = ({
             addNotification(`Group "${name}" created successfully`, 'success');
             setActiveGroups(prev => [...prev, result.group]);
             setSelectedGroup(result.group);
-            setSelectedPeer(null);
         } catch (error) {
             console.error('Error creating group:', error);
             addNotification('Failed to create group', 'error');

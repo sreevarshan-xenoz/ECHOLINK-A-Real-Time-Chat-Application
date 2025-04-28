@@ -83,6 +83,7 @@ const Landing = () => {
         await signOut();
         setUser(null);
     };
+    
     useEffect(() => {
         // Add scroll animation observer
         const observer = new IntersectionObserver((entries) => {
@@ -127,6 +128,14 @@ const Landing = () => {
                             <Link to="/download" className="auth-button">Download App</Link>
                         </div>
                     )}
+                    
+                    <Link 
+                        to="/ai"
+                        className="echo-ai-chat-button"
+                    >
+                        <span className="echo-ai-chat-button-icon">🤖</span>
+                        Chat with Echo AI
+                    </Link>
                 </div>
                 {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
                 
