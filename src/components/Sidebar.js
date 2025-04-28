@@ -73,6 +73,10 @@ const Sidebar = ({
             }, 500);
         }
         
+        // Navigate to the AI chat page
+        navigate('/ai');
+        
+        // Keep original functionality for state management
         if (onAISelect) {
             onAISelect();
         }

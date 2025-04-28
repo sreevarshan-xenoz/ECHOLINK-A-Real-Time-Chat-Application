@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { webrtcService } from '../services/webrtc-service';
 import aiService from '../services/ai-service';
 import * as supabaseService from '../services/supabase-service';
@@ -79,6 +80,7 @@ const Chat = ({
     theme,
     setTheme
 }) => {
+    const navigate = useNavigate();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [peers, setPeers] = useState([]);
@@ -1270,6 +1272,12 @@ const Chat = ({
         addNotification(`Message persistence ${newValue ? 'enabled' : 'disabled'}`, 'info');
     };
 
+    // Function to handle connecting with peers
+    const handleConnectWithPeers = () => {
+        // Use the showConnectionDialog method we implemented in the webrtcService
+        webrtcService.showConnectionDialog();
+    };
+
     return (
         <div className={`chat-container ${theme} ${isAIChatActive ? 'ai-mode-active' : 'peer-mode-active'}`} data-chat-mode={isAIChatActive ? 'ai' : 'peer'}>
             <div className="chat-header">
@@ -1344,7 +1352,7 @@ const Chat = ({
                         <div className="empty-state-icon">👥</div>
                         <h3>No conversations yet</h3>
                         <p>You need to connect with peers to start chatting</p>
-                        <button className="connect-peers-button" onClick={() => webrtcService.showConnectionDialog()}>Connect with Peers</button>
+                        <button className="connect-peers-button" onClick={handleConnectWithPeers}>Connect with Peers</button>
                     </div>
                 )}
                 {filteredMessages.map((message, index) => (

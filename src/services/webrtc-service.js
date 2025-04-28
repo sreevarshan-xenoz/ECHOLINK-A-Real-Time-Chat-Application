@@ -218,6 +218,166 @@ class WebRTCService {
         startConnectionChecks();
     }
 
+    // Add the showConnectionDialog method
+    showConnectionDialog() {
+        // Create a simple dialog to enter peer ID or discover peers
+        const dialog = document.createElement('div');
+        dialog.className = 'connection-dialog';
+        dialog.innerHTML = `
+            <div class="connection-dialog-content">
+                <h2>Connect with Peers</h2>
+                <p>Your Peer ID: <strong>${this.peerId}</strong></p>
+                <div class="connection-form">
+                    <input type="text" id="peer-id-input" placeholder="Enter Peer ID to connect" />
+                    <button id="connect-btn">Connect</button>
+                </div>
+                <div class="available-peers">
+                    <h3>Available Peers</h3>
+                    <div id="peer-list"></div>
+                </div>
+                <button id="close-dialog-btn">Close</button>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Add some basic styling
+        const style = document.createElement('style');
+        style.textContent = `
+            .connection-dialog {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+            .connection-dialog-content {
+                background-color: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                width: 400px;
+                max-width: 90%;
+                color: #333;
+            }
+            .connection-form {
+                display: flex;
+                margin: 15px 0;
+            }
+            .connection-form input {
+                flex: 1;
+                padding: 8px;
+                border: 1px solid #ccc;
+                border-radius: 4px 0 0 4px;
+            }
+            .connection-form button {
+                padding: 8px 16px;
+                background-color: #4a69bd;
+                color: white;
+                border: none;
+                border-radius: 0 4px 4px 0;
+                cursor: pointer;
+            }
+            .available-peers {
+                margin: 15px 0;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            #peer-list {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+            .peer-item {
+                padding: 8px;
+                border: 1px solid #eee;
+                border-radius: 4px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .peer-item button {
+                padding: 4px 8px;
+                background-color: #4a69bd;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+            }
+            #close-dialog-btn {
+                margin-top: 15px;
+                padding: 8px 16px;
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                width: 100%;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Handle connecting to a peer
+        const connectBtn = document.getElementById('connect-btn');
+        const peerIdInput = document.getElementById('peer-id-input');
+        const closeBtn = document.getElementById('close-dialog-btn');
+        const peerList = document.getElementById('peer-list');
+        
+        if (connectBtn) {
+            connectBtn.addEventListener('click', () => {
+                const peerId = peerIdInput.value.trim();
+                if (peerId) {
+                    this.initiateConnection(peerId);
+                    dialog.remove();
+                    style.remove();
+                }
+            });
+        }
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                dialog.remove();
+                style.remove();
+            });
+        }
+        
+        // Fetch and display available peers
+        this.socket.emit('get_peers', {}, (response) => {
+            if (response && response.peers && peerList) {
+                if (response.peers.length === 0) {
+                    peerList.innerHTML = '<p>No peers currently available</p>';
+                } else {
+                    peerList.innerHTML = '';
+                    response.peers.forEach(peer => {
+                        if (peer.peerId !== this.peerId) {
+                            const peerItem = document.createElement('div');
+                            peerItem.className = 'peer-item';
+                            peerItem.innerHTML = `
+                                <span>${peer.peerId}</span>
+                                <button class="connect-to-peer">Connect</button>
+                            `;
+                            peerList.appendChild(peerItem);
+                            
+                            const connectToPeerBtn = peerItem.querySelector('.connect-to-peer');
+                            if (connectToPeerBtn) {
+                                connectToPeerBtn.addEventListener('click', () => {
+                                    this.initiateConnection(peer.peerId);
+                                    dialog.remove();
+                                    style.remove();
+                                });
+                            }
+                        }
+                    });
+                }
+            }
+        });
+    }
+
     async attemptReconnect() {
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
             this.notifyConnectionState({

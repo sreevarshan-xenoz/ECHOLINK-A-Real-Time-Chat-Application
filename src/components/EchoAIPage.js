@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   submitMessage, 
   newChat, 
@@ -11,6 +11,7 @@ import {
 import './EchoAIChat.css';
 
 const EchoAIPage = () => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -238,6 +239,10 @@ const EchoAIPage = () => {
     }
   };
   
+  const handleBackToChat = () => {
+    navigate('/chat');
+  };
+  
   return (
     <div className="echo-ai-page">
       <div className="echo-ai-page-header">
@@ -251,9 +256,14 @@ const EchoAIPage = () => {
             </div>
           )}
         </div>
-        <Link to="/" className="back-to-home">
-          Back to Home
-        </Link>
+        <div className="echo-ai-page-actions">
+          <button 
+            className="back-to-chat-button" 
+            onClick={handleBackToChat}
+          >
+            Back to Chat
+          </button>
+        </div>
       </div>
       
       <div className="echo-ai-page-content">

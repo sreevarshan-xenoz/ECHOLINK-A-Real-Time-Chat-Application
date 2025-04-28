@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Landing from './components/Landing';
 import EchoAIPage from './components/EchoAIPage';
@@ -14,7 +14,9 @@ const Dashboard = lazy(() => import('./components/Dashboard'));
 const GitHubHome = lazy(() => import('./components/GitHubHome'));
 const GitHubIntegration = lazy(() => import('./components/GitHubIntegration'));
 
+// Create a wrapper component with navigation
 const MainApp = () => {
+    const navigate = useNavigate();
     const [selectedPeer, setSelectedPeer] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -99,12 +101,8 @@ const MainApp = () => {
     };
 
     const handleAIChatSelect = () => {
-        setSelectedPeer(null);
-        setIsAIChatActive(true);
-        if (!isAiInitialized) {
-            setShowSettings(true);
-            addNotification('Please configure AI settings to start chatting', 'info');
-        }
+        // Navigate to the AI page instead of just toggling isAIChatActive
+        navigate('/ai');
     };
 
     const handleModelSelect = async (model) => {
