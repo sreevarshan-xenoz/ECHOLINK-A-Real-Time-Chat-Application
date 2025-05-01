@@ -148,8 +148,6 @@ class AIService {
         };
     }
 
-
-
     addToHistory(message) {
         this.messageHistory.push({
             text: message.text,
@@ -300,6 +298,62 @@ class AIService {
         } catch (error) {
             console.error('Error analyzing message intent:', error);
             return null;
+        }
+    }
+
+    async generateText(prompt) {
+        if (!this.isInitialized) {
+            throw new Error('AI service is not initialized');
+        }
+        
+        try {
+            if (this.apiType === 'openai') {
+                const response = await this.openai.chat.completions.create({
+                    model: this.selectedModel || "gpt-3.5-turbo",
+                    messages: [
+                        {
+                            role: "user",
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: 1000,
+                    temperature: 0.5
+                });
+                
+                return response.choices[0].message.content.trim();
+            } 
+            else if (this.apiType === 'gemini') {
+                const model = this.gemini.getGenerativeModel({ 
+                    model: this.selectedModel || "gemini-pro" 
+                });
+                
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                return response.text();
+            }
+            else if (this.apiType === 'ollama') {
+                const response = await fetch(`${this.ollamaEndpoint}/api/generate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: this.selectedModel || 'llama3',
+                        prompt: prompt,
+                        stream: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to generate text with Ollama');
+                }
+                
+                const result = await response.json();
+                return result.response;
+            }
+            
+            throw new Error('No valid AI provider configured');
+        } catch (error) {
+            console.error('Error generating text:', error);
+            throw error;
         }
     }
 
