@@ -12,6 +12,7 @@ import {
 import { FaRobot, FaCode, FaMagic } from 'react-icons/fa';
 import { RootState } from '../../store';
 import aiService from '../../services/ai-service';
+import { IconWrapper } from '../../utils/IconWrapper';
 
 const GitHubCodeGenerator: React.FC = () => {
   const currentContent = useSelector((state: RootState) => (state.github as any).currentContent);
@@ -89,7 +90,9 @@ Please provide only the requested code without explanations.`;
     return (
       <Box p={4} borderWidth="1px" borderRadius="md" mt={4}>
         <Flex align="center" mb={4}>
-          <Box mr={2}><FaMagic size={20} /></Box>
+          <Box mr={2}>
+            <IconWrapper icon={FaMagic} size={20} />
+          </Box>
           <Heading size="md">AI Code Generator</Heading>
         </Flex>
         <Text mb={4}>AI service is not initialized. Please set up your AI API key in settings.</Text>
@@ -100,7 +103,9 @@ Please provide only the requested code without explanations.`;
   return (
     <Box p={4} borderWidth="1px" borderRadius="md" mt={4}>
       <Flex align="center" mb={4}>
-        <Box mr={2}><FaMagic size={20} /></Box>
+        <Box mr={2}>
+          <IconWrapper icon={FaMagic} size={20} />
+        </Box>
         <Heading size="md">AI Code Generator</Heading>
       </Flex>
       

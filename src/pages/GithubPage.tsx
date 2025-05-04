@@ -6,6 +6,7 @@ import GithubAuth from '../components/github/GithubAuth';
 import RepoSearch from '../components/github/RepoSearch';
 import CodeAnalysis from '../components/github/CodeAnalysis';
 import GitHubCodeGenerator from '../components/github/GitHubCodeGenerator';
+import DocumentationGenerator from '../components/github/DocumentationGenerator';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
@@ -52,6 +53,7 @@ const GithubPage: React.FC = () => {
                 <Box>
                   <CodeAnalysis />
                   <GitHubCodeGenerator />
+                  <DocumentationGenerator />
                 </Box>
               )}
             </GridItem>

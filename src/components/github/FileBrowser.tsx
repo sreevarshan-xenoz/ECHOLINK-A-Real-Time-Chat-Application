@@ -1,30 +1,34 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  Box, 
-  Table,
-  Tbody,
-  Tr,
-  Td,
-  Icon,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  Spinner,
-  Flex,
-  Text 
+import {
+  Box,
+  Flex, 
+  Text, 
+  Button, 
+  Spinner
 } from '@chakra-ui/react';
-import { FaFolder, FaFile, FaChevronRight } from 'react-icons/fa';
+import { FaFile, FaFolder, FaChevronRight, FaSyncAlt } from 'react-icons/fa';
+import { RootState, AppDispatch } from '../../store';
 import { fetchRepositoryContents } from '../../store/thunks/githubThunks';
 import { setSelectedPath } from '../../store/slices/githubSlice';
-import { AppDispatch, RootState } from '../../store';
+import { IconWrapper } from '../../utils/IconWrapper';
+import './FileBrowser.css';
+
+// Helper function to format file size
+const formatFileSize = (bytes: number) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 const FileBrowser: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const isLoading = useSelector((state: RootState) => (state.github as any).isLoading);
-  const selectedRepoId = useSelector((state: RootState) => (state.github as any).selectedRepository);
-  const selectedPath = useSelector((state: RootState) => (state.github as any).selectedPath);
-  const currentContent = useSelector((state: RootState) => (state.github as any).currentContent);
+  const isLoading = useSelector((state: RootState) => state.github.isLoading);
+  const selectedRepoId = useSelector((state: RootState) => state.github.selectedRepository);
+  const selectedPath = useSelector((state: RootState) => state.github.selectedPath);
+  const currentContent = useSelector((state: RootState) => state.github.currentContent);
   
   useEffect(() => {
     if (selectedRepoId) {
@@ -36,8 +40,8 @@ const FileBrowser: React.FC = () => {
     dispatch(setSelectedPath(newPath));
   };
   
-  const handleFileClick = (file: any) => {
-    dispatch(fetchRepositoryContents({ path: file.path }));
+  const handleItemClick = (item: any) => {
+    dispatch(fetchRepositoryContents({ path: item.path }));
   };
   
   if (!selectedRepoId) {
@@ -64,28 +68,51 @@ const FileBrowser: React.FC = () => {
     );
   }
   
+  // Custom breadcrumb rendering
+  const renderBreadcrumb = (path: string) => {
+    const segments = path ? path.split('/') : [];
+    return (
+      <Flex align="center" mb={4} overflow="auto" className="custom-breadcrumb">
+        <Box 
+          as="span" 
+          onClick={() => handlePathClick('')}
+          cursor="pointer"
+          color="blue.500"
+          _hover={{ textDecoration: 'underline' }}
+          mr={2}
+        >
+          Root
+        </Box>
+        
+        {segments.map((segment, index) => {
+          const pathToSegment = segments.slice(0, index + 1).join('/');
+          return (
+            <React.Fragment key={index}>
+              <Box mx={1} color="gray.500">
+                <IconWrapper icon={FaChevronRight} />
+              </Box>
+              <Box 
+                as="span" 
+                onClick={() => handlePathClick(pathToSegment)}
+                cursor="pointer"
+                color="blue.500"
+                _hover={{ textDecoration: 'underline' }}
+                mr={2}
+              >
+                {segment}
+              </Box>
+            </React.Fragment>
+          );
+        })}
+      </Flex>
+    );
+  };
+  
   // Show file content if current content is a file
   if (currentContent.type === 'file') {
     return (
       <Box>
-        <Breadcrumb separator={<Icon as={FaChevronRight} />} mb={4}>
-          <BreadcrumbItem>
-            <BreadcrumbLink onClick={() => handlePathClick('')}>
-              Root
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          {currentContent.path.split('/').map((segment, index, array) => {
-            // Create the path up to this segment
-            const pathToSegment = array.slice(0, index + 1).join('/');
-            return (
-              <BreadcrumbItem key={index} isCurrentPage={index === array.length - 1}>
-                <BreadcrumbLink onClick={() => handlePathClick(pathToSegment)}>
-                  {segment}
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            );
-          })}
-        </Breadcrumb>
+        {renderBreadcrumb(currentContent.path)}
         
         <Box p={4} borderWidth="1px" borderRadius="md" fontFamily="monospace" overflow="auto">
           <pre style={{ whiteSpace: 'pre-wrap', maxHeight: '70vh', overflow: 'auto' }}>
@@ -98,50 +125,76 @@ const FileBrowser: React.FC = () => {
   
   // Show directory listing
   return (
-    <Box>
-      <Breadcrumb separator={<Icon as={FaChevronRight} />} mb={4}>
-        <BreadcrumbItem>
-          <BreadcrumbLink onClick={() => handlePathClick('')}>
-            Root
-          </BreadcrumbLink>
-        </BreadcrumbItem>
-        {selectedPath && selectedPath.split('/').map((segment, index, array) => {
-          // Create the path up to this segment
-          const pathToSegment = array.slice(0, index + 1).join('/');
-          return (
-            <BreadcrumbItem key={index} isCurrentPage={index === array.length - 1}>
-              <BreadcrumbLink onClick={() => handlePathClick(pathToSegment)}>
-                {segment}
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          );
-        })}
-      </Breadcrumb>
+    <Box p={4} borderWidth="1px" borderRadius="md">
+      {renderBreadcrumb(selectedPath || '')}
       
-      <Table variant="simple">
-        <Tbody>
-          {Array.isArray(currentContent.content) && currentContent.content.length > 0 ? (
-            currentContent.content.map((item: any) => (
-              <Tr 
-                key={item.path}
-                _hover={{ bg: 'gray.100' }}
-                cursor="pointer"
-                onClick={() => handleFileClick(item)}
-              >
-                <Td width="40px">
-                  <Icon as={item.type === 'dir' ? FaFolder : FaFile} color={item.type === 'dir' ? 'yellow.500' : 'blue.500'} />
-                </Td>
-                <Td>{item.name}</Td>
-                <Td isNumeric>{item.size}</Td>
-              </Tr>
-            ))
-          ) : (
-            <Tr>
-              <Td colSpan={3} textAlign="center">Empty directory</Td>
-            </Tr>
-          )}
-        </Tbody>
-      </Table>
+      <Flex justifyContent="space-between" mb={4}>
+        <Button 
+          onClick={() => dispatch(fetchRepositoryContents({ path: selectedPath || '' }))} 
+          size="sm"
+        >
+          <Flex align="center">
+            <Box mr={2}>
+              <IconWrapper icon={FaSyncAlt} />
+            </Box>
+            <Text>Refresh</Text>
+          </Flex>
+        </Button>
+      </Flex>
+
+      {isLoading ? (
+        <Flex justify="center" p={4}>
+          <Spinner />
+        </Flex>
+      ) : currentContent.content && Array.isArray(currentContent.content) && currentContent.content.length === 0 ? (
+        <Text>This directory is empty</Text>
+      ) : (
+        <div className="file-browser-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Size</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentContent.content && Array.isArray(currentContent.content) && currentContent.content.length > 0 ? (
+                currentContent.content.map((item: any) => (
+                  <tr 
+                    key={item.path}
+                    onClick={() => handleItemClick(item)}
+                    className={item.type === 'file' ? 'file-item' : 'folder-item'}
+                  >
+                    <td>
+                      <Flex align="center">
+                        <Box 
+                          mr={2} 
+                          color={item.type === 'file' ? 'blue.500' : 'yellow.500'}
+                        >
+                          {item.type === 'file' ? 
+                            <IconWrapper icon={FaFile} /> : 
+                            <IconWrapper icon={FaFolder} />
+                          }
+                        </Box>
+                        <Text>{item.name}</Text>
+                      </Flex>
+                    </td>
+                    <td>
+                      {item.type === 'file' ? formatFileSize(item.size || 0) : ''}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={2}>
+                    <Text textAlign="center">Empty directory</Text>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Box>
   );
 };

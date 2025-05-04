@@ -6,7 +6,6 @@ import {
   ListItem, 
   Text, 
   Flex, 
-  Icon, 
   Badge, 
   Button, 
   Spinner
@@ -16,12 +15,13 @@ import { selectAllRepositories, setSelectedRepository } from '../../store/slices
 import { AppDispatch, RootState } from '../../store';
 import { fetchRepositoryBranches } from '../../store/thunks/githubThunks';
 import { formatDistanceToNow } from 'date-fns';
+import { IconWrapper } from '../../utils/IconWrapper';
 
 const RepositoryList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const repositories = useSelector(selectAllRepositories);
-  const selectedRepositoryId = useSelector((state: RootState) => (state.github as any).selectedRepository);
-  const isLoading = useSelector((state: RootState) => (state.github as any).isLoading);
+  const selectedRepositoryId = useSelector((state: RootState) => state.github.selectedRepository);
+  const isLoading = useSelector((state: RootState) => state.github.isLoading);
   
   // Use light theme colors as Chakra might not have useColorMode in this version
   const bg = 'white';
@@ -69,7 +69,9 @@ const RepositoryList: React.FC = () => {
           >
             <Flex direction="column">
               <Flex align="center" mb={1}>
-                <Icon as={FaCode} mr={2} color="blue.500" />
+                <Box mr={2} color="blue.500">
+                  <IconWrapper icon={FaCode} />
+                </Box>
                 <Heading size="sm" fontWeight="600">{repo.name}</Heading>
                 {repo.private && (
                   <Badge ml={2} colorScheme="purple" fontSize="xs">
@@ -95,18 +97,24 @@ const RepositoryList: React.FC = () => {
                 )}
                 
                 <Flex align="center" mr={3}>
-                  <Icon as={FaStar} mr={1} />
+                  <Box mr={1}>
+                    <IconWrapper icon={FaStar} />
+                  </Box>
                   <Text>{repo.stargazers_count}</Text>
                 </Flex>
                 
                 <Flex align="center" mr={3}>
-                  <Icon as={FaCodeBranch} mr={1} />
+                  <Box mr={1}>
+                    <IconWrapper icon={FaCodeBranch} />
+                  </Box>
                   <Text>{repo.forks_count}</Text>
                 </Flex>
                 
                 {repo.open_issues_count > 0 && (
                   <Flex align="center">
-                    <Icon as={FaExclamationCircle} mr={1} />
+                    <Box mr={1}>
+                      <IconWrapper icon={FaExclamationCircle} />
+                    </Box>
                     <Text>{repo.open_issues_count}</Text>
                   </Flex>
                 )}

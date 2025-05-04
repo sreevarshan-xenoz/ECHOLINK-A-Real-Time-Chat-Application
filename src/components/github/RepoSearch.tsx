@@ -13,10 +13,11 @@ import { AppDispatch, RootState } from '../../store';
 import { GitHubRepository } from '../../types/github';
 import { setRepositories, setSelectedRepository } from '../../store/slices/githubSlice';
 import { fetchRepositoryBranches } from '../../store/thunks/githubThunks';
+import { IconWrapper } from '../../utils/IconWrapper';
 
 const RepoSearch: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const authToken = useSelector((state: RootState) => (state.github as any).authToken);
+  const authToken = useSelector((state: RootState) => state.github.authToken);
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<GitHubRepository[]>([]);
@@ -108,7 +109,9 @@ const RepoSearch: React.FC = () => {
               onClick={() => handleSelectRepository(repo)}
             >
               <Flex align="center">
-                <Box mr={3}><FaGithub /></Box>
+                <Box mr={3}>
+                  <IconWrapper icon={FaGithub} />
+                </Box>
                 <Box>
                   <Text fontWeight="bold">{repo.full_name}</Text>
                   <Text fontSize="sm" color="gray.600">

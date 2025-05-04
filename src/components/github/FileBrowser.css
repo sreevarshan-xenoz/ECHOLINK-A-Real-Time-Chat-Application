@@ -1,0 +1,42 @@
+.file-browser-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.file-browser-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.file-browser-table th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+.file-browser-table td {
+  padding: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.folder-item {
+  cursor: pointer;
+}
+
+.folder-item:hover {
+  background-color: #f7fafc;
+}
+
+.file-item {
+  cursor: pointer;
+}
+
+.file-item:hover {
+  background-color: #f7fafc;
+}
+
+.custom-breadcrumb {
+  white-space: nowrap;
+  padding: 4px 0;
+} 

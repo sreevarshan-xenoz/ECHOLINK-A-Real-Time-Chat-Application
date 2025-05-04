@@ -12,6 +12,7 @@ import {
 import { FaRobot, FaCode, FaCheck, FaBug, FaLightbulb } from 'react-icons/fa';
 import { RootState } from '../../store';
 import aiService from '../../services/ai-service';
+import { IconWrapper } from '../../utils/IconWrapper';
 
 type AnalysisType = 'analyze' | 'review' | 'suggest' | 'explain';
 
@@ -118,7 +119,9 @@ const CodeAnalysis: React.FC = () => {
     return (
       <Box p={4} borderWidth="1px" borderRadius="md" mt={4}>
         <Flex align="center" mb={4}>
-          <Box mr={2}><FaRobot size={20} /></Box>
+          <Box mr={2}>
+            <IconWrapper icon={FaRobot} size={20} />
+          </Box>
           <Heading size="md">AI Code Assistant</Heading>
         </Flex>
         <Text>Select a file to analyze with AI</Text>
@@ -130,7 +133,9 @@ const CodeAnalysis: React.FC = () => {
     return (
       <Box p={4} borderWidth="1px" borderRadius="md" mt={4}>
         <Flex align="center" mb={4}>
-          <Box mr={2}><FaRobot size={20} /></Box>
+          <Box mr={2}>
+            <IconWrapper icon={FaRobot} size={20} />
+          </Box>
           <Heading size="md">AI Code Assistant</Heading>
         </Flex>
         <Text mb={4}>AI service is not initialized. Please set up your AI API key in settings.</Text>
@@ -141,7 +146,9 @@ const CodeAnalysis: React.FC = () => {
   return (
     <Box p={4} borderWidth="1px" borderRadius="md" mt={4}>
       <Flex align="center" mb={4}>
-        <Box mr={2}><FaRobot size={20} /></Box>
+        <Box mr={2}>
+          <IconWrapper icon={FaRobot} size={20} />
+        </Box>
         <Heading size="md">AI Code Assistant</Heading>
       </Flex>
       
@@ -149,7 +156,7 @@ const CodeAnalysis: React.FC = () => {
       
       <Flex mb={6} wrap="wrap" gap={2}>
         {(['analyze', 'review', 'suggest', 'explain'] as AnalysisType[]).map(type => {
-          const Icon = getActionIcon(type);
+          const IconComponent = getActionIcon(type);
           return (
             <Button
               key={type}
@@ -160,7 +167,7 @@ const CodeAnalysis: React.FC = () => {
               size="sm"
             >
               <Box mr={1} display="inline-block">
-                <Icon />
+                <IconWrapper icon={IconComponent} />
               </Box>
               {type.charAt(0).toUpperCase() + type.slice(1)}
             </Button>
