@@ -8,7 +8,7 @@ import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { v4 as uuidv4 } from 'uuid';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { LazyAISettings, LazyProfile } from './LazyComponents';
+import { LazyAISettings, LazyProfile, LazyMiniAIChat } from './LazyComponents';
 import {
   Box,
   Flex,
@@ -34,8 +34,9 @@ import {
   Card,
   CardBody,
   Grid,
+  Spinner,
 } from '@chakra-ui/react';
-import IconWrapper from '../utils/IconWrapper';
+import { IconWrapper } from '../utils/IconWrapper';
 import CodingPlatformsTab from './CodingPlatformsTab';
 
 // Message Status Component
@@ -1190,23 +1191,38 @@ const Chat = ({
                                 borderRadius="full"
                                 color={colorMode === 'dark' ? 'blue.200' : 'blue.500'}
                             >
-                                👥
+                                👋
                             </Box>
                             <Heading size="md" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
-                                No conversations yet
+                                Start a conversation
                             </Heading>
-                            <Text mb={4} color={colorMode === 'dark' ? 'gray.400' : 'gray.600'}>
-                                Select a peer or connect with someone to start chatting
+                            <Text mb={4} color={colorMode === 'dark' ? 'gray.400' : 'gray.600'} maxWidth="400px">
+                                Connect with someone to chat or try out the AI assistant. Your messages will appear here.
                             </Text>
-                            <Button 
-                                colorScheme="blue" 
-                                borderRadius="full"
-                                boxShadow="md"
-                                _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
-                                transition="all 0.2s"
-                            >
-                                Connect with Peers
-                            </Button>
+                            <HStack spacing={4}>
+                                <Button 
+                                    colorScheme="blue" 
+                                    borderRadius="full"
+                                    boxShadow="md"
+                                    leftIcon="👥"
+                                    onClick={handleConnectWithPeers}
+                                    _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                                    transition="all 0.2s"
+                                >
+                                    Connect
+                                </Button>
+                                <Button 
+                                    colorScheme="purple" 
+                                    borderRadius="full"
+                                    boxShadow="md"
+                                    leftIcon="🤖"
+                                    onClick={() => navigate('/ai')}
+                                    _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                                    transition="all 0.2s"
+                                >
+                                    Try AI Chat
+                                </Button>
+                            </HStack>
                         </Flex>
                     ) : (
                         <VStack spacing={2} align="stretch">
@@ -1264,6 +1280,11 @@ const Chat = ({
                                 </VStack>
                             </Box>
                         )}
+
+                        {/* Mini AI Chat */}
+                        <Suspense fallback={<Box p={2} textAlign="center"><Spinner size="sm" /></Box>}>
+                            <LazyMiniAIChat />
+                        </Suspense>
 
                         {/* Quick actions */}
                         <Box>
@@ -1453,7 +1474,7 @@ const Chat = ({
                             </InputGroup>
                         </Box>
 
-                        {/* Coding Platforms Integration - Using new tabbed component */}
+                        {/* Coding Platforms Integration */}
                         <CodingPlatformsTab />
 
                     </VStack>

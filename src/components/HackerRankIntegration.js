@@ -16,7 +16,7 @@ import {
   Divider
 } from '@chakra-ui/react';
 import { FaCheck, FaTrophy, FaShare, FaCode, FaUsers, FaCertificate, FaRocket } from 'react-icons/fa';
-import IconWrapper from '../utils/IconWrapper';
+import { IconWrapper } from '../utils/IconWrapper';
 
 const HackerRankIntegration = () => {
   const [username, setUsername] = useState('');

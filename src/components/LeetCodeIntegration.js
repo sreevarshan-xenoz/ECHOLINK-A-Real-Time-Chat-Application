@@ -16,7 +16,7 @@ import {
   Tooltip
 } from '@chakra-ui/react';
 import { FaCheck, FaTrophy, FaShare, FaCode, FaCalendarAlt, FaStar } from 'react-icons/fa';
-import IconWrapper from '../utils/IconWrapper';
+import { IconWrapper } from '../utils/IconWrapper';
 
 const LeetCodeIntegration = () => {
   const [username, setUsername] = useState('');
