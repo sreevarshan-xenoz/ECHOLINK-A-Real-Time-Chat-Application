@@ -1,16 +1,17 @@
-import { createSlice, PayloadAction, createEntityAdapter } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createEntityAdapter, EntityAdapter, EntityState } from '@reduxjs/toolkit';
 import { Peer, PeerConnectionStatus, PeerGroup } from '../../types/peer';
 import { RootState } from '../index';
 
 // Create entity adapters for peers and groups
+// Using type assertion to work around TypeScript error with EntityAdapterOptions
 const peersAdapter = createEntityAdapter<Peer>({
-  selectId: peer => peer.id,
-});
+  selectId: (peer: Peer) => peer.id,
+} as any);
 
 const groupsAdapter = createEntityAdapter<PeerGroup>({
-  selectId: group => group.id,
-  sortComparer: (a, b) => a.name.localeCompare(b.name),
-});
+  selectId: (group: PeerGroup) => group.id,
+  sortComparer: (a: PeerGroup, b: PeerGroup) => a.name.localeCompare(b.name),
+} as any);
 
 interface PeersState {
   // Non-serializable data stored outside Redux

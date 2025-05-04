@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { Box, Heading, Separator } from '@chakra-ui/react';
+import { Box, Heading, Divider } from '@chakra-ui/react';
 import RepositoryList from './RepositoryList';
 import { RootState } from '../../store';
 
@@ -12,7 +12,7 @@ const GithubExplorer: React.FC = () => {
       <Box p={4} bg="gray.50">
         <Heading size="md">GitHub Explorer</Heading>
       </Box>
-      <Separator />
+      <Divider />
       
       {isAuthenticated ? (
         <Box>

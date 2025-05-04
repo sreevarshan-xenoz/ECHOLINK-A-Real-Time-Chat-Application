@@ -154,7 +154,7 @@ ${code}
     return (
       <Box p={4} borderWidth="1px" borderRadius="md" mt={4}>
         <Flex align="center" mb={4}>
-          <Box mr={2}><FaBook size={20} /></Box>
+          <Box mr={2}><IconWrapper icon={FaBook} size={20} /></Box>
           <Heading size="md">Documentation Generator</Heading>
         </Flex>
         <Text mb={4}>AI service is not initialized. Please set up your AI API key in settings.</Text>
@@ -165,7 +165,7 @@ ${code}
   return (
     <Box p={4} borderWidth="1px" borderRadius="md" mt={4}>
       <Flex align="center" mb={4}>
-        <Box mr={2}><FaBook size={20} /></Box>
+        <Box mr={2}><IconWrapper icon={FaBook} size={20} /></Box>
         <Heading size="md">Documentation Generator</Heading>
       </Flex>
       

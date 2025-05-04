@@ -135,8 +135,20 @@ const CreateRepositoryForm: React.FC<CreateRepositoryFormProps> = ({
   );
 };
 
+// Define type for hook result to fix TypeScript errors
+type GitHubRepositoriesHookResult = {
+  repositories: GitHubRepository[];
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  refetch: () => void;
+  createRepository: (data: { name: string; description?: string; private?: boolean }) => void;
+  isCreating: boolean;
+};
+
 const RepositoryList: React.FC = () => {
   const dispatch = useAppDispatch();
+  // Cast the hook result to the proper type
   const { 
     repositories, 
     isLoading, 
@@ -145,7 +157,7 @@ const RepositoryList: React.FC = () => {
     refetch, 
     createRepository, 
     isCreating 
-  } = useGitHubRepositories();
+  } = useGitHubRepositories() as GitHubRepositoriesHookResult;
   const selectedRepositoryId = useAppSelector(state => state.github.selectedRepository);
   const theme = useAppSelector(selectTheme);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -196,8 +208,8 @@ const RepositoryList: React.FC = () => {
       )}
       
       <div className="repository-list">
-        {repositories?.length ? (
-          repositories.map(repo => (
+        {Array.isArray(repositories) && repositories.length > 0 ? (
+          repositories.map((repo: GitHubRepository) => (
             <RepositoryCard
               key={repo.id}
               repository={repo}

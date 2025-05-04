@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ChakraProvider } from '@chakra-ui/react';
+import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { store } from '../store';
 
 // Create a client for React Query
@@ -15,6 +15,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Define theme
+const theme = extendTheme({
+  config: {
+    initialColorMode: 'light',
+    useSystemColorMode: false,
+  },
+});
+
 interface AppProvidersProps {
   children: ReactNode;
 }
@@ -23,8 +31,7 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        {/* @ts-ignore - Different Chakra UI versions might have incompatible props */}
-        <ChakraProvider>
+        <ChakraProvider theme={theme}>
           {children}
         </ChakraProvider>
       </QueryClientProvider>

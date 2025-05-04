@@ -1,16 +1,4 @@
-import { AIState } from './slices/aiSlice';
-import { GitHubState } from './slices/githubSlice';
-import { MessagesState } from './slices/messagesSlice';
-import { PeersState } from './slices/peersSlice';
-import { UIState } from './slices/uiSlice';
-import { UserState } from './slices/userSlice';
+import type { RootState as StoreRootState } from './index';
 
-// Define the shape of the root state
-export interface RootState {
-  user: UserState;
-  messages: MessagesState;
-  peers: PeersState;
-  github: GitHubState;
-  ui: UIState;
-  ai: AIState;
-} 
+// Simply re-export the RootState type from the store index
+export type RootState = StoreRootState; 

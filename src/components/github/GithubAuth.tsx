@@ -18,10 +18,10 @@ import { IconWrapper } from '../../utils/IconWrapper';
 const GithubAuth: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [token, setToken] = useState('');
-  const isAuthenticated = useSelector((state: RootState) => (state.github as any).isAuthenticated);
-  const user = useSelector((state: RootState) => (state.github as any).user);
-  const isLoading = useSelector((state: RootState) => (state.github as any).isLoading);
-  const error = useSelector((state: RootState) => (state.github as any).error);
+  const isAuthenticated = useSelector((state: RootState) => state.github.isAuthenticated);
+  const user = useSelector((state: RootState) => state.github.user);
+  const isLoading = useSelector((state: RootState) => state.github.isLoading);
+  const error = useSelector((state: RootState) => state.github.error);
 
   const handleConnect = (e: React.FormEvent) => {
     e.preventDefault();

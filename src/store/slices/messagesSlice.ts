@@ -1,12 +1,13 @@
-import { createSlice, PayloadAction, createEntityAdapter } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createEntityAdapter, EntityAdapter, EntityState } from '@reduxjs/toolkit';
 import { Message, MessageEdit, Reaction, TranslationState } from '../../types/message';
 import { RootState } from '../index';
 
 // Create an entity adapter for messages
+// Using type assertion to work around TypeScript error with EntityAdapterOptions
 const messagesAdapter = createEntityAdapter<Message>({
-  selectId: (message) => message.id,
-  sortComparer: (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
-});
+  selectId: (message: Message) => message.id,
+  sortComparer: (a: Message, b: Message) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+} as any);
 
 // Define additional state
 interface MessagesState {
