@@ -11,8 +11,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store';
 
 const GithubPage: React.FC = () => {
-  const isAuthenticated = useSelector((state: RootState) => (state.github as any).isAuthenticated);
-  const selectedRepository = useSelector((state: RootState) => (state.github as any).selectedRepository);
+  const isAuthenticated = useSelector((state: RootState) => state.github.isAuthenticated);
+  const selectedRepository = useSelector((state: RootState) => state.github.selectedRepository);
   
   return (
     <Container maxW="container.xl" pt={5} pb={10}>

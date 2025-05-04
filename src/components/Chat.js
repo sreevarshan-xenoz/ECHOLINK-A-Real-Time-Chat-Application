@@ -1,71 +1,157 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, memo, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { webrtcService } from '../services/webrtc-service';
 import aiService from '../services/ai-service';
 import * as supabaseService from '../services/supabase-service';
-import AISettings from './AISettings';
-import Profile from './Profile';
-import './Chat.css';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { v4 as uuidv4 } from 'uuid';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
+import { LazyAISettings, LazyProfile } from './LazyComponents';
+import {
+  Box,
+  Flex,
+  Text,
+  Input,
+  Button,
+  IconButton,
+  Avatar,
+  Badge,
+  Divider,
+  InputGroup,
+  InputRightElement,
+  Tooltip,
+  useColorMode,
+  HStack,
+  VStack,
+  Spacer,
+  Heading,
+  Container,
+  useToast,
+  Tag,
+  TagLabel,
+  Card,
+  CardBody,
+  Grid,
+} from '@chakra-ui/react';
+import IconWrapper from '../utils/IconWrapper';
+import CodingPlatformsTab from './CodingPlatformsTab';
 
+// Message Status Component
 const MessageStatus = memo(({ status, timestamp }) => {
-    return (
-        <div className="message-status">
-            {status === 'sending' && <span className="status-icon sending">●</span>}
-            {status === 'sent' && <span className="status-icon sent">✓</span>}
-            {status === 'delivered' && <span className="status-icon delivered">✓✓</span>}
-            {status === 'read' && <span className="status-icon read">✓✓</span>}
-            {status === 'error' && <span className="status-icon error">!</span>}
-            {status === 'queued' && <span className="status-icon queued">⏱</span>}
-            {timestamp && <span className="status-time">{new Date(timestamp).toLocaleTimeString()}</span>}
-        </div>
-    );
+  const getStatusIcon = () => {
+    switch (status) {
+      case 'sending': return '●';
+      case 'sent': return '✓';
+      case 'delivered': return '✓✓';
+      case 'read': return '✓✓';
+      case 'error': return '!';
+      case 'queued': return '⏱';
+      default: return '';
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (status) {
+      case 'sending': return 'gray.400';
+      case 'sent': return 'blue.400';
+      case 'delivered': return 'blue.400';
+      case 'read': return 'green.400';
+      case 'error': return 'red.400';
+      case 'queued': return 'yellow.400';
+      default: return 'gray.400';
+    }
+  };
+
+  return (
+    <Flex alignItems="center" fontSize="xs" color="gray.500">
+      {status && (
+        <Text color={getStatusColor()} mr={1} fontWeight="bold">
+          {getStatusIcon()}
+        </Text>
+      )}
+      {timestamp && (
+        <Text>{new Date(timestamp).toLocaleTimeString()}</Text>
+      )}
+    </Flex>
+  );
 });
 
+// Message Item Component
 const MessageItem = memo(({ message, onReaction, onRetry, onMarkAsRead, onDelete }) => {
-    const handleRetry = (e) => {
-        e.stopPropagation();
-        onRetry(message);
-    };
-    
-    const handleDelete = (e) => {
-        e.stopPropagation();
-        onDelete(message);
-    };
-    
-    useEffect(() => {
-        // Send read receipt when message is visible
-        if (message.sender !== 'user' && message.status !== 'read') {
-            onMarkAsRead(message);
-        }
-    }, [message, onMarkAsRead]);
-    
-    return (
-        <div className={`message ${message.sender === 'user' ? 'sent' : 'received'}`}>
-            <div className="message-content">{message.text}</div>
-            <div className="message-meta">
-                <MessageStatus status={message.status} timestamp={message.timestamp} />
-                {message.offline && <span className="offline-indicator">offline</span>}
-                <div className="message-reactions">
-                    {message.reactions?.map((reaction, index) => (
-                        <span key={index} className="reaction">{reaction}</span>
-                    ))}
-                </div>
-                {message.status === 'error' && (
-                    <div className="message-actions">
-                        <button className="retry-button" onClick={handleRetry}>Retry</button>
-                        <button className="delete-button" onClick={handleDelete}>Delete</button>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
+  const isSent = message.sender === 'user';
+  const { colorMode } = useColorMode();
+  
+  const handleRetry = (e) => {
+    e.stopPropagation();
+    onRetry(message);
+  };
+  
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    onDelete(message);
+  };
+  
+  useEffect(() => {
+    // Send read receipt when message is visible
+    if (message.sender !== 'user' && message.status !== 'read') {
+      onMarkAsRead(message);
+    }
+  }, [message, onMarkAsRead]);
+  
+  return (
+    <Box
+      alignSelf={isSent ? 'flex-end' : 'flex-start'}
+      maxWidth="80%"
+      mb={3}
+    >
+      <Card
+        bg={isSent 
+          ? (colorMode === 'dark' ? 'blue.600' : 'blue.500') 
+          : (colorMode === 'dark' ? 'gray.700' : 'gray.100')}
+        color={isSent ? 'white' : (colorMode === 'dark' ? 'white' : 'black')}
+        borderRadius={isSent ? "lg 2px 2px lg" : "2px lg lg 2px"}
+        boxShadow="sm"
+      >
+        <CardBody py={2} px={3}>
+          <Text>{message.text}</Text>
+        </CardBody>
+      </Card>
+      <Flex 
+        justifyContent={isSent ? 'flex-end' : 'flex-start'}
+        alignItems="center"
+        mt={1}
+        fontSize="xs"
+        color="gray.500"
+      >
+        <MessageStatus status={message.status} timestamp={message.timestamp} />
+        {message.offline && (
+          <Badge ml={2} colorScheme="yellow" size="sm">
+            offline
+          </Badge>
+        )}
+        {message.reactions?.map((reaction, index) => (
+          <Tag key={index} size="sm" ml={1} borderRadius="full" variant="solid" colorScheme="blue">
+            <TagLabel>{reaction}</TagLabel>
+          </Tag>
+        ))}
+        {message.status === 'error' && (
+          <HStack ml={2} spacing={1}>
+            <Button size="xs" colorScheme="blue" onClick={handleRetry}>
+              Retry
+            </Button>
+            <Button size="xs" colorScheme="red" onClick={handleDelete}>
+              Delete
+            </Button>
+          </HStack>
+        )}
+      </Flex>
+    </Box>
+  );
 });
 
+// Main Chat Component
 const Chat = ({ 
     currentUser, 
     selectedPeer, 
@@ -81,6 +167,8 @@ const Chat = ({
     setTheme
 }) => {
     const navigate = useNavigate();
+    const toast = useToast();
+    const { colorMode } = useColorMode();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
     const [peers, setPeers] = useState([]);
@@ -108,14 +196,127 @@ const Chat = ({
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [connectionState, setConnectionState] = useState('connected');
     const [offlineMode, setOfflineMode] = useState(false);
+    const [customEmojis, setCustomEmojis] = useState(['👍', '❤️', '😊', '😂', '👏', '🎉', '🔥', '🌟', '🎨', '🎮']);
+    const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
+    const [selectedMessageForReaction, setSelectedMessageForReaction] = useState(null);
+    const [voiceTranscriptionEnabled, setVoiceTranscriptionEnabled] = useState(true);
+    const [collaborativeEditingEnabled, setCollaborativeEditingEnabled] = useState(true);
+    const [messageEditHistory, setMessageEditHistory] = useState(new Map());
+    const [showAISettings, setShowAISettings] = useState(false);
+    const [useBasicChatbot, setUseBasicChatbot] = useState(true);
+    const [settings, setSettings] = useState({
+        notifications: {
+            enabled: true,
+            sound: true
+        },
+        appearance: {
+            theme: 'dark',
+            fontSize: 'medium'
+        },
+        chat: {
+            enterToSend: true,
+            readReceipts: true
+        },
+        ai: {
+            provider: 'openai',
+            apiKey: '',
+            model: 'gpt-3.5-turbo'
+        },
+        privacy: {
+            encryptMessages: true,
+            autoDeleteMessages: false
+        }
+    });
+    
+    // Basic chatbot responses
+    const basicChatbotResponses = {
+        "hello": "Hello! I'm a basic chatbot. I can help you with simple tasks. Type 'help' to see what I can do.",
+        "hi": "Hi there! Need any help? Type 'help' to see what I can do.",
+        "help": "I can help you with:\n- Basic chat features\n- File sharing\n- Code sharing\n- Voice messages\nTo enable AI features, click the settings icon and configure your API key.",
+        "how are you": "I'm functioning well! How can I assist you today?",
+        "bye": "Goodbye! Have a great day!",
+        "features": "Current features:\n- Real-time messaging\n- File sharing\n- Code sharing\n- Voice messages\n- Reactions\nEnable AI for more advanced features!",
+        "ai": "To enable AI features, click the settings icon (⚙️) and configure your API key. This will unlock:\n- Smart replies\n- Message completion\n- Sentiment analysis\n- Language translation"
+    };
 
-    // Load user profile from localStorage on component mount
+    // Basic chatbot response handler
+    const getBasicChatbotResponse = (message) => {
+        const lowercaseMessage = message.toLowerCase().trim();
+        for (const [key, response] of Object.entries(basicChatbotResponses)) {
+            if (lowercaseMessage.includes(key)) {
+                return response;
+            }
+        }
+        return "I'm a basic chatbot. I can only understand simple commands. Type 'help' to see what I can do.";
+    };
+    
+    // Handler for settings changes
+    const handleSettingsChange = (section, key, value) => {
+        setSettings(prev => ({
+            ...prev,
+            [section]: {
+                ...prev[section],
+                [key]: value
+            }
+        }));
+    };
+    
+    // Toggle settings panel
+    const toggleSettings = () => {
+        setShowSettings(!showSettings);
+    };
+    
+    // Handler for retrying failed messages
+    const handleRetry = (message) => {
+        if (!selectedPeer) return;
+        
+        setMessages(prev => prev.map(msg => 
+            msg.id === message.id ? { ...msg, status: 'sending' } : msg
+        ));
+        
+        const success = webrtcService.sendMessage(message, selectedPeer);
+        
+        if (success) {
+            setMessages(prev => prev.map(msg => 
+                msg.id === message.id ? { ...msg, status: 'sent', error: null } : msg
+            ));
+        } else {
+            setMessages(prev => prev.map(msg => 
+                msg.id === message.id ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
+            ));
+        }
+    };
+    
+    // Handler for marking messages as read
+    const handleMarkAsRead = (message) => {
+        if (!selectedPeer) return;
+        
+        setMessages(prev => prev.map(msg => 
+            msg.id === message.id ? { ...msg, status: 'read' } : msg
+        ));
+        
+        webrtcService.sendReadReceipt(message.id, selectedPeer);
+    };
+    
+    // Handler for deleting messages
+    const handleDeleteMessage = (message) => {
+        setMessages(prev => prev.filter(msg => msg.id !== message.id));
+        
+        if (!isAIChatActive && selectedPeer) {
+            webrtcService.sendMessage({
+                type: 'DELETE_MESSAGE',
+                messageId: message.id,
+                sender: currentUser.id,
+                timestamp: new Date().toISOString()
+            }, selectedPeer);
+        }
+    };
+    
     useEffect(() => {
         const savedProfile = JSON.parse(localStorage.getItem('user_profile')) || null;
         if (savedProfile) {
             setUserProfile(savedProfile);
         } else {
-            // Set default profile if none exists
             const defaultProfile = {
                 displayName: `User-${currentUser?.id?.substring(0, 6)}`,
                 avatarUrl: ''
@@ -188,13 +389,6 @@ const Chat = ({
         }
     };
 
-    const [customEmojis, setCustomEmojis] = useState(['👍', '❤️', '😊', '😂', '👏', '🎉', '🔥', '🌟', '🎨', '🎮']);
-    const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
-    const [selectedMessageForReaction, setSelectedMessageForReaction] = useState(null);
-    const [voiceTranscriptionEnabled, setVoiceTranscriptionEnabled] = useState(true);
-    const [collaborativeEditingEnabled, setCollaborativeEditingEnabled] = useState(true);
-    const [messageEditHistory, setMessageEditHistory] = useState(new Map());
-    
     const handleCustomEmojiAdd = (emoji) => {
         if (!customEmojis.includes(emoji)) {
             setCustomEmojis(prev => [...prev, emoji]);
@@ -251,514 +445,10 @@ const Chat = ({
             }, selectedPeer);
         }
     };
-    const [showAISettings, setShowAISettings] = useState(false);
 
-    useEffect(() => {
-        if (isAiInitialized && selectedAIModel) {
-            aiService.setModel(selectedAIModel);
-        }
-    }, [isAiInitialized, selectedAIModel]);
-
-    const toggleSettings = () => {
-        if (isAIChatActive) {
-            setShowAISettings(!showAISettings);
-        } else {
-            setShowSettings(!showSettings);
-        }
-    };
-
-    const handleSettingsChange = (category, setting, value) => {
-        setSettings(prev => ({
-            ...prev,
-            [category]: {
-                ...prev[category],
-                [setting]: value
-            }
-        }));
-
-        // Apply immediate effects
-        if (category === 'appearance' && setting === 'theme') {
-            setTheme(value);
-        }
-    };
-
-    const [settings, setSettings] = useState({
-        notifications: {
-            enabled: true,
-            sound: true,
-            desktop: true,
-            preview: true
-        },
-        appearance: {
-            theme: theme,
-            chatBackground: 'default',
-            fontSize: 'medium',
-            bubbleStyle: 'modern',
-            messageAlignment: 'right',
-            messageDensity: 'comfortable',
-            animationLevel: 'full'
-        },
-        chat: {
-            enterToSend: true,
-            autoScroll: true,
-            readReceipts: true,
-            typingIndicator: true,
-            messageTranslation: true,
-            smartReplies: true
-        },
-        ai: {
-            provider: 'openai',
-            apiKey: '',
-            model: 'gpt-3.5-turbo',
-            personality: 'default',
-            autoComplete: true,
-            smartReplies: true
-        },
-        privacy: {
-            encryptMessages: true,
-            autoDeleteMessages: false,
-            deleteAfter: '24h',
-            blockList: []
-        }
-    });
-    const [batchSize] = useState(50);
-    const [visibleMessages] = useState([]);
-    const [completionSuggestion] = useState('');
-    const [isUsingCompletion] = useState(false);
-
-    const [isAIChatEnabled, setIsAIChatEnabled] = useState(isAIChatActive);
-    const [useBasicChatbot, setUseBasicChatbot] = useState(true);
-
-    // Basic chatbot responses
-    const basicChatbotResponses = {
-        "hello": "Hello! I'm a basic chatbot. I can help you with simple tasks. Type 'help' to see what I can do.",
-        "hi": "Hi there! Need any help? Type 'help' to see what I can do.",
-        "help": "I can help you with:\n- Basic chat features\n- File sharing\n- Code sharing\n- Voice messages\nTo enable AI features, click the settings icon and configure your API key.",
-        "how are you": "I'm functioning well! How can I assist you today?",
-        "bye": "Goodbye! Have a great day!",
-        "features": "Current features:\n- Real-time messaging\n- File sharing\n- Code sharing\n- Voice messages\n- Reactions\nEnable AI for more advanced features!",
-        "ai": "To enable AI features, click the settings icon (⚙️) and configure your API key. This will unlock:\n- Smart replies\n- Message completion\n- Sentiment analysis\n- Language translation"
-    };
-
-    // Basic chatbot response handler
-    const getBasicChatbotResponse = (message) => {
-        const lowercaseMessage = message.toLowerCase().trim();
-        for (const [key, response] of Object.entries(basicChatbotResponses)) {
-            if (lowercaseMessage.includes(key)) {
-                return response;
-            }
-        }
-        return "I'm a basic chatbot. I can only understand simple commands. Type 'help' to see what I can do.";
-    };
-
-    // Load message history from Supabase if persistence is enabled
-    const loadMessageHistory = useCallback(async () => {
-        if (!persistenceEnabled || !currentUser?.id || (!selectedPeer && !selectedGroup)) return;
-        
-        setIsLoadingHistory(true);
-        try {
-            let historyResult;
-            
-            if (selectedGroup) {
-                // Load group messages
-                historyResult = await supabaseService.getGroupMessages(selectedGroup.id);
-            } else {
-                // Load direct messages
-                historyResult = await supabaseService.getDirectMessages(currentUser.id, selectedPeer);
-            }
-            
-            if (historyResult.error) {
-                throw historyResult.error;
-            }
-            
-            // Process messages
-            const decryptedMessages = await Promise.all(
-                historyResult.messages.map(async (msg) => {
-                    try {
-                        // Decrypt message content
-                        const decrypted = await webrtcService.decryptMessage({
-                            data: JSON.parse(msg.encrypted_content),
-                            iv: JSON.parse(msg.encryption_iv)
-                        });
-                        
-                        return {
-                            id: msg.id,
-                            text: decrypted.text,
-                            sender: msg.sender_id,
-                            timestamp: msg.created_at,
-                            status: msg.read ? 'read' : (msg.delivered ? 'delivered' : 'sent'),
-                            type: msg.message_type || 'CHAT',
-                            persisted: true
-                        };
-                    } catch (error) {
-                        console.error('Error decrypting message:', error);
-                        return null;
-                    }
-                })
-            );
-            
-            // Filter out failed decryptions
-            const validMessages = decryptedMessages.filter(msg => msg !== null);
-            
-            // Merge with existing messages, avoiding duplicates by ID
-            setMessages(prev => {
-                const existingIds = new Set(prev.map(m => m.id));
-                const newMessages = validMessages.filter(m => !existingIds.has(m.id));
-                return [...prev, ...newMessages].sort((a, b) => 
-                    new Date(a.timestamp) - new Date(b.timestamp)
-                );
-            });
-            
-            // Mark messages as read
-            validMessages.forEach(msg => {
-                if (msg.sender !== currentUser.id && !msg.read) {
-                    supabaseService.markMessageRead(msg.id);
-                    webrtcService.sendReadReceipt(msg.id, msg.sender);
-                }
-            });
-            
-        } catch (error) {
-            console.error('Error loading message history:', error);
-            addNotification('Failed to load message history', 'error');
-        } finally {
-            setIsLoadingHistory(false);
-        }
-    }, [currentUser?.id, selectedPeer, selectedGroup, persistenceEnabled, addNotification]);
-
-    // Effect to load history when peer or group changes
-    useEffect(() => {
-        if (persistenceEnabled && (selectedPeer || selectedGroup)) {
-            loadMessageHistory();
-        }
-    }, [selectedPeer, selectedGroup, persistenceEnabled, loadMessageHistory]);
-
-    // Effect to handle connection state changes
-    useEffect(() => {
-        const unsubscribe = webrtcService.onConnectionState((state) => {
-            console.log('Connection state change:', state);
-            
-            if (state.type === 'error' && state.fatal) {
-                setConnectionState('error');
-                setOfflineMode(true);
-                addNotification('Connection lost. Working in offline mode.', 'error');
-            } else if (state.type === 'connectionState' && state.state === 'connected') {
-                setConnectionState('connected');
-                if (offlineMode) {
-                    setOfflineMode(false);
-                    addNotification('Connection restored.', 'success');
-                    
-                    // Check for offline messages
-                    webrtcService.checkOfflineMessages()
-                        .then(result => {
-                            if (result.delivered > 0) {
-                                addNotification(`Received ${result.delivered} offline messages`, 'info');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error checking offline messages:', error);
-                        });
-                }
-            } else if (state.type === 'reconnecting') {
-                setConnectionState('reconnecting');
-                addNotification(`Reconnecting... Attempt ${state.attempt} of ${state.maxAttempts}`, 'warning');
-            }
-        });
-        
-        return unsubscribe;
-    }, [addNotification, offlineMode]);
-
-    // Function to handle message retry
-    const handleRetry = useCallback((message) => {
-        // Update status to sending
-        setMessages(prev => prev.map(msg => 
-            msg.id === message.id ? { ...msg, status: 'sending', error: null } : msg
-        ));
-        
-        // Attempt to send again
-        const success = webrtcService.sendMessage(message, selectedPeer);
-        
-        if (success) {
-            // Update status to sent
-            setMessages(prev => prev.map(msg => 
-                msg.id === message.id ? { ...msg, status: 'sent' } : msg
-            ));
-        } else if (offlineMode && persistenceEnabled) {
-            // Queue for offline delivery
-            setMessages(prev => prev.map(msg => 
-                msg.id === message.id ? { ...msg, status: 'queued', offline: true } : msg
-            ));
-        } else {
-            // Still failed
-            setMessages(prev => prev.map(msg => 
-                msg.id === message.id ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
-            ));
-        }
-    }, [selectedPeer, offlineMode, persistenceEnabled]);
-
-    // Function to handle message deletion
-    const handleDeleteMessage = useCallback((message) => {
-        setMessages(prev => prev.filter(msg => msg.id !== message.id));
-    }, []);
-
-    // Function to mark message as read
-    const handleMarkAsRead = useCallback((message) => {
-        if (message.persisted) {
-            // Update in database
-            supabaseService.markMessageRead(message.id)
-                .catch(error => console.error('Error marking message as read:', error));
-        }
-        
-        // Send read receipt
-        if (message.sender !== currentUser.id) {
-            webrtcService.sendReadReceipt(message.id, message.sender);
-        }
-        
-        // Update local state
-        setMessages(prev => prev.map(msg => 
-            msg.id === message.id ? { ...msg, status: 'read' } : msg
-        ));
-    }, [currentUser]);
-
-    // Effects
-    useEffect(() => {
-        // Handle chat mode changes
-        setMessages([]);
-        
-        // Add transition effect when switching chat modes
-        const chatContainer = document.querySelector('.chat-container');
-        if (chatContainer) {
-            // Add transition class for animation
-            chatContainer.classList.add('mode-transition');
-            
-            // Set data attribute for mode-specific styling
-            chatContainer.setAttribute('data-chat-mode', isAIChatActive ? 'ai' : 'peer');
-            console.log('Setting chat mode to:', isAIChatActive ? 'ai' : 'peer');
-            
-            // Add a visual flash effect to indicate mode change
-            const flashElement = document.createElement('div');
-            flashElement.className = 'mode-change-flash';
-            chatContainer.appendChild(flashElement);
-            
-            // Display a temporary transition message
-            const transitionMessage = {
-                id: uuidv4(),
-                type: 'SYSTEM',
-                text: `Switched to ${isAIChatActive ? 'AI Chat' : 'Peer Chat'} mode`,
-                timestamp: new Date().toISOString(),
-                isSystemMessage: true
-            };
-            setMessages([transitionMessage]);
-            
-            setTimeout(() => {
-                chatContainer.classList.remove('mode-transition');
-                if (flashElement && flashElement.parentNode) {
-                    flashElement.parentNode.removeChild(flashElement);
-                }
-            }, 500);
-        }
-
-        // Update document title to reflect current chat mode
-        document.title = isAIChatActive ? 'EchoLink - AI Chat' : 'EchoLink - Peer Chat';
-
-        // Cleanup function
-        return () => {
-            if (completionTimeout.current) {
-                clearTimeout(completionTimeout.current);
-            }
-        };
-    }, [isAIChatActive]);
-
-    // Handle peer selection changes
-    useEffect(() => {
-        if (selectedPeer) {
-            setMessages([]);
-        }
-    }, [selectedPeer, setMessages]);
-
-    // WebRTC message handling effect
-    useEffect(() => {
-        const unsubscribe = webrtcService.onMessage((message) => {
-            switch (message.type) {
-                case 'CHAT':
-                case 'FILE_META':
-                case 'FILE_CHUNK':
-                    setMessages(prev => [...prev, message]);
-                    break;
-                case 'VOICE_MESSAGE':
-                    const processVoiceMessage = async () => {
-                        if (voiceTranscriptionEnabled) {
-                            const transcription = await handleVoiceTranscription(message.audioBlob);
-                            setMessages(prev => [...prev, { ...message, transcription }]);
-                        } else {
-                            setMessages(prev => [...prev, message]);
-                        }
-                    };
-                    processVoiceMessage();
-                    break;
-                case 'PEER_CONNECTED':
-                    setPeers(prev => [...prev, message.peerId]);
-                    break;
-                case 'PEER_DISCONNECTED':
-                    setPeers(prev => prev.filter(id => id !== message.peerId));
-                    break;
-                case 'TYPING_STATUS':
-                    setTypingStatus(prev => ({
-                        ...prev,
-                        [message.sender]: message.isTyping
-                    }));
-                    break;
-                case 'REACTION':
-                    setMessages(prev => prev.map(msg =>
-                        msg.id === message.messageId
-                            ? { ...msg, reactions: [...(msg.reactions || []), message.reaction] }
-                            : msg
-                    ));
-                    break;
-                case 'EDIT_MESSAGE':
-                    setMessages(prev => prev.map(msg =>
-                        msg.id === message.messageId
-                            ? { 
-                                ...msg, 
-                                text: message.newContent, 
-                                isEdited: true,
-                                editHistory: [...(msg.editHistory || []), message.editData]
-                            }
-                            : msg
-                    ));
-                    setMessageEditHistory(prev => {
-                        const newMap = new Map(prev);
-                        const history = newMap.get(message.messageId) || [];
-                        newMap.set(message.messageId, [...history, message.editData]);
-                        return newMap;
-                    });
-                    break;
-                case 'DELIVERY_RECEIPT':
-                    setMessages(prev => prev.map(msg => 
-                        msg.id === message.messageId 
-                            ? { ...msg, status: 'delivered' } 
-                            : msg
-                    ));
-                    break;
-                    
-                case 'READ_RECEIPT':
-                    setMessages(prev => prev.map(msg => 
-                        msg.id === message.messageId 
-                            ? { ...msg, status: 'read' } 
-                            : msg
-                    ));
-                    break;
-                    
-                case 'GROUP_CREATED':
-                    addNotification(`You were added to group: ${message.groupName}`, 'info');
-                    setActiveGroups(prev => [...prev, {
-                        id: message.groupId,
-                        name: message.groupName,
-                        createdBy: message.createdBy,
-                        members: message.members
-                    }]);
-                    break;
-                    
-                case 'MEMBER_JOINED':
-                    if (selectedGroup && selectedGroup.id === message.groupId) {
-                        addNotification(`${message.userDisplayName || 'A new member'} joined the group`, 'info');
-                        
-                        // Update members list
-                        setSelectedGroup(prev => ({
-                            ...prev,
-                            members: [...prev.members, message.peerId]
-                        }));
-                    }
-                    break;
-                    
-                case 'MEMBER_LEFT':
-                    if (selectedGroup && selectedGroup.id === message.groupId) {
-                        addNotification(`${message.userDisplayName || 'A member'} left the group`, 'info');
-                        
-                        // Update members list
-                        setSelectedGroup(prev => ({
-                            ...prev,
-                            members: prev.members.filter(id => id !== message.peerId)
-                        }));
-                    }
-                    break;
-                default:
-                    break;
-            }
-        });
-
-        setPeers(webrtcService.getConnectedPeers());
-        
-        // Load active groups if authenticated
-        if (currentUser?.id) {
-            webrtcService.setUserId(currentUser.id);
-            webrtcService.enablePersistence(persistenceEnabled);
-            
-            // Get user groups
-            webrtcService.getGroups()
-                .then(result => {
-                    if (result.groups) {
-                        setActiveGroups(result.groups);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching groups:', error);
-                });
-            
-            // Check for offline messages
-            webrtcService.checkOfflineMessages()
-                .then(result => {
-                    if (result.delivered > 0) {
-                        addNotification(`Received ${result.delivered} offline messages`, 'info');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking offline messages:', error);
-                });
-        }
-        
-        return () => {
-            unsubscribe();
-            setMessages([]);
-            setTypingStatus({});
-            setPeers([]);
-            if (typingTimeout) clearTimeout(typingTimeout);
-            if (completionTimeout.current) clearTimeout(completionTimeout.current);
-        };
-    }, [typingTimeout, setMessages, setPeers, setTypingStatus, currentUser, persistenceEnabled, addNotification, selectedGroup]);
-
-    // AI chat cleanup effect
-    useEffect(() => {
-        if (!isAIChatEnabled) {
-            aiService.clearAIChatHistory();
-        }
-        return () => {
-            if (isAIChatEnabled) {
-                setIsAIChatEnabled(false);
-                aiService.clearAIChatHistory();
-            }
-        };
-    }, [isAIChatEnabled]);
-
-    // Scroll effect
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
-
-    // Memoized filtered messages
-    const filteredMessages = useMemo(() => {
-        return messages
-            .filter(msg => {
-                if (msg.isSystemMessage) return true; // Always show system messages
-                if (isAIChatActive) return true;
-                if (selectedPeer) {
-                    return msg.sender === selectedPeer || msg.sender === currentUser.id;
-                }
-                return false;
-            })
-            .filter(msg => 
-                msg.isSystemMessage || !searchQuery || msg.text?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-    }, [messages, isAIChatActive, selectedPeer, currentUser.id, searchQuery]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -791,12 +481,10 @@ const Chat = ({
             status: 'sending'
         };
 
-        // Add message to the UI immediately for better user experience
         setMessages(prev => [...prev, messageData]);
         setNewMessage('');
         setMessageCompletion('');
         
-        // Handle AI chat mode
         if (isAIChatActive) {
             if (!isAiInitialized) {
                 if (useBasicChatbot) {
@@ -826,23 +514,18 @@ const Chat = ({
                     setShowAISettings(true);
                 }
             }
-        } 
-        // Handle peer chat mode
-        else if (selectedPeer) {
+        } else if (selectedPeer) {
             const success = webrtcService.sendMessage(messageData, selectedPeer);
             
-            // Update message status based on sending result
             if (success) {
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'sent' } : msg
                 ));
             } else if (offlineMode && persistenceEnabled) {
-                // When offline and persistence enabled, queue the message
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'queued', offline: true } : msg
                 ));
             } else {
-                // Message failed to send
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
                 ));
@@ -851,9 +534,7 @@ const Chat = ({
             if (selectedPeer) {
                 webrtcService.setTypingStatus(false, selectedPeer);
             }
-        }
-        // Handle group chat
-        else if (selectedGroup) {
+        } else if (selectedGroup) {
             const groupMessageData = {
                 ...messageData,
                 groupId: selectedGroup.id
@@ -861,25 +542,21 @@ const Chat = ({
             
             const success = webrtcService.sendMessage(groupMessageData);
             
-            // Update message status based on sending result
             if (success) {
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'sent' } : msg
                 ));
             } else if (offlineMode && persistenceEnabled) {
-                // When offline and persistence enabled, queue the message
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'queued', offline: true } : msg
                 ));
             } else {
-                // Message failed to send
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
                 ));
             }
         }
 
-        // Reset typing status
         if (selectedPeer) {
             webrtcService.setTypingStatus(false, selectedPeer);
         }
@@ -906,14 +583,20 @@ const Chat = ({
         }
     };
 
-    // Message row renderer for virtualization
+    // Memoized filtered messages
+    const filteredMessages = useMemo(() => {
+        return messages.filter(msg => 
+            !searchQuery || 
+            (msg.text && msg.text.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+    }, [messages, searchQuery]);
+
     const MessageRow = ({ index, style }) => {
         const message = filteredMessages[index];
         const isAIMessage = isAIChatActive && message.sender === 'AI_ASSISTANT';
         const isSystemMessage = message.isSystemMessage;
         const isEditable = message.sender === currentUser.id && !isAIMessage && !isSystemMessage;
         
-        // Special rendering for system messages
         if (isSystemMessage) {
             return (
                 <div style={style}>
@@ -1234,19 +917,19 @@ const Chat = ({
     };
 
     const memoizedMessageList = useMemo(() => (
-    <div className="messages-list">
-        {filteredMessages.map(message => (
-            <MessageItem
-                key={message.id}
-                message={message}
-                onReaction={(reaction) => handleReaction(message.id, reaction)}
-                onRetry={handleRetry}
-                onMarkAsRead={handleMarkAsRead}
-                onDelete={handleDeleteMessage}
-            />
-        ))}
-    </div>
-), [filteredMessages, handleReaction, handleRetry, handleMarkAsRead, handleDeleteMessage]);
+        <div className="messages-list">
+            {filteredMessages.map(message => (
+                <MessageItem
+                    key={message.id}
+                    message={message}
+                    onReaction={(reaction) => handleReaction(message.id, reaction)}
+                    onRetry={handleRetry}
+                    onMarkAsRead={handleMarkAsRead}
+                    onDelete={handleDeleteMessage}
+                />
+            ))}
+        </div>
+    ), [filteredMessages, handleReaction, handleRetry, handleMarkAsRead, handleDeleteMessage]);
 
     const createGroup = async (name, members) => {
         try {
@@ -1272,168 +955,585 @@ const Chat = ({
         addNotification(`Message persistence ${newValue ? 'enabled' : 'disabled'}`, 'info');
     };
 
-    // Function to handle connecting with peers
     const handleConnectWithPeers = () => {
-        // Use the showConnectionDialog method we implemented in the webrtcService
         webrtcService.showConnectionDialog();
     };
 
-    return (
-        <div className={`chat-container ${theme} ${isAIChatActive ? 'ai-mode-active' : 'peer-mode-active'}`} data-chat-mode={isAIChatActive ? 'ai' : 'peer'}>
-            <div className="chat-header">
-                <div className="chat-user-info">
-                    <div 
-                        className={`avatar ${isAIChatActive ? 'ai-avatar' : ''}`}
-                        onClick={() => !isAIChatActive && setShowProfileModal(true)}
-                        style={{ cursor: !isAIChatActive ? 'pointer' : 'default' }}
-                    >
-                        {isAIChatActive ? '🤖' : 
-                         userProfile?.avatarUrl ? 
-                            (userProfile.avatarUrl.startsWith('data:') ? 
-                                <img src={userProfile.avatarUrl} alt="Profile" className="avatar-image" /> : 
-                                userProfile.avatarUrl) : 
-                            (userProfile?.displayName?.charAt(0) || currentUser?.id?.charAt(0) || '👤')}
-                    </div>
-                    <div className="user-details">
-                        <h3>
-                            {isAIChatActive ? 'AI Assistant' : 
-                             userProfile?.displayName || selectedPeer || 'Unknown User'}
-                        </h3>
-                        <div className="chat-mode-indicator">
-                            <span className={`mode-badge ${isAIChatActive ? 'ai-mode' : 'peer-mode'}`}>
-                                {isAIChatActive ? '🤖 AI Chat Mode' : '👥 Peer Chat Mode'}
-                                <span className="mode-status-dot"></span>
-                            </span>
-                            <span className="mode-description">
-                                {isAIChatActive 
-                                    ? 'Chatting with AI Assistant' 
-                                    : selectedPeer 
-                                        ? `Connected with ${selectedPeer.substring(0, 8)}...` 
-                                        : 'Select a peer to start chatting'}
-                            </span>
-                        </div>
-                        <span className="status">
-                            <span className="status-dot"></span>
-                            Online
-                        </span>
-                        {!isAIChatActive && typingStatus[selectedPeer] && (
-                            <div className="typing-indicator">
-                                <span className="typing-dot"></span>
-                                <span className="typing-dot"></span>
-                                <span className="typing-dot"></span>
-                                typing...
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <div className="chat-actions">
-                    <button 
-                        onClick={() => setShowProfileModal(true)} 
-                        className="profile-button"
-                        title="Edit your profile"
-                    >
-                        {userProfile?.avatarUrl && userProfile.avatarUrl.startsWith('data:') ? 
-                            <img src={userProfile.avatarUrl} alt="Profile" className="button-avatar-image" /> : 
-                            '👤'}
-                    </button>
-                    <button 
-                        onClick={toggleSettings} 
-                        className="settings-button"
-                        title={isAIChatActive ? "AI Settings" : "Chat Settings"}
-                    >
-                        ⚙️
-                    </button>
-                </div>
-            </div>
-
-            <div className="messages-container">
-                {filteredMessages.length === 0 && !isAIChatActive && !selectedPeer && (
-                    <div className="no-peers-message">
-                        <div className="empty-state-icon">👥</div>
-                        <h3>No conversations yet</h3>
-                        <p>You need to connect with peers to start chatting</p>
-                        <button className="connect-peers-button" onClick={handleConnectWithPeers}>Connect with Peers</button>
-                    </div>
-                )}
-                {filteredMessages.map((message, index) => (
-                    <div key={message.id} style={{padding: '8px', width: '100%'}}>
-                        <MessageRow
-                            index={index}
-                            style={{
-                                padding: '8px',
-                                width: '100%'
-                            }}
-                        />
-                    </div>
-                ))}
-                <div ref={messagesEndRef} />
-            </div>
-
-            <div className="message-input-container">
-                <input
-                    type="text"
-                    className="message-input"
-                    value={newMessage}
-                    onChange={handleInputChange}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Type a message..."
-                />
-                <button
-                    className="send-button"
-                    onClick={handleSendMessage}
-                    disabled={!newMessage.trim()}
-                >
-                    ➤
-                </button>
-            </div>
-
-            {showAISettings && (
-                <AISettings 
+    // Modified rendering for modals using our LazyComponents
+    const renderAISettings = () => {
+        if (!showAISettings) return null;
+        
+        return (
+            <Suspense fallback={<Box p={4}>Loading settings...</Box>}>
+                <LazyAISettings 
                     onClose={() => setShowAISettings(false)} 
                     addNotification={addNotification} 
                     currentUser={currentUser}
                 />
-            )}
-
-            {showProfileModal && (
-                <Profile 
+            </Suspense>
+        );
+    };
+    
+    const renderProfileModal = () => {
+        if (!showProfileModal) return null;
+        
+        return (
+            <Suspense fallback={<Box p={4}>Loading profile...</Box>}>
+                <LazyProfile 
                     currentUser={currentUser} 
                     onClose={() => setShowProfileModal(false)} 
                     onProfileUpdate={handleProfileUpdate}
                 />
-            )}
+            </Suspense>
+        );
+    };
 
-            {renderSettingsPanel()}
-
-            {/* Add persistence toggle in settings */}
-            <div className="settings-toggle">
-                <div className="setting-item">
-                    <label>Message Persistence</label>
-                    <button 
-                        className={`toggle-button ${persistenceEnabled ? 'active' : ''}`}
-                        onClick={togglePersistence}
+    return (
+        <Flex 
+            direction="column" 
+            h="100vh" 
+            bg={colorMode === 'dark' ? 'gray.900' : 'gray.50'}
+        >
+            {/* Chat header */}
+            <Flex 
+                p={3} 
+                bg={colorMode === 'dark' ? 'gray.800' : 'gray.50'} 
+                borderBottomWidth="1px"
+                borderBottomColor={colorMode === 'dark' ? 'gray.700' : 'gray.200'}
+                alignItems="center"
+                boxShadow="sm"
+            >
+                <Box>
+                    <Flex alignItems="center">
+                        <Avatar 
+                            size="md" 
+                            name={isAIChatActive ? "AI" : selectedPeer || "User"} 
+                            bg={isAIChatActive ? "purple.500" : "blue.500"}
+                            mr={3}
+                        />
+                        <Box>
+                            <Heading size="md">
+                                {isAIChatActive ? 'Echo AI Assistant' : userProfile?.displayName || selectedPeer || 'Select a peer'}
+                            </Heading>
+                            <Flex alignItems="center">
+                                <Badge 
+                                    colorScheme={isAIChatActive ? "purple" : "blue"}
+                                    variant="subtle"
+                                    fontSize="xs"
+                                    px={2}
+                                    py={0.5}
+                                    borderRadius="full"
+                                >
+                                    {isAIChatActive ? '🤖 AI Chat' : '👥 Peer Chat'}
+                                </Badge>
+                                {!isAIChatActive && typingStatus[selectedPeer] && (
+                                    <Text ml={2} fontSize="xs" color="gray.500" fontStyle="italic">
+                                        typing...
+                                    </Text>
+                                )}
+                            </Flex>
+                        </Box>
+                    </Flex>
+                </Box>
+                <Spacer />
+                <HStack spacing={1}>
+                    <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => navigate('/dashboard')}
+                        colorScheme="blue"
+                        borderRadius="full"
+                        _hover={{ bg: colorMode === 'dark' ? 'blue.800' : 'blue.50' }}
                     >
-                        {persistenceEnabled ? 'Enabled' : 'Disabled'}
-                    </button>
-                </div>
-            </div>
-            
-            {/* Add a connection status indicator */}
+                        Dashboard
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate('/github')}
+                        colorScheme="blue"
+                        borderRadius="full"
+                        _hover={{ bg: colorMode === 'dark' ? 'blue.800' : 'blue.50' }}
+                    >
+                        GitHub
+                    </Button>
+                    <IconButton
+                        aria-label="Settings"
+                        icon={'⚙️'}
+                        variant="ghost"
+                        borderRadius="full"
+                        onClick={() => setShowSettings(!showSettings)}
+                    />
+                </HStack>
+            </Flex>
+
+            {/* Chat content area */}
+            <Flex flex="1" overflow="hidden">
+                <Box 
+                    w="250px" 
+                    bg={colorMode === 'dark' ? 'gray.800' : 'gray.50'} 
+                    p={4}
+                    borderRightWidth="1px"
+                    borderRightColor={colorMode === 'dark' ? 'gray.700' : 'gray.200'}
+                    overflowY="auto"
+                    display={{ base: 'none', md: 'block' }}
+                >
+                    <VStack spacing={4} align="stretch">
+                        <Box>
+                            <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>Your ID</Heading>
+                            <Flex 
+                                bg={colorMode === 'dark' ? 'gray.700' : 'gray.50'} 
+                                p={2} 
+                                borderRadius="md"
+                                alignItems="center"
+                                justifyContent="space-between"
+                                borderWidth="1px"
+                                borderColor={colorMode === 'dark' ? 'gray.600' : 'gray.200'}
+                            >
+                                <Text fontSize="sm" fontFamily="monospace" isTruncated>
+                                    {currentUser?.id || '380b5d29-aed6-4904-891a-5d0a39b2e4df'}
+                                </Text>
+                                <IconButton
+                                    aria-label="Copy ID"
+                                    icon={'📋'}
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(currentUser?.id);
+                                        toast({
+                                            title: "ID copied to clipboard",
+                                            status: "success",
+                                            duration: 2000,
+                                        });
+                                    }}
+                                />
+                            </Flex>
+                        </Box>
+                        
+                        <Box 
+                            p={3} 
+                            bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'} 
+                            borderRadius="md"
+                            borderWidth="1px"
+                            borderColor={colorMode === 'dark' ? 'gray.600' : 'blue.100'}
+                        >
+                            <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>Connect with Others</Heading>
+                            <Text fontSize="xs" mb={2}>1. Share your ID with friends</Text>
+                            <Text fontSize="xs" mb={2}>2. Or enter their ID below to connect</Text>
+                            <Input 
+                                placeholder="Paste friend's ID here" 
+                                size="sm" 
+                                mb={2}
+                                bg={colorMode === 'dark' ? 'gray.600' : 'white'}
+                                borderColor={colorMode === 'dark' ? 'gray.500' : 'gray.300'}
+                            />
+                            <Button 
+                                colorScheme="blue" 
+                                size="sm" 
+                                width="full"
+                                borderRadius="md"
+                            >
+                                Connect
+                            </Button>
+                        </Box>
+                        
+                        <Divider borderColor={colorMode === 'dark' ? 'gray.600' : 'gray.200'} />
+                        
+                        <Box>
+                            <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                Welcome to Echo Link! 👋
+                            </Heading>
+                            <Text fontSize="xs" mb={2} fontWeight="medium">To start chatting:</Text>
+                            <Box fontSize="xs" color={colorMode === 'dark' ? 'gray.300' : 'gray.600'}>
+                                <HStack mb={1}>
+                                    <Text>1.</Text>
+                                    <Text>Copy your ID using the button above</Text>
+                                </HStack>
+                                <HStack mb={1}>
+                                    <Text>2.</Text>
+                                    <Text>Share it with your friends</Text>
+                                </HStack>
+                                <HStack mb={1}>
+                                    <Text>3.</Text>
+                                    <Text>Ask them to paste it in their connect field</Text>
+                                </HStack>
+                                <HStack mb={1}>
+                                    <Text>4.</Text>
+                                    <Text>Or paste their ID in your connect field</Text>
+                                </HStack>
+                            </Box>
+                        </Box>
+                    </VStack>
+                </Box>
+
+                {/* Chat messages area */}
+                <Flex 
+                    flex="1" 
+                    direction="column" 
+                    p={4}
+                    overflowY="auto"
+                    bg={colorMode === 'dark' ? 'gray.800' : 'gray.50'}
+                >
+                    {filteredMessages.length === 0 ? (
+                        <Flex 
+                            direction="column" 
+                            alignItems="center" 
+                            justifyContent="center" 
+                            textAlign="center"
+                            height="100%"
+                        >
+                            <Box 
+                                fontSize="5xl" 
+                                mb={4} 
+                                bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'} 
+                                p={5} 
+                                borderRadius="full"
+                                color={colorMode === 'dark' ? 'blue.200' : 'blue.500'}
+                            >
+                                👥
+                            </Box>
+                            <Heading size="md" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                No conversations yet
+                            </Heading>
+                            <Text mb={4} color={colorMode === 'dark' ? 'gray.400' : 'gray.600'}>
+                                Select a peer or connect with someone to start chatting
+                            </Text>
+                            <Button 
+                                colorScheme="blue" 
+                                borderRadius="full"
+                                boxShadow="md"
+                                _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+                                transition="all 0.2s"
+                            >
+                                Connect with Peers
+                            </Button>
+                        </Flex>
+                    ) : (
+                        <VStack spacing={2} align="stretch">
+                            {filteredMessages.map(message => (
+                                <MessageItem
+                                    key={message.id}
+                                    message={message}
+                                    onReaction={handleReaction}
+                                    onRetry={handleRetry}
+                                    onMarkAsRead={handleMarkAsRead}
+                                    onDelete={handleDeleteMessage}
+                                />
+                            ))}
+                            <div ref={messagesEndRef} />
+                        </VStack>
+                    )}
+                </Flex>
+
+                {/* New right sidebar */}
+                <Box 
+                    w="280px" 
+                    bg={colorMode === 'dark' ? 'gray.800' : 'gray.50'} 
+                    p={4}
+                    borderLeftWidth="1px"
+                    borderLeftColor={colorMode === 'dark' ? 'gray.700' : 'gray.200'}
+                    overflowY="auto"
+                    display={{ base: 'none', lg: 'block' }}
+                >
+                    <VStack spacing={4} align="stretch">
+                        {/* Contact info */}
+                        {selectedPeer && (
+                            <Box 
+                                p={3} 
+                                bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'} 
+                                borderRadius="md"
+                                borderWidth="1px"
+                                borderColor={colorMode === 'dark' ? 'gray.600' : 'blue.100'}
+                            >
+                                <Heading size="sm" mb={3} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                    Contact Info
+                                </Heading>
+                                <VStack align="start" spacing={2}>
+                                    <HStack>
+                                        <Text fontSize="xs" fontWeight="bold">Name:</Text>
+                                        <Text fontSize="xs">{userProfile?.displayName || selectedPeer}</Text>
+                                    </HStack>
+                                    <HStack>
+                                        <Text fontSize="xs" fontWeight="bold">Status:</Text>
+                                        <Badge colorScheme="green" fontSize="xs">Online</Badge>
+                                    </HStack>
+                                    <HStack>
+                                        <Text fontSize="xs" fontWeight="bold">ID:</Text>
+                                        <Text fontSize="xs" isTruncated>{selectedPeer}</Text>
+                                    </HStack>
+                                </VStack>
+                            </Box>
+                        )}
+
+                        {/* Quick actions */}
+                        <Box>
+                            <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                Quick Actions
+                            </Heading>
+                            <VStack spacing={2}>
+                                <Button
+                                    leftIcon={'📁'}
+                                    colorScheme="blue"
+                                    variant="outline"
+                                    size="sm"
+                                    width="full"
+                                    justifyContent="flex-start"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    borderRadius="md"
+                                    bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'}
+                                >
+                                    Send a file
+                                </Button>
+                                <Button
+                                    leftIcon={'💻'}
+                                    colorScheme="purple"
+                                    variant="outline"
+                                    size="sm"
+                                    width="full"
+                                    justifyContent="flex-start"
+                                    onClick={() => setCodeEditor({ ...codeEditor, visible: true })}
+                                    borderRadius="md"
+                                    bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'}
+                                >
+                                    Share code
+                                </Button>
+                                <Button
+                                    leftIcon={'🔄'}
+                                    colorScheme="green"
+                                    variant="outline"
+                                    size="sm"
+                                    width="full"
+                                    justifyContent="flex-start"
+                                    onClick={() => setShowAISettings(true)}
+                                    borderRadius="md"
+                                    bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'}
+                                >
+                                    AI settings
+                                </Button>
+                                <Button
+                                    leftIcon={'📊'}
+                                    colorScheme="orange"
+                                    variant="outline"
+                                    size="sm"
+                                    width="full"
+                                    justifyContent="flex-start"
+                                    onClick={() => navigate('/dashboard')}
+                                    borderRadius="md"
+                                    bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'}
+                                >
+                                    View stats
+                                </Button>
+                            </VStack>
+                        </Box>
+                        
+                        {/* Media shared section */}
+                        <Box>
+                            <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                Shared Media
+                            </Heading>
+                            <Grid templateColumns="repeat(3, 1fr)" gap={2}>
+                                {filteredMessages
+                                    .filter(msg => msg.type === 'FILE_META')
+                                    .slice(0, 6)
+                                    .map((file, index) => (
+                                        <Box 
+                                            key={index}
+                                            bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'} 
+                                            borderRadius="md"
+                                            p={2}
+                                            textAlign="center"
+                                        >
+                                            <Text fontSize="xl">📄</Text>
+                                            <Text fontSize="xs" isTruncated>{file.name}</Text>
+                                        </Box>
+                                    ))}
+                                {filteredMessages.filter(msg => msg.type === 'FILE_META').length === 0 && (
+                                    <Text fontSize="xs" color="gray.500">No media shared yet</Text>
+                                )}
+                            </Grid>
+                        </Box>
+
+                        {/* Smart suggestions */}
+                        {isAiInitialized && (
+                            <Box>
+                                <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                    Smart Suggestions
+                                </Heading>
+                                <VStack align="stretch" spacing={2}>
+                                    {smartReplies.length > 0 ? (
+                                        smartReplies.map((reply, index) => (
+                                            <Button
+                                                key={index}
+                                                size="xs"
+                                                variant="outline"
+                                                colorScheme="blue"
+                                                onClick={() => {
+                                                    setNewMessage(reply);
+                                                    // Focus the input after setting the message
+                                                    setTimeout(() => document.querySelector('input[placeholder="Type a message..."]').focus(), 0);
+                                                }}
+                                            >
+                                                {reply}
+                                            </Button>
+                                        ))
+                                    ) : (
+                                        <Text fontSize="xs" color="gray.500">
+                                            AI will suggest replies based on conversation context
+                                        </Text>
+                                    )}
+                                </VStack>
+                            </Box>
+                        )}
+
+                        {/* Code snippets */}
+                        <Box>
+                            <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                Recent Code Snippets
+                            </Heading>
+                            {filteredMessages.filter(msg => msg.type === 'CODE_SHARE').length > 0 ? (
+                                filteredMessages
+                                    .filter(msg => msg.type === 'CODE_SHARE')
+                                    .slice(0, 2)
+                                    .map((snippet, index) => (
+                                        <Box 
+                                            key={index}
+                                            bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'} 
+                                            borderRadius="md"
+                                            p={2}
+                                            mb={2}
+                                            fontSize="xs"
+                                            cursor="pointer"
+                                            onClick={() => setCodeEditor({
+                                                visible: true,
+                                                language: snippet.language,
+                                                code: snippet.code
+                                            })}
+                                        >
+                                            <Flex justifyContent="space-between" mb={1}>
+                                                <Badge colorScheme="purple">{snippet.language}</Badge>
+                                                <Text fontSize="xs">{new Date(snippet.timestamp).toLocaleTimeString()}</Text>
+                                            </Flex>
+                                            <Box 
+                                                bg={colorMode === 'dark' ? 'gray.600' : 'blue.100'} 
+                                                p={1} 
+                                                borderRadius="sm"
+                                                fontFamily="monospace"
+                                                noOfLines={3}
+                                            >
+                                                {snippet.code.substring(0, 100)}
+                                                {snippet.code.length > 100 && '...'}
+                                            </Box>
+                                        </Box>
+                                    ))
+                            ) : (
+                                <Text fontSize="xs" color="gray.500">No code snippets shared yet</Text>
+                            )}
+                        </Box>
+
+                        {/* Search messages */}
+                        <Box>
+                            <Heading size="sm" mb={2} color={colorMode === 'dark' ? 'blue.200' : 'blue.600'}>
+                                Search Messages
+                            </Heading>
+                            <InputGroup size="sm">
+                                <Input
+                                    placeholder="Search in conversation..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'}
+                                    borderColor={colorMode === 'dark' ? 'gray.600' : 'blue.200'}
+                                    _focus={{ 
+                                        borderColor: 'blue.400', 
+                                        boxShadow: `0 0 0 1px ${colorMode === 'dark' ? 'blue.400' : 'blue.400'}`
+                                    }}
+                                />
+                                <InputRightElement>
+                                    {'🔍'}
+                                </InputRightElement>
+                            </InputGroup>
+                        </Box>
+
+                        {/* Coding Platforms Integration - Using new tabbed component */}
+                        <CodingPlatformsTab />
+
+                    </VStack>
+                </Box>
+            </Flex>
+
+            {/* Message input */}
+            <Box 
+                p={3} 
+                bg={colorMode === 'dark' ? 'gray.800' : 'gray.50'} 
+                borderTopWidth="1px"
+                borderTopColor={colorMode === 'dark' ? 'gray.700' : 'gray.200'}
+            >
+                <Flex>
+                    <InputGroup size="md">
+                        <Input
+                            placeholder="Type a message..."
+                            value={newMessage}
+                            onChange={handleInputChange}
+                            onKeyPress={handleKeyPress}
+                            bg={colorMode === 'dark' ? 'gray.700' : 'blue.50'}
+                            borderColor={colorMode === 'dark' ? 'gray.600' : 'blue.200'}
+                            _focus={{ 
+                                borderColor: 'blue.400', 
+                                boxShadow: `0 0 0 1px ${colorMode === 'dark' ? 'blue.400' : 'blue.400'}`
+                            }}
+                            borderRadius="full"
+                            pr="4.5rem"
+                        />
+                        <InputRightElement width="4.5rem">
+                            <Button 
+                                h="1.75rem" 
+                                size="sm" 
+                                colorScheme="blue"
+                                onClick={handleSendMessage}
+                                isDisabled={!newMessage.trim()}
+                                borderRadius="full"
+                            >
+                                Send
+                            </Button>
+                        </InputRightElement>
+                    </InputGroup>
+                </Flex>
+                
+                {/* Message persistence toggle */}
+                <Flex justifyContent="flex-end" mt={2}>
+                    <Button
+                        size="xs"
+                        variant={persistenceEnabled ? "solid" : "outline"}
+                        colorScheme={persistenceEnabled ? "green" : "gray"}
+                        onClick={togglePersistence}
+                        borderRadius="full"
+                    >
+                        {persistenceEnabled ? "Persistence: On" : "Persistence: Off"}
+                    </Button>
+                </Flex>
+            </Box>
+
+            {/* Modals with lazy loading */}
+            {renderAISettings()}
+            {renderProfileModal()}
+
+            {/* Connection status indicator */}
             {connectionState !== 'connected' && (
-                <div className={`connection-status ${connectionState}`}>
-                    {connectionState === 'reconnecting' && 'Reconnecting...'}
-                    {connectionState === 'error' && 'Connection error. Working offline.'}
-                </div>
+                <Box 
+                    position="fixed" 
+                    bottom="4" 
+                    left="50%" 
+                    transform="translateX(-50%)"
+                    bg={connectionState === 'reconnecting' ? 'yellow.500' : 'red.500'}
+                    color="white"
+                    px={4}
+                    py={2}
+                    borderRadius="full"
+                    boxShadow="md"
+                >
+                    {connectionState === 'reconnecting' ? 'Reconnecting...' : 'Connection error. Working offline.'}
+                </Box>
             )}
-            
-            {/* Add a loading indicator for message history */}
-            {isLoadingHistory && (
-                <div className="loading-history">
-                    <div className="loading-spinner"></div>
-                    <p>Loading message history...</p>
-                </div>
-            )}
-        </div>
+        </Flex>
     );
 };
 
