@@ -194,12 +194,11 @@ io.on('connection', (socket) => {
 
     // 3. Socket.IO Rooms for Group Management
     socket.on('create_group', (data, callback) => {
-        const { groupId, groupName } = data;
-        // In a real app, you'd persist group info (e.g., in a database)
-        // For now, rooms are dynamic. The first person to 'join' effectively creates it client-side.
-        // We can acknowledge creation if needed.
-        console.log(`User ${socket.userId} (Peer ${socket.peerId}) wants to create/join group: ${groupId} (${groupName})`);
+        const { groupId, groupName } = data; // groupName can be used for display or future persistence
         socket.join(groupId);
+        console.log(`User ${socket.userId} (Peer ${socket.peerId}) created/joined group: ${groupId} (${groupName || 'Unnamed'})`);
+
+        // Notify other members in the group about the new joiner
         socket.to(groupId).emit('member_joined', {
             groupId,
             peerId: socket.peerId,
@@ -207,14 +206,34 @@ io.on('connection', (socket) => {
             userName: socket.userName,
             avatarUrl: socket.avatarUrl
         });
-        if (callback) callback({ success: true, groupId });
+
+        // Get current members to send back to the joiner
+        const membersInRoom = [];
+        const roomSocketIds = io.sockets.adapter.rooms.get(groupId);
+        if (roomSocketIds) {
+            roomSocketIds.forEach(socketId => {
+                const memberSocket = io.sockets.sockets.get(socketId);
+                // Ensure the socket exists and has user information (especially if a socket disconnected abruptly)
+                if (memberSocket && memberSocket.userId) { 
+                    membersInRoom.push({
+                        userId: memberSocket.userId,
+                        peerId: memberSocket.peerId,
+                        userName: memberSocket.userName,
+                        avatarUrl: memberSocket.avatarUrl
+                    });
+                }
+            });
+        }
+
+        if (callback) callback({ success: true, groupId, members: membersInRoom });
     });
 
     socket.on('join_group', (data, callback) => {
         const { groupId } = data;
         socket.join(groupId);
         console.log(`User ${socket.userId} (Peer ${socket.peerId}) joined group: ${groupId}`);
-        // Notify other members in the group
+
+        // Notify other members in the group about the new joiner
         socket.to(groupId).emit('member_joined', {
             groupId,
             peerId: socket.peerId,
@@ -222,7 +241,25 @@ io.on('connection', (socket) => {
             userName: socket.userName,
             avatarUrl: socket.avatarUrl
         });
-        if (callback) callback({ success: true, groupId });
+
+        // Get current members to send back to the joiner
+        const membersInRoom = [];
+        const roomSocketIds = io.sockets.adapter.rooms.get(groupId);
+        if (roomSocketIds) {
+            roomSocketIds.forEach(socketId => {
+                const memberSocket = io.sockets.sockets.get(socketId);
+                if (memberSocket && memberSocket.userId) { 
+                    membersInRoom.push({
+                        userId: memberSocket.userId,
+                        peerId: memberSocket.peerId,
+                        userName: memberSocket.userName,
+                        avatarUrl: memberSocket.avatarUrl
+                    });
+                }
+            });
+        }
+
+        if (callback) callback({ success: true, groupId, members: membersInRoom });
     });
 
     socket.on('leave_group', (data, callback) => {
@@ -264,6 +301,30 @@ io.on('connection', (socket) => {
             signalType, // e.g., 'offer', 'answer', 'candidate'
             signalData  // The actual SDP or candidate
         });
+    });
+
+    // Group Typing Indicators
+    socket.on('start_typing_group', (data) => {
+        const { groupId } = data;
+        // Ensure the user is actually in the group before broadcasting
+        if (socket.rooms.has(groupId) && socket.userId) {
+            socket.to(groupId).emit('member_typing_start', {
+                groupId,
+                userId: socket.userId,
+                userName: socket.userName // Send userName for display purposes
+            });
+        }
+    });
+
+    socket.on('stop_typing_group', (data) => {
+        const { groupId } = data;
+        if (socket.rooms.has(groupId) && socket.userId) {
+            socket.to(groupId).emit('member_typing_stop', {
+                groupId,
+                userId: socket.userId,
+                userName: socket.userName
+            });
+        }
     });
 
     // Handle disconnections
