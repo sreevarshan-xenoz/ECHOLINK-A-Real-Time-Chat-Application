@@ -90,6 +90,23 @@ To deploy for public use:
 2. Update the server URL in `src/services/webrtc-service.js`
 3. Deploy the client application to a static host (e.g., Netlify, Vercel)
 
+## Upgrade Plan
+
+This section outlines potential future enhancements to take ECHOLINK to the next level:
+
+- **Group Chat Functionality**: Implement robust group chat features, allowing multiple users to communicate in a single conversation.
+- **Video Calling**: Integrate video calling capabilities using WebRTC for a richer communication experience.
+- **Persistent Storage/Database Integration**: For users who want to retain chat history across sessions or devices, integrate a database (e.g., Supabase, Firebase, or a self-hosted solution like PostgreSQL with a backend API) to store messages and user data securely.
+- **User Authentication and Profiles**: Implement a proper user authentication system (e.g., OAuth, email/password) and allow users to create profiles with avatars and status messages.
+- **Mobile Applications**: Develop native or cross-platform (e.g., React Native, Flutter) mobile applications for iOS and Android to expand accessibility.
+- **Push Notifications**: Add push notifications to alert users of new messages when the application is not active.
+- **Scalable Signaling Server**: For larger deployments, enhance the signaling server architecture for better scalability and reliability, potentially using technologies like Redis for session management and load balancing.
+- **Advanced Moderation Tools**: For public or larger group chats, introduce moderation tools for administrators.
+- **Screen Sharing**: Add screen sharing capabilities, further enhancing collaborative features.
+- **Improved UI/UX**: Continuously refine the user interface and user experience based on user feedback and modern design principles.
+- **Bots and Integrations**: Allow for the integration of bots or third-party services within chats.
+- **End-to-End Encrypted Group Chats**: Extend end-to-end encryption to group chats, which can be complex but offers maximum privacy.
+
 ## Troubleshooting
 
 1. **Can't Connect to Peers**
@@ -106,4 +123,4 @@ To deploy for public use:
 3. **Audio/File Sharing Issues**
    - Ensure you've granted necessary browser permissions
    - Check if your browser supports WebRTC file sharing
-   - Verify the file size is within limits 
+   - Verify the file size is within limits
