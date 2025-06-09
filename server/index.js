@@ -4,344 +4,308 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const axios = require('axios');
 const bodyParser = require('body-parser');
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
-app.use(cors());
+
+// 1. Refined CORS Configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://your-production-domain.com'] // Replace with your actual production frontend domain
+  : ['http://localhost:3000', 'http://127.0.0.1:3000']; // Common development origins
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(bodyParser.json());
 
-// GitHub OAuth endpoint
-app.post('/api/github/oauth/token', async (req, res) => {
+// GitHub OAuth credentials (replace with your actual credentials or use environment variables)
+const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || 'YOUR_GITHUB_CLIENT_ID';
+const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || 'YOUR_GITHUB_CLIENT_SECRET';
+const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost:5000/auth/github/callback'; // Ensure this matches your GitHub app settings
+
+// In-memory storage (Consider Redis or a database for production)
+const connectedUsers = new Map(); // userId -> socket.id
+const connectedPeers = new Map(); // peerId -> socket.id
+const userIdToPeerId = new Map(); // userId -> peerId
+const peerIdToUserId = new Map(); // peerId -> userId
+// No longer need peerGroups, as Socket.IO rooms will manage group membership implicitly
+
+app.get('/', (req, res) => {
+    res.send('Signaling server is running');
+});
+
+// GitHub OAuth Step 1: Redirect to GitHub's authorization page
+app.get('/auth/github', (req, res) => {
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${GITHUB_REDIRECT_URI}&scope=user:email`;
+    res.redirect(githubAuthUrl);
+});
+
+// GitHub OAuth Step 2: GitHub redirects back to your server
+app.get('/auth/github/callback', async (req, res) => {
+    const { code } = req.query;
+    if (!code) {
+        return res.status(400).send('Authorization code is missing');
+    }
+
     try {
-        const { code } = req.body;
-        
-        console.log('Received GitHub OAuth code exchange request');
-        
-        if (!code) {
-            console.error('No code provided in request');
-            return res.status(400).json({ error: 'No code provided' });
-        }
-        
-        // Log the values being used (without exposing the full client secret)
-        const clientId = process.env.REACT_APP_GITHUB_CLIENT_ID;
-        const clientSecret = process.env.REACT_APP_GITHUB_CLIENT_SECRET;
-        console.log(`Using Client ID: ${clientId}`);
-        console.log(`Client Secret available: ${!!clientSecret}`);
-        
-        if (!clientId || !clientSecret) {
-            console.error('GitHub OAuth credentials missing in environment variables');
-            return res.status(500).json({ error: 'Server configuration error' });
-        }
-        
-        // Exchange code for access token with GitHub
-        console.log('Making request to GitHub OAuth API');
-        const response = await axios.post('https://github.com/login/oauth/access_token', {
-            client_id: clientId,
-            client_secret: clientSecret,
-            code: code
+        // Exchange authorization code for an access token
+        const tokenResponse = await axios.post('https://github.com/login/oauth/access_token', {
+            client_id: GITHUB_CLIENT_ID,
+            client_secret: GITHUB_CLIENT_SECRET,
+            code: code,
+            redirect_uri: GITHUB_REDIRECT_URI
         }, {
-            headers: {
-                'Accept': 'application/json'
-            }
+            headers: { Accept: 'application/json' }
         });
-        
-        console.log('GitHub OAuth response received');
-        
-        // Check if we got an access token
-        if (response.data && response.data.access_token) {
-            console.log('Successfully received access token');
-            res.json(response.data);
-        } else {
-            console.error('GitHub response did not contain access token:', response.data);
-            res.status(400).json({ error: 'Invalid response from GitHub', details: response.data });
+
+        const accessToken = tokenResponse.data.access_token;
+        if (!accessToken) {
+            return res.status(500).send('Failed to obtain access token');
         }
+
+        // Fetch user information from GitHub API
+        const userResponse = await axios.get('https://api.github.com/user', {
+            headers: { Authorization: `token ${accessToken}` }
+        });
+
+        const userData = userResponse.data;
+        const userId = userData.id.toString(); // Use GitHub user ID as our userId
+        const userName = userData.login;
+        const userAvatar = userData.avatar_url;
+
+        // TODO: Store or update user information in your database here if needed
+
+        // Redirect user back to the frontend with user info (or a session token)
+        // For simplicity, redirecting with query parameters. In production, use a more secure method like JWT.
+        const frontendRedirectUrl = process.env.NODE_ENV === 'production' 
+            ? 'https://your-production-domain.com/auth/callback' 
+            : 'http://localhost:3000/auth/callback';
+        
+        res.redirect(`${frontendRedirectUrl}?userId=${userId}&userName=${userName}&avatarUrl=${encodeURIComponent(userAvatar)}&accessToken=${accessToken}`);
+
     } catch (error) {
-        console.error('Error exchanging GitHub code for token:', error);
-        // Enhanced error reporting
-        const errorDetails = {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data
-        };
-        console.error('Error details:', errorDetails);
-        res.status(500).json({ error: 'Failed to exchange code for token', details: errorDetails });
+        console.error('GitHub OAuth error:', error.response ? error.response.data : error.message);
+        res.status(500).send('An error occurred during GitHub authentication.');
     }
 });
 
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: "*",
+        origin: function (origin, callback) {
+          if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS for Socket.IO'));
+          }
+        },
         methods: ["GET", "POST"]
     }
 });
 
-// Store connected users
-const connectedUsers = new Map(); // userId -> socketId
-const connectedPeers = new Map(); // peerId -> socketId
-const userIdToPeerId = new Map(); // userId -> peerId
-const peerIdToUserId = new Map(); // peerId -> userId
-const peerGroups = new Map(); // groupId -> Set of peerIds
-
-// Handle WebRTC signaling
 io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
 
     socket.on('user_connected', (data) => {
-        const { peerId, userId } = data;
-        console.log(`User connected - peerId: ${peerId}, userId: ${userId || 'anonymous'}`);
+        const { peerId, userId, userName, avatarUrl } = data;
+        console.log(`User connected - peerId: ${peerId}, userId: ${userId || 'anonymous'}, userName: ${userName}`);
         
-        // Store mappings
+        // 2. Optimized Socket.IO Disconnect Logic: Store identifiers on the socket object
+        socket.peerId = peerId;
+        if (userId) {
+            socket.userId = userId;
+            socket.userName = userName; // Store userName for status updates
+            socket.avatarUrl = avatarUrl; // Store avatarUrl for status updates
+        }
+
         connectedPeers.set(peerId, socket.id);
-        
         if (userId) {
             connectedUsers.set(userId, socket.id);
             userIdToPeerId.set(userId, peerId);
             peerIdToUserId.set(peerId, userId);
-            
-            // Broadcast user's online status
+
+            // Broadcast new user's status to all other connected clients
             socket.broadcast.emit('user_status_change', {
-                userId: userId,
-                peerId: peerId,
+                userId,
+                peerId,
+                userName,
+                avatarUrl,
                 status: 'online'
             });
         }
-        
-        // Send current online peers to the new user
-        const onlinePeers = [];
-        for (const [pid, sid] of connectedPeers.entries()) {
-            if (pid !== peerId) {
-                const uid = peerIdToUserId.get(pid);
-                onlinePeers.push({
-                    peerId: pid,
-                    userId: uid
-                });
+        // Send list of currently online users to the newly connected user
+        const onlineUsers = [];
+        for (const [uid, sid] of connectedUsers.entries()) {
+            const pid = userIdToPeerId.get(uid);
+            const userSocket = io.sockets.sockets.get(sid);
+            if (pid && userSocket) {
+                 onlineUsers.push({ userId: uid, peerId: pid, userName: userSocket.userName, avatarUrl: userSocket.avatarUrl, status: 'online' });
             }
         }
-        
-        socket.emit('online_peers', onlinePeers);
+        socket.emit('online_users', onlineUsers);
+        console.log('Connected peers:', Array.from(connectedPeers.keys()));
+        console.log('Connected users:', Array.from(connectedUsers.keys()));
     });
 
-    // WebRTC signaling
+    // WebRTC Signaling
     socket.on('offer', (data) => {
-        const { recipientId, senderId, offer } = data;
-        console.log(`Offer from ${senderId} to ${recipientId}`);
-        
-        const recipientSocketId = connectedPeers.get(recipientId);
-        if (recipientSocketId) {
-            io.to(recipientSocketId).emit('offer', {
-                offer,
-                senderId
+        const targetSocketId = connectedPeers.get(data.targetPeerId) || connectedUsers.get(data.targetPeerId); // Allow targeting by userId too
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('offer', { 
+                sdp: data.sdp, 
+                senderPeerId: socket.peerId, 
+                senderUserId: socket.userId 
             });
         } else {
-            // Recipient not connected
-            socket.emit('peer_unavailable', {
-                peerId: recipientId,
-                reason: 'disconnected'
-            });
+            console.log(`Target peer ${data.targetPeerId} not found for offer`);
         }
     });
 
     socket.on('answer', (data) => {
-        const { recipientId, senderId, answer } = data;
-        console.log(`Answer from ${senderId} to ${recipientId}`);
-        
-        const recipientSocketId = connectedPeers.get(recipientId);
-        if (recipientSocketId) {
-            io.to(recipientSocketId).emit('answer', {
-                answer,
-                senderId
+        const targetSocketId = connectedPeers.get(data.targetPeerId);
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('answer', { 
+                sdp: data.sdp, 
+                senderPeerId: socket.peerId, 
+                senderUserId: socket.userId 
             });
-        }
-    });
-
-    socket.on('ice_candidate', (data) => {
-        const { recipientId, senderId, candidate } = data;
-        
-        const recipientSocketId = connectedPeers.get(recipientId);
-        if (recipientSocketId) {
-            io.to(recipientSocketId).emit('ice_candidate', {
-                candidate,
-                senderId
-            });
-        }
-    });
-
-    // Message handling (only used if peers can't connect directly)
-    socket.on('send_message', (data) => {
-        const recipientSocket = connectedUsers.get(data.recipientId) || connectedPeers.get(data.recipientId);
-        if (recipientSocket) {
-            io.to(recipientSocket).emit('receive_message', {
-                senderId: data.senderId,
-                message: data.message,
-                timestamp: new Date()
-            });
-            console.log(`Message sent from ${data.senderId} to ${data.recipientId}`);
         } else {
-            // Queue for offline delivery
-            socket.emit('message_queued', {
-                messageId: data.messageId,
-                recipientId: data.recipientId,
-                timestamp: new Date()
+            console.log(`Target peer ${data.targetPeerId} not found for answer`);
+        }
+    });
+
+    socket.on('candidate', (data) => {
+        const targetSocketId = connectedPeers.get(data.targetPeerId);
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('candidate', { 
+                candidate: data.candidate, 
+                senderPeerId: socket.peerId, 
+                senderUserId: socket.userId 
             });
+        } else {
+            console.log(`Target peer ${data.targetPeerId} not found for candidate`);
         }
     });
 
-    // Group chat functions
-    socket.on('create_group', (data) => {
-        const { groupId, name, createdBy, members } = data;
-        
-        // Track group members
-        if (!peerGroups.has(groupId)) {
-            peerGroups.set(groupId, new Set(members));
-        }
-        
-        // Notify all members
-        for (const memberId of members) {
-            if (memberId === createdBy) continue; // Creator already knows
-            
-            const memberSocket = connectedUsers.get(memberId) || connectedPeers.get(memberId);
-            if (memberSocket) {
-                io.to(memberSocket).emit('group_created', {
-                    groupId,
-                    name,
-                    createdBy,
-                    members
-                });
-            }
-        }
+    // 3. Socket.IO Rooms for Group Management
+    socket.on('create_group', (data, callback) => {
+        const { groupId, groupName } = data;
+        // In a real app, you'd persist group info (e.g., in a database)
+        // For now, rooms are dynamic. The first person to 'join' effectively creates it client-side.
+        // We can acknowledge creation if needed.
+        console.log(`User ${socket.userId} (Peer ${socket.peerId}) wants to create/join group: ${groupId} (${groupName})`);
+        socket.join(groupId);
+        socket.to(groupId).emit('member_joined', {
+            groupId,
+            peerId: socket.peerId,
+            userId: socket.userId,
+            userName: socket.userName,
+            avatarUrl: socket.avatarUrl
+        });
+        if (callback) callback({ success: true, groupId });
     });
 
-    socket.on('join_group', (data) => {
-        const { groupId, userId, peerId } = data;
-        
-        if (peerGroups.has(groupId)) {
-            // Add to group
-            peerGroups.get(groupId).add(peerId);
-            
-            // Notify other members
-            for (const memberId of peerGroups.get(groupId)) {
-                if (memberId === peerId) continue;
-                
-                const memberSocket = connectedPeers.get(memberId);
-                if (memberSocket) {
-                    io.to(memberSocket).emit('member_joined', {
-                        groupId,
-                        peerId,
-                        userId
-                    });
-                }
-            }
-        }
+    socket.on('join_group', (data, callback) => {
+        const { groupId } = data;
+        socket.join(groupId);
+        console.log(`User ${socket.userId} (Peer ${socket.peerId}) joined group: ${groupId}`);
+        // Notify other members in the group
+        socket.to(groupId).emit('member_joined', {
+            groupId,
+            peerId: socket.peerId,
+            userId: socket.userId,
+            userName: socket.userName,
+            avatarUrl: socket.avatarUrl
+        });
+        if (callback) callback({ success: true, groupId });
     });
 
-    socket.on('leave_group', (data) => {
-        const { groupId, peerId } = data;
-        
-        if (peerGroups.has(groupId)) {
-            // Remove from group
-            peerGroups.get(groupId).delete(peerId);
-            
-            // Notify other members
-            for (const memberId of peerGroups.get(groupId)) {
-                const memberSocket = connectedPeers.get(memberId);
-                if (memberSocket) {
-                    io.to(memberSocket).emit('member_left', {
-                        groupId,
-                        peerId
-                    });
-                }
-            }
-            
-            // Clean up empty groups
-            if (peerGroups.get(groupId).size === 0) {
-                peerGroups.delete(groupId);
-            }
-        }
+    socket.on('leave_group', (data, callback) => {
+        const { groupId } = data;
+        socket.leave(groupId);
+        console.log(`User ${socket.userId} (Peer ${socket.peerId}) left group: ${groupId}`);
+        // Notify other members in the group
+        socket.to(groupId).emit('member_left', {
+            groupId,
+            peerId: socket.peerId,
+            userId: socket.userId
+        });
+        if (callback) callback({ success: true, groupId });
     });
 
-    socket.on('typing', (data) => {
-        const recipientSocket = connectedUsers.get(data.recipientId) || connectedPeers.get(data.recipientId);
-        if (recipientSocket) {
-            io.to(recipientSocket).emit('user_typing', {
-                userId: data.senderId,
-                peerId: data.peerId,
-                isTyping: data.isTyping
-            });
-        }
+    socket.on('send_group_message', (data) => {
+        const { groupId, message, type = 'text' } = data;
+        // Broadcast to all members of the group, including the sender
+        io.to(groupId).emit('group_message', {
+            groupId,
+            senderPeerId: socket.peerId,
+            senderUserId: socket.userId,
+            senderUserName: socket.userName,
+            senderAvatarUrl: socket.avatarUrl,
+            message,
+            type,
+            timestamp: new Date().toISOString()
+        });
+    });
+    
+    socket.on('send_group_signal', (data) => {
+        const { groupId, signalType, signalData } = data;
+        // Relay signals like 'offer', 'answer', 'candidate' within a group
+        // The sender should not receive their own signal back
+        socket.to(groupId).emit('group_signal', {
+            groupId,
+            senderPeerId: socket.peerId,
+            senderUserId: socket.userId,
+            signalType, // e.g., 'offer', 'answer', 'candidate'
+            signalData  // The actual SDP or candidate
+        });
     });
 
     // Handle disconnections
     socket.on('disconnect', () => {
-        // Find the disconnected user
-        let disconnectedPeerId = null;
-        let disconnectedUserId = null;
-        
-        for (const [peerId, socketId] of connectedPeers.entries()) {
-            if (socketId === socket.id) {
-                disconnectedPeerId = peerId;
-                break;
-            }
-        }
-        
-        for (const [userId, socketId] of connectedUsers.entries()) {
-            if (socketId === socket.id) {
-                disconnectedUserId = userId;
-                break;
-            }
-        }
-        
-        // Clean up
+        const disconnectedPeerId = socket.peerId;
+        const disconnectedUserId = socket.userId;
+
         if (disconnectedPeerId) {
             connectedPeers.delete(disconnectedPeerId);
             peerIdToUserId.delete(disconnectedPeerId);
-            
             console.log(`Peer disconnected: ${disconnectedPeerId}`);
         }
         
         if (disconnectedUserId) {
             connectedUsers.delete(disconnectedUserId);
             userIdToPeerId.delete(disconnectedUserId);
-            
-            // Broadcast status change
+            console.log(`User disconnected: ${disconnectedUserId}`);
+
+            // Broadcast user's offline status
             io.emit('user_status_change', {
                 userId: disconnectedUserId,
-                peerId: disconnectedPeerId,
+                peerId: disconnectedPeerId, // May or may not be present if only userId was set
+                userName: socket.userName, // Send userName if available
                 status: 'offline'
             });
-            
-            console.log(`User disconnected: ${disconnectedUserId}`);
         }
-        
-        // Remove from groups
-        for (const [groupId, members] of peerGroups.entries()) {
-            if (disconnectedPeerId && members.has(disconnectedPeerId)) {
-                members.delete(disconnectedPeerId);
-                
-                // Notify remaining members
-                for (const memberId of members) {
-                    const memberSocket = connectedPeers.get(memberId);
-                    if (memberSocket) {
-                        io.to(memberSocket).emit('member_left', {
-                            groupId,
-                            peerId: disconnectedPeerId
-                        });
-                    }
-                }
-                
-                // Clean up empty groups
-                if (members.size === 0) {
-                    peerGroups.delete(groupId);
-                }
-            }
-        }
+
+        // Socket.IO handles room cleanup automatically when a socket disconnects.
+        // If you need to notify remaining room members about a departure explicitly
+        // (beyond the generic 'user_status_change'), you can iterate through socket.rooms.
+        // However, the 'member_left' event should be preferred from an explicit 'leave_group' action.
+        // For abrupt disconnects, 'user_status_change' covers the status update.
+
+        console.log('Client disconnected:', socket.id, 'Peer:', disconnectedPeerId, 'User:', disconnectedUserId);
+        console.log('Remaining connected peers:', Array.from(connectedPeers.keys()));
+        console.log('Remaining connected users:', Array.from(connectedUsers.keys()));
     });
 });
 
 const PORT = process.env.PORT || 5000;
-const HOST = '0.0.0.0';
+const HOST = process.env.HOST || '0.0.0.0'; // Standard for listening on all available network interfaces
 
 server.listen(PORT, HOST, () => {
-    console.log(`Server running on http://${HOST}:${PORT}`);
+    console.log(`Server listening on ${HOST}:${PORT}`);
 });
