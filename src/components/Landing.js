@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Landing.css';
 import { ParticleBackground, StatsSection, FeatureComparison, FloatingChatPreview } from './LandingFeatures';
 import LandingGitHubFeatures from './LandingGitHubFeatures';
 import Auth from './Auth';
 import { getCurrentUser, signOut } from '../services/supabase-service';
+import { Text, Box, useColorModeValue, Link as ChakraLink } from '@chakra-ui/react';
 
 const FloatingCube = () => {
     const cubeRef = useRef(null);
@@ -250,6 +251,53 @@ const Landing = () => {
                     <p>© 2025 ECHOLINK - Secure Communications</p>
                 </div>
             </div>
+            {/* Footer */}
+            <footer className="footer">
+                <div className="container">
+                    <div className="footer-content">
+                        <div className="footer-logo">
+                            <img src="/logo.png" alt="EchoLink Logo" />
+                            <h3>EchoLink</h3>
+                        </div>
+                        <div className="footer-links">
+                            <ul>
+                                <li><a href="#features">Features</a></li>
+                                <li><a href="#download">Download</a></li>
+                                <li><a href="#about">About</a></li>
+                                <li><a href="#contact">Contact</a></li>
+                            </ul>
+                        </div>
+                        <div className="footer-social">
+                            <a href="#"><i className="fab fa-twitter"></i></a>
+                            <a href="#"><i className="fab fa-facebook"></i></a>
+                            <a href="#"><i className="fab fa-instagram"></i></a>
+                            <a href="#"><i className="fab fa-github"></i></a>
+                        </div>
+                    </div>
+                    <div className="footer-bottom">
+                        <p>&copy; 2023 EchoLink. All rights reserved.</p>
+                        
+                        {/* Credits */}
+                        <Box 
+                            mt={2}
+                            textAlign="center"
+                            fontSize="sm"
+                            color={useColorModeValue('gray.600', 'gray.400')}
+                        >
+                            <Text>
+                                Enhanced by <Text as="span" fontWeight="bold" display="inline">SREE VARSHAN V</Text>
+                            </Text>
+                            <ChakraLink 
+                                href="https://github.com/sreevarshan-xenoz" 
+                                isExternal
+                                color={useColorModeValue('blue.500', 'blue.300')}
+                            >
+                                github.com/sreevarshan-xenoz
+                            </ChakraLink>
+                        </Box>
+                    </div>
+                </div>
+            </footer>
         </div>
     );
 };

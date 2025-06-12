@@ -1594,6 +1594,31 @@ const Chat = ({
                     {connectionState === 'reconnecting' ? 'Reconnecting...' : 'Connection error. Working offline.'}
                 </Box>
             )}
+
+            {/* Credits */}
+            <Box
+                position="fixed"
+                bottom="2"
+                right="2"
+                fontSize="xs"
+                color={colorMode === 'dark' ? 'gray.500' : 'gray.600'}
+                textAlign="right"
+                zIndex="1"
+            >
+                <Text>
+                    Enhanced by <Text as="span" fontWeight="bold">SREE VARSHAN V</Text>
+                </Text>
+                <Text>
+                    <a 
+                        href="https://github.com/sreevarshan-xenoz" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'underline' }}
+                    >
+                        github.com/sreevarshan-xenoz
+                    </a>
+                </Text>
+            </Box>
         </Flex>
     );
 };

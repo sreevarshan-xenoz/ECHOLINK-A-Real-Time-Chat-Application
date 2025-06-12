@@ -1,16 +1,48 @@
-# P2P Chat Application
+# EchoLink - A Real-Time Chat Application
 
-A decentralized peer-to-peer chat application using WebRTC for direct communication between browsers.
+EchoLink is a modern, feature-rich real-time chat application built with React and Firebase. It offers a seamless communication experience with a focus on developer collaboration.
 
 ## Features
-- 🔒 End-to-end encryption
-- 📱 Real-time messaging
-- 🎤 Voice messages
-- 📎 File sharing
-- 👍 Message reactions
-- 🌙 Dark mode
-- 🔍 Message search
-- ⌨️ Typing indicators
+
+- Real-time messaging
+- Code sharing and execution
+- Voice messages
+- Collaborative whiteboard
+- LeetCode and HackerRank integration
+- AI-powered assistant
+- Dark/light mode
+- File sharing
+- User profiles
+- And much more!
+
+## Technologies Used
+
+- React
+- Firebase/Supabase
+- Chakra UI
+- WebRTC
+- React Router
+- Redux
+
+## Installation
+
+1. Clone the repository
+2. Install dependencies with `npm install`
+3. Configure environment variables
+4. Run the development server with `npm start`
+
+## Usage
+
+After installation, navigate to `http://localhost:3000` in your browser to use the application.
+
+## Credits
+
+Enhanced by **SREE VARSHAN V**
+- GitHub: [sreevarshan-xenoz](https://github.com/sreevarshan-xenoz)
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Setup Instructions
 
