@@ -13,7 +13,7 @@ const Chat = lazy(() => import('./components/Chat'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
 const GitHubHome = lazy(() => import('./components/GitHubHome'));
 const GitHubIntegration = lazy(() => import('./components/GitHubIntegration'));
-const GithubPage = lazy(() => import('./pages/GithubPage'));
+const Download = lazy(() => import('./components/Download'));
 
 // Create a wrapper component with navigation
 const MainApp = () => {
@@ -324,9 +324,9 @@ const App = () => {
                         <GitHubIntegration />
                     </Suspense>
                 } />
-                <Route path="/github" element={
-                    <Suspense fallback={<div className="loading-container">Loading GitHub...</div>}>
-                        <GithubPage />
+                <Route path="/download" element={
+                    <Suspense fallback={<div className="loading-spinner">Loading download page...</div>}>
+                        <Download />
                     </Suspense>
                 } />
                 <Route path="*" element={<Navigate to="/" replace />} />

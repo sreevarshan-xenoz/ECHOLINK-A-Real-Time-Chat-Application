@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './Landing.css';
 import { ParticleBackground, StatsSection, FeatureComparison, FloatingChatPreview } from './LandingFeatures';
 import LandingGitHubFeatures from './LandingGitHubFeatures';
@@ -140,7 +140,7 @@ const Landing = () => {
                 </div>
                 {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
                 
-                <div className="features">
+                <div className="features" id="features">
                     <div className="feature-card scroll-animate">
                         <div className="feature-icon">🔒</div>
                         <h3>End-to-End Encryption</h3>
@@ -175,7 +175,7 @@ const Landing = () => {
                     </div>
                 </div>
 
-                <div className="about-section scroll-animate">
+                <div className="about-section scroll-animate" id="about">
                     <h2>About ECHOLINK</h2>
                     <p className="about-description">
                         ECHOLINK is a cutting-edge communication platform designed for secure, efficient, and 
@@ -247,7 +247,7 @@ const Landing = () => {
 
                 <FloatingChatPreview />
 
-                <div className="landing-footer scroll-animate">
+                <div className="landing-footer scroll-animate" id="contact">
                     <p>© 2025 ECHOLINK - Secure Communications</p>
                 </div>
             </div>
@@ -261,17 +261,17 @@ const Landing = () => {
                         </div>
                         <div className="footer-links">
                             <ul>
-                                <li><a href="#features">Features</a></li>
-                                <li><a href="#download">Download</a></li>
-                                <li><a href="#about">About</a></li>
-                                <li><a href="#contact">Contact</a></li>
+                                <li><Link to="/#features">Features</Link></li>
+                                <li><Link to="/download">Download</Link></li>
+                                <li><Link to="/#about">About</Link></li>
+                                <li><Link to="/#contact">Contact</Link></li>
                             </ul>
                         </div>
                         <div className="footer-social">
-                            <a href="#"><i className="fab fa-twitter"></i></a>
-                            <a href="#"><i className="fab fa-facebook"></i></a>
-                            <a href="#"><i className="fab fa-instagram"></i></a>
-                            <a href="#"><i className="fab fa-github"></i></a>
+                            <a href="https://twitter.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-twitter"></i></a>
+                            <a href="https://facebook.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook"></i></a>
+                            <a href="https://instagram.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram"></i></a>
+                            <a href="https://github.com/sreevarshan-xenoz/ECHOLINK-A-Real-Time-Chat-Application" target="_blank" rel="noopener noreferrer"><i className="fab fa-github"></i></a>
                         </div>
                     </div>
                     <div className="footer-bottom">
