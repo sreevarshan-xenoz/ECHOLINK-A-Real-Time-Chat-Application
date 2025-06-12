@@ -8,7 +8,14 @@ import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { v4 as uuidv4 } from 'uuid';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import { LazyAISettings, LazyProfile, LazyMiniAIChat } from './LazyComponents';
+import { 
+  LazyAISettings, 
+  LazyProfile, 
+  LazyMiniAIChat, 
+  LazyCodeExecutionPanel,
+  LazyVoiceMessageRecorder,
+  LazyCollaborativeWhiteboard
+} from './LazyComponents';
 import {
   Box,
   Flex,
@@ -1284,6 +1291,39 @@ const Chat = ({
                         {/* Mini AI Chat */}
                         <Suspense fallback={<Box p={2} textAlign="center"><Spinner size="sm" /></Box>}>
                             <LazyMiniAIChat />
+                        </Suspense>
+
+                        {/* Code Execution Panel */}
+                        <Suspense fallback={<Box p={2} textAlign="center"><Spinner size="sm" /></Box>}>
+                            <LazyCodeExecutionPanel onShareCode={handleShareCode} />
+                        </Suspense>
+
+                        {/* Voice Message Recorder */}
+                        <Suspense fallback={<Box p={2} textAlign="center"><Spinner size="sm" /></Box>}>
+                            <LazyVoiceMessageRecorder onSendVoiceMessage={handleVoiceTranscription} />
+                        </Suspense>
+
+                        {/* Collaborative Whiteboard */}
+                        <Suspense fallback={<Box p={2} textAlign="center"><Spinner size="sm" /></Box>}>
+                            <LazyCollaborativeWhiteboard onShareWhiteboard={(blob, filename) => {
+                                // Handle sharing whiteboard image
+                                // For now, just create a message with the image
+                                const reader = new FileReader();
+                                reader.readAsDataURL(blob);
+                                reader.onloadend = () => {
+                                    const base64data = reader.result;
+                                    const newMessage = {
+                                        id: uuidv4(),
+                                        sender: 'user',
+                                        text: `Shared whiteboard: ${filename}`,
+                                        timestamp: new Date().toISOString(),
+                                        type: 'IMAGE',
+                                        imageData: base64data
+                                    };
+                                    setMessages(prev => [...prev, newMessage]);
+                                    scrollToBottom();
+                                };
+                            }} />
                         </Suspense>
 
                         {/* Quick actions */}
