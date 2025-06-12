@@ -29,4 +29,22 @@ export const LazyMiniAIChat = lazy(() =>
   import('./MiniAIChat').then(module => ({
     default: module.default
   }))
+);
+
+export const LazyCodeExecutionPanel = lazy(() => 
+  import('./CodeExecutionPanel').then(module => ({
+    default: module.default
+  }))
+);
+
+export const LazyVoiceMessageRecorder = lazy(() => 
+  import('./VoiceMessageRecorder').then(module => ({
+    default: module.default
+  }))
+);
+
+export const LazyCollaborativeWhiteboard = lazy(() => 
+  import('./CollaborativeWhiteboard').then(module => ({
+    default: module.default
+  }))
 ); 
