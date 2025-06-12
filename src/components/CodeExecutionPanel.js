@@ -61,6 +61,7 @@ const CodeExecutionPanel = ({ onShareCode }) => {
   const borderColor = useColorModeValue('blue.200', 'gray.600');
   const codeBgColor = useColorModeValue('white', 'gray.700');
   const outputBgColor = useColorModeValue('gray.100', 'gray.900');
+  const hoverBgColor = useColorModeValue('gray.100', 'gray.700');
   
   const toggleOpen = () => {
     setIsOpen(!isOpen);
@@ -252,7 +253,7 @@ const CodeExecutionPanel = ({ onShareCode }) => {
                     fontSize="xs"
                     cursor="pointer"
                     onClick={() => loadHistoryItem(item)}
-                    _hover={{ bg: useColorModeValue('gray.100', 'gray.700') }}
+                    _hover={{ bg: hoverBgColor }}
                   >
                     <Badge colorScheme={item.language === 'javascript' ? 'yellow' : item.language === 'python' ? 'blue' : 'red'}>
                       {item.language}

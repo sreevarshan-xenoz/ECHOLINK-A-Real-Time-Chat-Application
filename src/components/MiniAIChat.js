@@ -68,6 +68,9 @@ const MiniAIChat = () => {
   const headerBgColor = useColorModeValue('blue.50', 'gray.700');
   const borderColor = useColorModeValue('blue.200', 'gray.600');
   const inputBgColor = useColorModeValue('white', 'gray.700');
+  const userMessageBgColor = useColorModeValue('blue.100', 'blue.600');
+  const aiMessageBgColor = useColorModeValue('gray.100', 'gray.700');
+  const userMessageTextColor = useColorModeValue('black', 'white');
   
   const toggleOpen = () => {
     setIsOpen(!isOpen);
@@ -187,10 +190,8 @@ const MiniAIChat = () => {
               >
                 <Box
                   maxW="80%"
-                  bg={message.sender === 'user' 
-                    ? useColorModeValue('blue.100', 'blue.600') 
-                    : useColorModeValue('gray.100', 'gray.700')}
-                  color={message.sender === 'user' && useColorModeValue('black', 'white')}
+                  bg={message.sender === 'user' ? userMessageBgColor : aiMessageBgColor}
+                  color={message.sender === 'user' ? userMessageTextColor : undefined}
                   p={2}
                   borderRadius={message.sender === 'user' 
                     ? '8px 8px 0 8px' 
@@ -204,7 +205,7 @@ const MiniAIChat = () => {
             {isLoading && (
               <Flex justify="flex-start">
                 <Box
-                  bg={useColorModeValue('gray.100', 'gray.700')}
+                  bg={aiMessageBgColor}
                   p={2}
                   borderRadius="8px 8px 8px 0"
                 >
