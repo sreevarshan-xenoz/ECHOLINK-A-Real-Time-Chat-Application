@@ -1,4 +1,4 @@
-# EchoLink - A Real-Time Chat Application
+# EchoLink
 
 EchoLink is a modern, feature-rich real-time chat application built with React and Firebase. It offers a seamless communication experience with a focus on developer collaboration.
 
