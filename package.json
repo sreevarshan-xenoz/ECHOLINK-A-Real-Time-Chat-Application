@@ -48,7 +48,9 @@
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
     "test": "react-app-rewired test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron-dev": "set ELECTRON_START_URL=http://localhost:3000 && npm run start & npx electron .",
+    "electron-pack": "npm run build && npx electron ."
   },
   "eslintConfig": {
     "extends": [
@@ -77,6 +79,7 @@
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
+    "electron": "^37.1.0",
     "https-browserify": "^1.0.0",
     "net-browserify": "^0.2.4",
     "os-browserify": "^0.3.0",
