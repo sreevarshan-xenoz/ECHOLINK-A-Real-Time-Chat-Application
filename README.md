@@ -35,6 +35,52 @@ EchoLink is a modern, feature-rich real-time chat application built with React a
 
 After installation, navigate to `http://localhost:3000` in your browser to use the application.
 
+## Testing
+
+This project uses the default React testing setup (Jest and React Testing Library).
+
+### Run All Tests
+
+```bash
+npm test
+```
+This will launch the test runner in interactive watch mode. Press `a` to run all tests, or follow the on-screen instructions for more options.
+
+### Run Tests Once (CI Mode)
+
+```bash
+CI=true npm test
+```
+This will run all tests once and exit, which is useful for continuous integration environments.
+
+### Test Coverage
+
+To generate a code coverage report:
+
+```bash
+npm test -- --coverage
+```
+The coverage report will be available in the `coverage/` directory.
+
+### Writing Tests
+
+- Test files should be placed alongside the components they test, using the `.test.js` or `.test.tsx` extension (e.g., `MyComponent.test.js`).
+- Use [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) and [Jest](https://jestjs.io/docs/getting-started) for writing tests.
+- To add a new test, create a file like `ComponentName.test.js` in the same directory as the component.
+
+Example test file:
+```js
+import { render, screen } from '@testing-library/react';
+import MyComponent from './MyComponent';
+
+test('renders the component', () => {
+  render(<MyComponent />);
+  expect(screen.getByText(/hello/i)).toBeInTheDocument();
+});
+```
+
+For more information, see the [Create React App testing documentation](https://create-react-app.dev/docs/running-tests/).
+
 ## Credits
 
 Enhanced by **SREE VARSHAN V**
