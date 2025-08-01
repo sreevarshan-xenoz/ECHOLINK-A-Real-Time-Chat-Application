@@ -3,6 +3,62 @@
  * Centralized configuration management for the application
  */
 
+export interface GitHubConfig {
+  clientId: string | undefined;
+  clientSecret: string | undefined;
+  isConfigured: boolean;
+  redirectUri: string;
+  scope: string;
+}
+
+export interface SupabaseConfig {
+  url: string | undefined;
+  anonKey: string | undefined;
+  isConfigured: boolean;
+}
+
+export interface AIConfig {
+  huggingFace: {
+    token: string | undefined;
+    isConfigured: boolean;
+  };
+  openai: {
+    apiKey: string | undefined;
+    isConfigured: boolean;
+  };
+  gemini: {
+    apiKey: string | undefined;
+    isConfigured: boolean;
+  };
+}
+
+export interface ServerConfig {
+  port: number;
+  serverPort: number;
+  signalingUrl: string;
+  wsUrl: string;
+}
+
+export interface FeatureFlags {
+  aiChat: boolean;
+  githubIntegration: boolean;
+  voiceMessages: boolean;
+  fileSharing: boolean;
+  codeExecution: boolean;
+  collaborativeWhiteboard: boolean;
+}
+
+export interface AnalyticsConfig {
+  sentry: {
+    dsn: string | undefined;
+    isConfigured: boolean;
+  };
+  googleAnalytics: {
+    trackingId: string | undefined;
+    isConfigured: boolean;
+  };
+}
+
 class EnvironmentConfig {
   constructor() {
     this.isDevelopment = process.env.NODE_ENV === 'development';
