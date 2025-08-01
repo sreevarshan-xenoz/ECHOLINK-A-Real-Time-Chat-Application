@@ -888,6 +888,62 @@
         padding: 14px 30px;
         font-size: 1.1rem;
     }
+    
+    .auth-buttons {
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+    
+    .auth-button, .cta-button {
+        min-width: 200px;
+        padding: 12px 24px;
+        font-size: 1rem;
+    }
+    
+    .echo-ai-chat-button {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+    
+    .floating-cube {
+        display: none; /* Hide on small screens */
+    }
+    
+    .demo-container {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .demo-text {
+        text-align: center;
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .footer-links ul {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+/* Additional mobile improvements */
+@media (max-width: 360px) {
+    .landing-header h1 {
+        font-size: 2rem;
+    }
+    
+    .tagline {
+        font-size: 1rem;
+    }
+    
+    .auth-button, .cta-button {
+        min-width: 180px;
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
 }
 
 /* GitHub Features Section */
@@ -1231,7 +1287,9 @@
     display: flex;
     gap: 1rem;
     justify-content: center;
-    margin-top: 1rem;
+    align-items: center;
+    margin: 2rem 0;
+    flex-wrap: wrap;
 }
 
 .auth-button {
@@ -1256,6 +1314,137 @@
     box-shadow: 0 0 10px var(--neon-blue),
                 0 0 25px var(--neon-blue);
     text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+/* Echo AI Section */
+.echo-ai-section {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+.echo-ai-chat-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, var(--neon-purple) 0%, var(--neon-blue) 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 0, 255, 0.3);
+    border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.echo-ai-chat-button:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 0 15px var(--neon-purple),
+                0 0 30px var(--neon-purple),
+                0 8px 25px rgba(255, 0, 255, 0.4);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+.echo-ai-chat-button-icon {
+    font-size: 1.2rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Footer Positioning Fix */
+.footer {
+    background: rgba(15, 40, 70, 0.4);
+    padding: 2rem 0 1rem;
+    margin-top: 4rem;
+    border-top: 1px solid rgba(15, 154, 254, 0.2);
+}
+
+.footer .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.footer-logo img {
+    width: 40px;
+    height: 40px;
+}
+
+.footer-logo h3 {
+    color: var(--neon-blue);
+    margin: 0;
+}
+
+.footer-links ul {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+}
+
+.footer-links a {
+    color: #a5b1c2;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.footer-links a:hover {
+    color: var(--neon-blue);
+    text-shadow: 0 0 5px var(--neon-blue);
+}
+
+.footer-social {
+    display: flex;
+    gap: 1rem;
+}
+
+.footer-social a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(15, 154, 254, 0.1);
+    border-radius: 50%;
+    color: var(--neon-blue);
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.footer-social a:hover {
+    background: rgba(15, 154, 254, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(15, 154, 254, 0.3);
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(15, 154, 254, 0.1);
+    color: #6c7983;
 }
 
 .ai-features-section {

@@ -116,27 +116,31 @@ const Landing = () => {
                 <div className="landing-header scroll-animate">
                     <h1>ECHOLINK</h1>
                     <p className="tagline">Secure, Real-Time Communication</p>
-                    {user ? (
-                        <div className="auth-buttons">
-                            <Link to="/chat" className="cta-button">Start Chatting in Web</Link>
-                            <Link to="/download" className="auth-button">Download App</Link>
-                            <Link to="/dashboard" className="auth-button">Dashboard</Link>
-                            <button onClick={handleSignOut} className="auth-button">Sign Out</button>
-                        </div>
-                    ) : (
-                        <div className="auth-buttons">
-                            <button onClick={() => setShowAuth(true)} className="cta-button">Get Started</button>
-                            <Link to="/download" className="auth-button">Download App</Link>
-                        </div>
-                    )}
+                    <div className="auth-buttons">
+                        {user ? (
+                            <>
+                                <Link to="/chat" className="cta-button">Start Chatting in Web</Link>
+                                <Link to="/download" className="auth-button">Download App</Link>
+                                <Link to="/dashboard" className="auth-button">Dashboard</Link>
+                                <button onClick={handleSignOut} className="auth-button">Sign Out</button>
+                            </>
+                        ) : (
+                            <>
+                                <button onClick={() => setShowAuth(true)} className="cta-button">Get Started</button>
+                                <Link to="/download" className="auth-button">Download App</Link>
+                            </>
+                        )}
+                    </div>
                     
-                    <Link 
-                        to="/ai"
-                        className="echo-ai-chat-button"
-                    >
-                        <span className="echo-ai-chat-button-icon">🤖</span>
-                        Chat with Echo AI
-                    </Link>
+                    <div className="echo-ai-section">
+                        <Link 
+                            to="/ai"
+                            className="echo-ai-chat-button"
+                        >
+                            <span className="echo-ai-chat-button-icon">🤖</span>
+                            Chat with Echo AI
+                        </Link>
+                    </div>
                 </div>
                 {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
                 
