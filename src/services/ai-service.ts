@@ -227,6 +227,217 @@ class AIService {
       return [];
     }
   }
+
+  /**
+   * Generate text using the configured AI model
+   */
+  public async generateText(prompt: string, options?: {
+    maxTokens?: number;
+    temperature?: number;
+    model?: string;
+  }): Promise<string> {
+    if (!this.isInitialized) {
+      throw new Error('AI service not initialized');
+    }
+
+    const { maxTokens = 2048, temperature = 0.7, model } = options || {};
+
+    try {
+      if (this.apiType === 'openai' && this.openai) {
+        const response = await this.openai.chat.completions.create({
+          model: model || this.selectedModel || "gpt-3.5-turbo",
+          messages: [
+            { role: "system", content: this.aiPersonality },
+            { role: "user", content: prompt }
+          ],
+          max_tokens: maxTokens,
+          temperature
+        });
+
+        return response.choices[0].message.content?.trim() || '';
+      }
+
+      if (this.apiType === 'gemini' && this.gemini) {
+        const modelInstance = this.gemini.getGenerativeModel({ 
+          model: model || this.selectedModel || "gemini-pro" 
+        });
+        const result = await modelInstance.generateContent(prompt);
+        const response = await result.response;
+        return response.text();
+      }
+
+      if (this.apiType === 'ollama') {
+        const response = await fetch(`${this.ollamaEndpoint}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: model || this.selectedModel || 'llama2',
+            prompt: prompt,
+            stream: false
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Ollama request failed');
+        }
+
+        const data = await response.json();
+        return data.response || '';
+      }
+
+      throw new Error('No AI service configured');
+    } catch (error) {
+      console.error('Error generating text:', error);
+      throw new Error(`AI text generation failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Chat with AI maintaining conversation history
+   */
+  public async chatWithAI(message: string, userId?: string): Promise<AIResponse> {
+    if (!this.isInitialized) {
+      throw new Error('AI service not initialized');
+    }
+
+    try {
+      // Add user message to chat history
+      this.aiChatHistory.push({
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+
+      // Prepare conversation context
+      const messages = [
+        { role: 'system', content: this.aiPersonality },
+        ...this.aiChatHistory.slice(-10).map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      ];
+
+      let responseText = '';
+
+      if (this.apiType === 'openai' && this.openai) {
+        const response = await this.openai.chat.completions.create({
+          model: this.selectedModel || "gpt-3.5-turbo",
+          messages: messages as any,
+          max_tokens: 1000,
+          temperature: 0.7
+        });
+        responseText = response.choices[0].message.content?.trim() || '';
+      } else if (this.apiType === 'gemini' && this.gemini) {
+        const modelInstance = this.gemini.getGenerativeModel({ 
+          model: this.selectedModel || "gemini-pro" 
+        });
+        const result = await modelInstance.generateContent(message);
+        const response = await result.response;
+        responseText = response.text();
+      } else if (this.apiType === 'ollama') {
+        const response = await fetch(`${this.ollamaEndpoint}/api/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: this.selectedModel || 'llama2',
+            prompt: message,
+            stream: false
+          })
+        });
+        const data = await response.json();
+        responseText = data.response || '';
+      }
+
+      // Add AI response to chat history
+      this.aiChatHistory.push({
+        role: 'assistant',
+        content: responseText,
+        timestamp: new Date().toISOString()
+      });
+
+      return {
+        type: 'CHAT',
+        content: responseText,
+        sender: 'AI_ASSISTANT',
+        timestamp: new Date().toISOString(),
+        id: Math.random().toString(36).substr(2, 9)
+      };
+    } catch (error) {
+      console.error('Error in AI chat:', error);
+      throw new Error(`AI chat failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * Translate text to specified language
+   */
+  public async translateText(text: string, targetLanguage: string): Promise<string> {
+    if (!this.isInitialized) return text;
+
+    try {
+      const prompt = `Translate the following text to ${targetLanguage}. Only return the translated text, no explanations:\n\n${text}`;
+      return await this.generateText(prompt, { maxTokens: 500, temperature: 0.3 });
+    } catch (error) {
+      console.error('Error translating text:', error);
+      return text;
+    }
+  }
+
+  /**
+   * Get message completion suggestions
+   */
+  public async getMessageCompletion(partialMessage: string): Promise<string[]> {
+    if (!this.isInitialized || partialMessage.length < 3) return [];
+
+    try {
+      const prompt = `Complete this message naturally (provide 3 different completions, one per line):\n${partialMessage}`;
+      const result = await this.generateText(prompt, { maxTokens: 100, temperature: 0.8 });
+      return result.split('\n').filter(line => line.trim()).slice(0, 3);
+    } catch (error) {
+      console.error('Error getting message completion:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Detect language of text
+   */
+  public async detectLanguage(text: string): Promise<string | null> {
+    if (!this.isInitialized) return null;
+
+    try {
+      const prompt = `Detect the language of this text and respond with only the language name in English:\n${text}`;
+      const result = await this.generateText(prompt, { maxTokens: 10, temperature: 0 });
+      return result.trim();
+    } catch (error) {
+      console.error('Error detecting language:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get AI service status
+   */
+  public getStatus(): {
+    isInitialized: boolean;
+    apiType: string | null;
+    selectedModel: string | null;
+    historyLength: number;
+  } {
+    return {
+      isInitialized: this.isInitialized,
+      apiType: this.apiType,
+      selectedModel: this.selectedModel,
+      historyLength: this.messageHistory.length
+    };
+  }
+
+  /**
+   * Clear AI chat history
+   */
+  public clearChatHistory(): void {
+    this.aiChatHistory = [];
+  }
 }
 
 export const aiService = new AIService();
