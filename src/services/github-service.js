@@ -1,10 +1,11 @@
 // GitHub API integration service
 import { supabase } from './supabase-service';
+import config from '../config/environment';
 
 class GitHubService {
     constructor() {
-        this.clientId = process.env.REACT_APP_GITHUB_CLIENT_ID || '';
-        this.redirectUri = `${window.location.origin}/dashboard`;
+        this.clientId = config.github.clientId;
+        this.redirectUri = config.github.redirectUri;
         console.log('GitHub redirect URI:', this.redirectUri);
         this.scope = 'repo user';
         this.accessToken = null;

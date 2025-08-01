@@ -24,8 +24,11 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // GitHub OAuth credentials (replace with your actual credentials or use environment variables)
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || 'YOUR_GITHUB_CLIENT_ID';
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || 'YOUR_GITHUB_CLIENT_SECRET';
+// Load environment variables from .env file
+require('dotenv').config({ path: '../.env' });
+
+const GITHUB_CLIENT_ID = process.env.REACT_APP_GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = process.env.REACT_APP_GITHUB_CLIENT_SECRET;
 const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost:5000/auth/github/callback'; // Ensure this matches your GitHub app settings
 
 // In-memory storage (Consider Redis or a database for production)
