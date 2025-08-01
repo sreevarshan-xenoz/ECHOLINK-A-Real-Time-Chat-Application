@@ -60,6 +60,10 @@ export interface AnalyticsConfig {
 }
 
 class EnvironmentConfig {
+  public readonly isDevelopment: boolean;
+  public readonly isProduction: boolean;
+  public readonly isTest: boolean;
+
   constructor() {
     this.isDevelopment = process.env.NODE_ENV === 'development';
     this.isProduction = process.env.NODE_ENV === 'production';

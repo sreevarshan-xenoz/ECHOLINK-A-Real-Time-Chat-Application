@@ -267,6 +267,10 @@
 
 .landing-header {
     margin-bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .landing-header h1 {
@@ -860,6 +864,21 @@
         font-size: 1.2rem;
     }
     
+    .auth-buttons {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: center;
+        width: 100%;
+        max-width: 300px;
+        margin: 2rem auto 1rem auto;
+    }
+    
+    .echo-ai-section {
+        width: 100%;
+        max-width: 300px;
+        margin: 1rem auto 3rem auto;
+    }
+    
     .features {
         flex-direction: column;
         align-items: center;
@@ -892,17 +911,29 @@
     .auth-buttons {
         flex-direction: column;
         gap: 0.8rem;
+        align-items: center;
+        width: 100%;
     }
     
     .auth-button, .cta-button {
         min-width: 200px;
         padding: 12px 24px;
         font-size: 1rem;
+        text-align: center;
+    }
+    
+    .echo-ai-section {
+        margin: 1rem 0 2rem 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
     }
     
     .echo-ai-chat-button {
         padding: 10px 20px;
         font-size: 0.9rem;
+        min-width: 200px;
+        text-align: center;
     }
     
     .floating-cube {
@@ -950,6 +981,10 @@
 .github-features-section {
     margin: 80px 0;
     text-align: center;
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 80px auto;
 }
 
 .github-features-section h2 {
@@ -972,6 +1007,10 @@
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 30px;
     margin-bottom: 40px;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto 40px auto;
+    padding: 0 20px;
 }
 
 .github-feature-card {
@@ -1288,7 +1327,7 @@
     gap: 1rem;
     justify-content: center;
     align-items: center;
-    margin: 2rem 0;
+    margin: 2rem 0 1rem 0;
     flex-wrap: wrap;
 }
 
@@ -1318,8 +1357,11 @@
 
 /* Echo AI Section */
 .echo-ai-section {
-    margin: 2rem 0;
+    margin: 1rem 0 3rem 0;
     text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .echo-ai-chat-button {

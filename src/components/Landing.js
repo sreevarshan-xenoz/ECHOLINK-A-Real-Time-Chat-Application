@@ -263,6 +263,7 @@ const Landing = () => {
                             <img src="/logo.png" alt="EchoLink Logo" />
                             <h3>EchoLink</h3>
                         </div>
+                        {/* Temporarily hidden to fix layout issues
                         <div className="footer-links">
                             <ul>
                                 <li><Link to="/#features">Features</Link></li>
@@ -271,6 +272,7 @@ const Landing = () => {
                                 <li><Link to="/#contact">Contact</Link></li>
                             </ul>
                         </div>
+                        */}
                         <div className="footer-social">
                             <a href="https://twitter.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-twitter"></i></a>
                             <a href="https://facebook.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook"></i></a>
