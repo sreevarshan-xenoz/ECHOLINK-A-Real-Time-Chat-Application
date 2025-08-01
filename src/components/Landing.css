@@ -7,6 +7,25 @@
     --neon-glow: 0 0 5px, 0 0 15px, 0 0 30px;
 }
 
+/* Hide any unwanted fixed positioned elements on the right side */
+.landing-container *[style*="position: fixed"][style*="right"],
+.landing-container *[style*="position: absolute"][style*="right"] {
+    display: none !important;
+}
+
+/* Ensure no elements float to the right side */
+.landing-container {
+    overflow-x: hidden;
+}
+
+/* Hide any navigation or floating elements that might appear */
+.floating-nav,
+.fixed-nav,
+.right-sidebar,
+.side-nav {
+    display: none !important;
+}
+
 .landing-container {
     min-height: 100vh;
     display: flex;

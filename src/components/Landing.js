@@ -255,24 +255,14 @@ const Landing = () => {
                     <p>© 2025 ECHOLINK - Secure Communications</p>
                 </div>
             </div>
-            {/* Footer */}
-            <footer className="footer">
+            {/* Footer temporarily hidden to fix layout issues
+            <footer className="footer" style={{display: 'none'}}>
                 <div className="container">
                     <div className="footer-content">
                         <div className="footer-logo">
                             <img src="/logo.png" alt="EchoLink Logo" />
                             <h3>EchoLink</h3>
                         </div>
-                        {/* Temporarily hidden to fix layout issues
-                        <div className="footer-links">
-                            <ul>
-                                <li><Link to="/#features">Features</Link></li>
-                                <li><Link to="/download">Download</Link></li>
-                                <li><Link to="/#about">About</Link></li>
-                                <li><Link to="/#contact">Contact</Link></li>
-                            </ul>
-                        </div>
-                        */}
                         <div className="footer-social">
                             <a href="https://twitter.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-twitter"></i></a>
                             <a href="https://facebook.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook"></i></a>
@@ -283,7 +273,6 @@ const Landing = () => {
                     <div className="footer-bottom">
                         <p>&copy; 2023 EchoLink. All rights reserved.</p>
                         
-                        {/* Credits */}
                         <Box 
                             mt={2}
                             textAlign="center"
@@ -304,6 +293,7 @@ const Landing = () => {
                     </div>
                 </div>
             </footer>
+            */}
         </div>
     );
 };
