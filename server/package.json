@@ -9,6 +9,7 @@
     "start-collab": "node collaborative-server.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.55.0",
     "axios": "^1.8.4",
     "body-parser": "^2.2.0",
     "cors": "^2.8.5",

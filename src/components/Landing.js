@@ -251,49 +251,140 @@ const Landing = () => {
 
                 <FloatingChatPreview />
 
-                <div className="landing-footer scroll-animate" id="contact">
-                    <p>© 2025 ECHOLINK - Secure Communications</p>
-                </div>
             </div>
-            {/* Footer temporarily hidden to fix layout issues
-            <footer className="footer" style={{display: 'none'}}>
-                <div className="container">
-                    <div className="footer-content">
-                        <div className="footer-logo">
-                            <img src="/logo.png" alt="EchoLink Logo" />
-                            <h3>EchoLink</h3>
+            
+            {/* Professional Footer */}
+            <footer className="professional-footer">
+                <div className="footer-container">
+                    {/* Main Footer Content */}
+                    <div className="footer-main">
+                        {/* Company Section */}
+                        <div className="footer-section company-section">
+                            <div className="footer-logo">
+                                <div className="logo-icon">🔗</div>
+                                <h3>ECHOLINK</h3>
+                            </div>
+                            <p className="company-description">
+                                Secure, real-time communication platform designed for privacy-focused users. 
+                                Connect, chat, and collaborate with end-to-end encryption.
+                            </p>
+                            <div className="social-links">
+                                <a href="https://github.com/sreevarshan-xenoz/ECHOLINK-A-Real-Time-Chat-Application" 
+                                   target="_blank" rel="noopener noreferrer" 
+                                   className="social-link github">
+                                    <span>GitHub</span>
+                                </a>
+                                <a href="https://twitter.com/echolink" 
+                                   target="_blank" rel="noopener noreferrer" 
+                                   className="social-link twitter">
+                                    <span>Twitter</span>
+                                </a>
+                                <a href="https://linkedin.com/company/echolink" 
+                                   target="_blank" rel="noopener noreferrer" 
+                                   className="social-link linkedin">
+                                    <span>LinkedIn</span>
+                                </a>
+                            </div>
                         </div>
-                        <div className="footer-social">
-                            <a href="https://twitter.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-twitter"></i></a>
-                            <a href="https://facebook.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-facebook"></i></a>
-                            <a href="https://instagram.com/echolink" target="_blank" rel="noopener noreferrer"><i className="fab fa-instagram"></i></a>
-                            <a href="https://github.com/sreevarshan-xenoz/ECHOLINK-A-Real-Time-Chat-Application" target="_blank" rel="noopener noreferrer"><i className="fab fa-github"></i></a>
+
+                        {/* Product Section */}
+                        <div className="footer-section">
+                            <h4>Product</h4>
+                            <ul>
+                                <li><Link to="/#features">Features</Link></li>
+                                <li><Link to="/ai">AI Assistant</Link></li>
+                                <li><Link to="/download">Download</Link></li>
+                                <li><Link to="/dashboard">Dashboard</Link></li>
+                                <li><Link to="/github">GitHub Integration</Link></li>
+                            </ul>
+                        </div>
+
+                        {/* Resources Section */}
+                        <div className="footer-section">
+                            <h4>Resources</h4>
+                            <ul>
+                                <li><Link to="/docs">Documentation</Link></li>
+                                <li><Link to="/api">API Reference</Link></li>
+                                <li><Link to="/tutorials">Tutorials</Link></li>
+                                <li><Link to="/blog">Blog</Link></li>
+                                <li><Link to="/changelog">Changelog</Link></li>
+                            </ul>
+                        </div>
+
+                        {/* Company Section */}
+                        <div className="footer-section">
+                            <h4>Company</h4>
+                            <ul>
+                                <li><Link to="/#about">About Us</Link></li>
+                                <li><Link to="/careers">Careers</Link></li>
+                                <li><Link to="/contact">Contact</Link></li>
+                                <li><Link to="/press">Press Kit</Link></li>
+                                <li><Link to="/partners">Partners</Link></li>
+                            </ul>
+                        </div>
+
+                        {/* Legal Section */}
+                        <div className="footer-section">
+                            <h4>Legal</h4>
+                            <ul>
+                                <li><Link to="/privacy">Privacy Policy</Link></li>
+                                <li><Link to="/terms">Terms of Service</Link></li>
+                                <li><Link to="/security">Security</Link></li>
+                                <li><Link to="/cookies">Cookie Policy</Link></li>
+                                <li><Link to="/gdpr">GDPR</Link></li>
+                            </ul>
                         </div>
                     </div>
+
+                    {/* Newsletter Signup */}
+                    <div className="newsletter-section">
+                        <div className="newsletter-content">
+                            <div className="newsletter-text">
+                                <h4>Stay Updated</h4>
+                                <p>Get the latest updates, security tips, and feature announcements.</p>
+                            </div>
+                            <div className="newsletter-form">
+                                <input 
+                                    type="email" 
+                                    placeholder="Enter your email"
+                                    className="newsletter-input"
+                                />
+                                <button className="newsletter-button">
+                                    Subscribe
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer Bottom */}
                     <div className="footer-bottom">
-                        <p>&copy; 2023 EchoLink. All rights reserved.</p>
-                        
-                        <Box 
-                            mt={2}
-                            textAlign="center"
-                            fontSize="sm"
-                            color={useColorModeValue('gray.600', 'gray.400')}
-                        >
-                            <Text>
-                                Enhanced by <Text as="span" fontWeight="bold" display="inline">SREE VARSHAN V</Text>
-                            </Text>
-                            <ChakraLink 
-                                href="https://github.com/sreevarshan-xenoz" 
-                                isExternal
-                                color={useColorModeValue('blue.500', 'blue.300')}
-                            >
-                                github.com/sreevarshan-xenoz
-                            </ChakraLink>
-                        </Box>
+                        <div className="footer-bottom-content">
+                            <div className="copyright">
+                                © 2025 ECHOLINK. All rights reserved.
+                            </div>
+                            <div className="footer-meta">
+                                <span>Made with ❤️ for secure communication</span>
+                                <span className="divider">•</span>
+                                <span>Version 1.0.0</span>
+                            </div>
+                            <div className="creator-credit">
+                                <Text fontSize="sm" color="#a5b1c2">
+                                    Enhanced by{' '}
+                                    <ChakraLink 
+                                        href="https://github.com/sreevarshan-xenoz" 
+                                        isExternal
+                                        color="var(--neon-blue)"
+                                        textDecoration="none"
+                                        _hover={{ textDecoration: 'underline' }}
+                                    >
+                                        SREE VARSHAN V
+                                    </ChakraLink>
+                                </Text>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </footer>
-            */}
         </div>
     );
 };

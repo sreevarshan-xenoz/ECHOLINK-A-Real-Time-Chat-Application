@@ -4,6 +4,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const axios = require('axios');
 const bodyParser = require('body-parser');
+const supabaseClient = require('./supabase-client');
 
 const app = express();
 
@@ -278,10 +279,12 @@ io.on('connection', (socket) => {
         if (callback) callback({ success: true, groupId });
     });
 
-    socket.on('send_group_message', (data) => {
-        const { groupId, message, type = 'text' } = data;
-        // Broadcast to all members of the group, including the sender
-        io.to(groupId).emit('group_message', {
+    socket.on('send_group_message', async (data) => {
+        const { groupId, message, type = 'text', parentMessageId = null } = data;
+        const timestamp = new Date().toISOString();
+        
+        // Create message object for database and broadcasting
+        const messageObject = {
             groupId,
             senderPeerId: socket.peerId,
             senderUserId: socket.userId,
@@ -289,8 +292,34 @@ io.on('connection', (socket) => {
             senderAvatarUrl: socket.avatarUrl,
             message,
             type,
-            timestamp: new Date().toISOString()
-        });
+            timestamp,
+            parentMessageId
+        };
+        
+        // Store message in database
+        try {
+            const { data: savedMessage, error } = await supabaseClient.saveMessage({
+                senderId: socket.userId,
+                recipientId: null,
+                groupId,
+                content: message,
+                type,
+                parentMessageId,
+                timestamp
+            });
+            
+            if (error) {
+                console.error('Error saving group message to database:', error);
+            } else {
+                // Add database ID to the message object
+                messageObject.id = savedMessage[0].id;
+            }
+        } catch (err) {
+            console.error('Exception saving group message to database:', err);
+        }
+        
+        // Broadcast to all members of the group, including the sender
+        io.to(groupId).emit('group_message', messageObject);
     });
     
     socket.on('send_group_signal', (data) => {
