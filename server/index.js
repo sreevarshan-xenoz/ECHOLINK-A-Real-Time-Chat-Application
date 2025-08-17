@@ -43,6 +43,84 @@ app.get('/', (req, res) => {
     res.send('Signaling server is running');
 });
 
+// API routes for message history and groups
+app.get('/api/messages/group/:groupId', async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+        
+        const { messages, error } = await supabaseClient.getGroupMessages(groupId, limit, offset);
+        
+        if (error) {
+            console.error('Error fetching group messages:', error);
+            return res.status(500).json({ error: 'Failed to fetch messages' });
+        }
+        
+        res.json({ messages });
+    } catch (err) {
+        console.error('Exception fetching group messages:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.get('/api/messages/direct/:userId/:peerId', async (req, res) => {
+    try {
+        const { userId, peerId } = req.params;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+        
+        const { messages, error } = await supabaseClient.getDirectMessages(userId, peerId, limit, offset);
+        
+        if (error) {
+            console.error('Error fetching direct messages:', error);
+            return res.status(500).json({ error: 'Failed to fetch messages' });
+        }
+        
+        res.json({ messages });
+    } catch (err) {
+        console.error('Exception fetching direct messages:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// API routes for groups
+app.get('/api/groups/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const { groups, error } = await supabaseClient.getUserGroups(userId);
+        
+        if (error) {
+            console.error('Error fetching user groups:', error);
+            return res.status(500).json({ error: 'Failed to fetch groups' });
+        }
+        
+        res.json({ groups });
+    } catch (err) {
+        console.error('Exception fetching user groups:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+app.get('/api/groups/:groupId/members', async (req, res) => {
+    try {
+        const { groupId } = req.params;
+        
+        const { members, error } = await supabaseClient.getGroupMembers(groupId);
+        
+        if (error) {
+            console.error('Error fetching group members:', error);
+            return res.status(500).json({ error: 'Failed to fetch group members' });
+        }
+        
+        res.json({ members });
+    } catch (err) {
+        console.error('Exception fetching group members:', err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // GitHub OAuth Step 1: Redirect to GitHub's authorization page
 app.get('/auth/github', (req, res) => {
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${GITHUB_REDIRECT_URI}&scope=user:email`;
@@ -156,6 +234,60 @@ io.on('connection', (socket) => {
         console.log('Connected users:', Array.from(connectedUsers.keys()));
     });
 
+    // Direct messaging with persistence
+    socket.on('send_direct_message', async (data) => {
+        const { targetPeerId, message, type = 'text', parentMessageId = null } = data;
+        const timestamp = new Date().toISOString();
+        
+        // Find the target user
+        const targetUserId = peerIdToUserId.get(targetPeerId);
+        const targetSocketId = connectedPeers.get(targetPeerId) || connectedUsers.get(targetPeerId);
+        
+        // Create message object
+        const messageObject = {
+            senderPeerId: socket.peerId,
+            senderUserId: socket.userId,
+            senderUserName: socket.userName,
+            senderAvatarUrl: socket.avatarUrl,
+            targetPeerId,
+            targetUserId,
+            message,
+            type,
+            timestamp,
+            parentMessageId
+        };
+        
+        // Store message in database
+        try {
+            const { data: savedMessage, error } = await supabaseClient.saveMessage({
+                senderId: socket.userId,
+                recipientId: targetUserId,
+                groupId: null,
+                content: message,
+                type,
+                parentMessageId,
+                timestamp
+            });
+            
+            if (error) {
+                console.error('Error saving direct message to database:', error);
+            } else {
+                // Add database ID to the message object
+                messageObject.id = savedMessage[0].id;
+            }
+        } catch (err) {
+            console.error('Exception saving direct message to database:', err);
+        }
+        
+        // Send to recipient if online
+        if (targetSocketId) {
+            io.to(targetSocketId).emit('direct_message', messageObject);
+        }
+        
+        // Always send back to sender for confirmation
+        socket.emit('direct_message_sent', messageObject);
+    });
+    
     // WebRTC Signaling
     socket.on('offer', (data) => {
         const targetSocketId = connectedPeers.get(data.targetPeerId) || connectedUsers.get(data.targetPeerId); // Allow targeting by userId too
@@ -197,11 +329,40 @@ io.on('connection', (socket) => {
     });
 
     // 3. Socket.IO Rooms for Group Management
-    socket.on('create_group', (data, callback) => {
-        const { groupId, groupName } = data; // groupName can be used for display or future persistence
+    socket.on('create_group', async (data, callback) => {
+        const { groupId, groupName, initialMembers = [] } = data;
+        
+        if (!socket.userId) {
+            if (callback) callback({ success: false, error: 'User not authenticated' });
+            return;
+        }
+        
+        // Join the Socket.IO room
         socket.join(groupId);
-        console.log(`User ${socket.userId} (Peer ${socket.peerId}) created/joined group: ${groupId} (${groupName || 'Unnamed'})`);
-
+        console.log(`User ${socket.userId} (Peer ${socket.peerId}) created group: ${groupId} (${groupName || 'Unnamed'})`);
+        
+        // Store group in database
+        try {
+            // Add the creator and any initial members to the group
+            const allMembers = [socket.userId, ...initialMembers.filter(id => id !== socket.userId)];
+            
+            const { group, error } = await supabaseClient.createGroup(
+                groupName || 'Unnamed Group', 
+                socket.userId,
+                allMembers
+            );
+            
+            if (error) {
+                console.error('Error creating group in database:', error);
+                // Continue with in-memory group even if database fails
+            } else {
+                console.log(`Group created in database with ID: ${group.id}`);
+            }
+        } catch (err) {
+            console.error('Exception creating group in database:', err);
+            // Continue with in-memory group even if database fails
+        }
+        
         // Notify other members in the group about the new joiner
         socket.to(groupId).emit('member_joined', {
             groupId,
@@ -217,7 +378,7 @@ io.on('connection', (socket) => {
         if (roomSocketIds) {
             roomSocketIds.forEach(socketId => {
                 const memberSocket = io.sockets.sockets.get(socketId);
-                // Ensure the socket exists and has user information (especially if a socket disconnected abruptly)
+                // Ensure the socket exists and has user information
                 if (memberSocket && memberSocket.userId) { 
                     membersInRoom.push({
                         userId: memberSocket.userId,
@@ -232,10 +393,44 @@ io.on('connection', (socket) => {
         if (callback) callback({ success: true, groupId, members: membersInRoom });
     });
 
-    socket.on('join_group', (data, callback) => {
+    socket.on('join_group', async (data, callback) => {
         const { groupId } = data;
+        
+        if (!socket.userId) {
+            if (callback) callback({ success: false, error: 'User not authenticated' });
+            return;
+        }
+        
+        // Join the Socket.IO room
         socket.join(groupId);
         console.log(`User ${socket.userId} (Peer ${socket.peerId}) joined group: ${groupId}`);
+        
+        // Add user to group in database if not already a member
+        try {
+            // First check if the group exists and if the user is already a member
+            const { members, error: getMembersError } = await supabaseClient.getGroupMembers(groupId);
+            
+            if (!getMembersError) {
+                const isAlreadyMember = members.some(member => member.user_id === socket.userId);
+                
+                if (!isAlreadyMember) {
+                    // Add user to group_members table
+                    const { data, error } = await supabaseClient.supabase
+                        .from('group_members')
+                        .insert({
+                            group_id: groupId,
+                            user_id: socket.userId,
+                            role: 'member'
+                        });
+                    
+                    if (error) {
+                        console.error('Error adding user to group in database:', error);
+                    }
+                }
+            }
+        } catch (err) {
+            console.error('Exception adding user to group in database:', err);
+        }
 
         // Notify other members in the group about the new joiner
         socket.to(groupId).emit('member_joined', {
