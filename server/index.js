@@ -461,16 +461,37 @@ io.on('connection', (socket) => {
         if (callback) callback({ success: true, groupId, members: membersInRoom });
     });
 
-    socket.on('leave_group', (data, callback) => {
+    socket.on('leave_group', async (data, callback) => {
         const { groupId } = data;
+        
+        // Leave the Socket.IO room
         socket.leave(groupId);
         console.log(`User ${socket.userId} (Peer ${socket.peerId}) left group: ${groupId}`);
+        
+        // Remove user from group in database
+        if (socket.userId) {
+            try {
+                const { error } = await supabaseClient.supabase
+                    .from('group_members')
+                    .delete()
+                    .eq('group_id', groupId)
+                    .eq('user_id', socket.userId);
+                
+                if (error) {
+                    console.error('Error removing user from group in database:', error);
+                }
+            } catch (err) {
+                console.error('Exception removing user from group in database:', err);
+            }
+        }
+        
         // Notify other members in the group
         socket.to(groupId).emit('member_left', {
             groupId,
             peerId: socket.peerId,
             userId: socket.userId
         });
+        
         if (callback) callback({ success: true, groupId });
     });
 

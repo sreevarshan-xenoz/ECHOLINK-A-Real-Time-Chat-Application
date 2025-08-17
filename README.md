@@ -166,10 +166,14 @@ This project uses Jest and React Testing Library.
 ---
 
 ## 🛣️ Upgrade Plan
-- Group chat
+
+### ✅ Implemented
+- **Robust Group Chat Features**: Enhanced group chat with member lists and typing indicators
+- **Persistent Storage/Database Integration**: Messages and groups are now stored in Supabase database
+
+### 🔜 Coming Soon
 - Video calling
-- Persistent storage
-- User authentication
+- User authentication and profiles
 - Mobile apps
 - Push notifications
 - Scalable signaling server
