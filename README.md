@@ -76,18 +76,56 @@
 
 ## ⚡ Installation
 
+### Quick Setup (Recommended)
 1. **Clone the repository**
    ```bash
    git clone https://github.com/sreevarshan-xenoz/ECHOLINK-A-Real-Time-Chat-Application.git
    cd ECHOLINK-A-Real-Time-Chat-Application
    ```
-2. **Install dependencies**
+
+2. **Run the setup script**
+   - **Windows:** Double-click `setup.bat` or run in PowerShell:
+     ```powershell
+     .\setup.bat
+     ```
+   - **Linux/Mac:**
+     ```bash
+     chmod +x setup.sh
+     ./setup.sh
+     ```
+
+3. **Configure environment variables**
+   - Copy `.env.example` to `.env`
+   - Fill in your actual credentials (see setup guides below)
+
+4. **Start all servers**
    ```bash
-   npm install
+   npm run dev:all
    ```
-3. **Configure environment variables** (see `.env.example`)
-4. **Run the development server**
+
+### Manual Setup
+1. **Install all dependencies**
    ```bash
+   npm run install:all
+   ```
+2. **Fix security vulnerabilities**
+   ```bash
+   npm run audit:fix
+   ```
+3. **Update browser data**
+   ```bash
+   npm run update:browsers
+   ```
+4. **Configure environment variables** (see `.env.example`)
+5. **Start servers individually**
+   ```bash
+   # Terminal 1: Signaling Server
+   cd signaling-server && npm start
+   
+   # Terminal 2: Backend Server
+   cd server && npm start
+   
+   # Terminal 3: Frontend
    npm start
    ```
 
