@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import * as THREE from 'three';
+import { usePerformance } from './PerformanceOptimization';
 
 interface ThreeBackgroundProps {
   theme: 'light' | 'dark';
@@ -12,6 +13,7 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
   intensity = 1, 
   particleCount = 200 
 }) => {
+  const { animationSettings, reducedMotion } = usePerformance();
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -19,14 +21,23 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
   const particlesRef = useRef<THREE.Points | null>(null);
   const animationIdRef = useRef<number | null>(null);
 
+  // Use performance-aware settings
+  const actualParticleCount = reducedMotion ? 0 : animationSettings.particleCount || particleCount;
+  const actualIntensity = reducedMotion ? 0 : intensity;
+  const enableAnimations = animationSettings.enable3D && !reducedMotion;
+
   // Particle geometry and material
   const particleSystem = useMemo(() => {
-    const geometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-    const velocities = new Float32Array(particleCount * 3);
-    const sizes = new Float32Array(particleCount);
+    if (!enableAnimations || actualParticleCount === 0) {
+      return null;
+    }
 
-    for (let i = 0; i < particleCount; i++) {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(actualParticleCount * 3);
+    const velocities = new Float32Array(actualParticleCount * 3);
+    const sizes = new Float32Array(actualParticleCount);
+
+    for (let i = 0; i < actualParticleCount; i++) {
       const i3 = i * 3;
       
       // Position
@@ -48,7 +59,7 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
     geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
     return { geometry, velocities };
-  }, [particleCount]);
+  }, [actualParticleCount, enableAnimations]);
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -92,9 +103,11 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
     });
 
     // Create particle system
-    const particles = new THREE.Points(particleSystem.geometry, material);
-    scene.add(particles);
-    particlesRef.current = particles;
+    if (particleSystem) {
+      const particles = new THREE.Points(particleSystem.geometry, material);
+      scene.add(particles);
+      particlesRef.current = particles;
+    }
 
     // Add geometric shapes for visual interest
     const geometries = [
@@ -141,17 +154,19 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
     };
 
     const animate = () => {
+      if (!enableAnimations) return;
+      
       animationIdRef.current = requestAnimationFrame(animate);
 
-      if (particles && particles.geometry) {
-        const positions = particles.geometry.attributes.position.array as Float32Array;
+      if (particlesRef.current && particlesRef.current.geometry && particleSystem) {
+        const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
         const velocities = particleSystem.velocities;
 
         // Update particle positions
         for (let i = 0; i < positions.length; i += 3) {
-          positions[i] += velocities[i] * intensity;
-          positions[i + 1] += velocities[i + 1] * intensity;
-          positions[i + 2] += velocities[i + 2] * intensity;
+          positions[i] += velocities[i] * actualIntensity;
+          positions[i + 1] += velocities[i + 1] * actualIntensity;
+          positions[i + 2] += velocities[i + 2] * actualIntensity;
 
           // Boundary check and reset
           if (Math.abs(positions[i]) > 50) velocities[i] *= -1;
@@ -159,14 +174,14 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
           if (Math.abs(positions[i + 2]) > 50) velocities[i + 2] *= -1;
         }
 
-        particles.geometry.attributes.position.needsUpdate = true;
+        particlesRef.current.geometry.attributes.position.needsUpdate = true;
       }
 
       // Rotate geometric shapes
       scene.children.forEach((child) => {
         if (child instanceof THREE.Mesh) {
-          child.rotation.x += 0.005 * intensity;
-          child.rotation.y += 0.005 * intensity;
+          child.rotation.x += 0.005 * actualIntensity;
+          child.rotation.y += 0.005 * actualIntensity;
         }
       });
 
@@ -191,7 +206,9 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
     window.addEventListener('resize', handleResize);
 
     // Start animation
-    animate();
+    if (enableAnimations) {
+      animate();
+    }
 
     // Cleanup
     return () => {
@@ -209,10 +226,12 @@ const ThreeBackground: React.FC<ThreeBackgroundProps> = ({
       // Dispose of Three.js objects
       scene.clear();
       renderer.dispose();
-      particleSystem.geometry.dispose();
+      if (particleSystem) {
+        particleSystem.geometry.dispose();
+      }
       material.dispose();
     };
-  }, [theme, intensity, particleCount, particleSystem]);
+  }, [theme, actualIntensity, actualParticleCount, particleSystem, enableAnimations]);
 
   // Update theme-specific colors
   useEffect(() => {
