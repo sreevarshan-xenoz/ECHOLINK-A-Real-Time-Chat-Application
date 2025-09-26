@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "update-deps": "npm update && npm audit fix",
+    "update-major": "npx npm-check-updates -u && npm install",
+    "check-updates": "npx npm-check-updates",
+    "clean-install": "rm -rf node_modules package-lock.json && npm install",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx --fix"
+  }
+}

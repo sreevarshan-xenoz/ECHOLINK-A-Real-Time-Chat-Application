@@ -110,8 +110,8 @@ class AIService {
         max_tokens: 1
       });
       this.apiType = 'openai';
-    } catch (error) {
-      throw new Error(`OpenAI initialization failed: ${error.message}`);
+    } catch (error: any) {
+      throw new Error(`OpenAI initialization failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
@@ -134,13 +134,14 @@ class AIService {
       }
 
       this.apiType = 'gemini';
-    } catch (error) {
-      if (error.message?.includes('API key not valid')) {
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Unknown error';
+      if (errorMessage.includes('API key not valid')) {
         throw new Error('Invalid Gemini API key');
-      } else if (error.message?.includes('quota')) {
+      } else if (errorMessage.includes('quota')) {
         throw new Error('Gemini API quota exceeded');
       } else {
-        throw new Error(`Gemini API error: ${error.message}`);
+        throw new Error(`Gemini API error: ${errorMessage}`);
       }
     }
   }
@@ -197,7 +198,7 @@ class AIService {
         temperature: 0
       });
 
-      return response?.choices[0].message.content.trim() || null;
+      return response?.choices?.[0]?.message?.content?.trim() || null;
     } catch (error) {
       console.error('Error analyzing sentiment:', error);
       return null;
@@ -221,7 +222,7 @@ class AIService {
         max_tokens: 50
       });
 
-      return response?.choices[0].message.content.trim().split('\n') || [];
+      return response?.choices?.[0]?.message?.content?.trim()?.split('\n') || [];
     } catch (error) {
       console.error('Error generating smart replies:', error);
       return [];
@@ -286,9 +287,9 @@ class AIService {
       }
 
       throw new Error('No AI service configured');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating text:', error);
-      throw new Error(`AI text generation failed: ${error.message}`);
+      throw new Error(`AI text generation failed: ${error?.message || 'Unknown error'}`);
     }
   }
 
@@ -362,9 +363,9 @@ class AIService {
         timestamp: new Date().toISOString(),
         id: Math.random().toString(36).substr(2, 9)
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in AI chat:', error);
-      throw new Error(`AI chat failed: ${error.message}`);
+      throw new Error(`AI chat failed: ${error?.message || 'Unknown error'}`);
     }
   }
 

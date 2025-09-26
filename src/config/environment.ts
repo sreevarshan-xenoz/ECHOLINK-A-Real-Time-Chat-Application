@@ -152,8 +152,8 @@ class EnvironmentConfig {
   }
 
   // Validation methods
-  validateRequiredConfig() {
-    const errors = [];
+  validateRequiredConfig(): { isValid: boolean; errors: string[] } {
+    const errors: string[] = [];
 
     if (!this.supabase.isConfigured) {
       errors.push('Supabase configuration is missing (REACT_APP_SUPABASE_URL, REACT_APP_SUPABASE_ANON_KEY)');

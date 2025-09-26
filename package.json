@@ -57,7 +57,18 @@
     "audit:fix": "npm audit fix && cd server && npm audit fix && cd ../signaling-server && npm audit fix && cd ..",
     "update:browsers": "npx update-browserslist-db@latest",
     "clean": "rimraf node_modules package-lock.json && rimraf server/node_modules server/package-lock.json && rimraf signaling-server/node_modules signaling-server/package-lock.json",
-    "prebuild": "npm run update:browsers"
+    "prebuild": "npm run update:browsers",
+    "type-check": "tsc --noEmit",
+    "type-check:watch": "tsc --noEmit --watch",
+    "check-updates": "npx npm-check-updates",
+    "update-deps": "npm update && npm audit fix",
+    "update-major": "npx npm-check-updates -u && npm install",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
+    "lint": "eslint src --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src --ext .js,.jsx,.ts,.tsx --fix",
+    "health-check": "npm run type-check && npm run lint && npm run format:check",
+    "fix-all": "npm run lint:fix && npm run format && npm run audit:fix"
   },
   "eslintConfig": {
     "extends": [

@@ -886,12 +886,21 @@ body.light {
 .app-container {
     display: flex;
     height: 100vh;
+    min-height: 100vh;
+    max-height: 100vh;
     overflow: hidden;
     background-color: var(--bg-dark);
     color: var(--text-dark);
+    position: relative;
+    width: 100%;
 }
 
 .app-container.light {
     background-color: var(--bg-light);
     color: var(--text-light);
+}
+
+/* Ensure proper flex layout */
+.app-container > * {
+    height: 100vh;
 }

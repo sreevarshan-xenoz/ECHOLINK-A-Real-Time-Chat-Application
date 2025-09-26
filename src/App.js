@@ -4,10 +4,10 @@ import Sidebar from './components/Sidebar';
 import Landing from './components/Landing';
 import EchoAIPage from './components/EchoAIPage';
 import { webrtcService } from './services/webrtc-service';
-import { fileService } from './services/file-service';
 import aiService from './services/ai-service';
 
 import './App.css';
+import './components/UIFixes.css';
 
 const Chat = lazy(() => import('./components/Chat'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
