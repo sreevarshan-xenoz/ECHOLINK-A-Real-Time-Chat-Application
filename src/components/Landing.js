@@ -6,6 +6,8 @@ import LandingGitHubFeatures from './LandingGitHubFeatures';
 import Auth from './Auth';
 import { getCurrentUser, signOut } from '../services/supabase-service';
 import { Text, Box, useColorModeValue, Link as ChakraLink } from '@chakra-ui/react';
+import { AnimatedElement, FloatingElement, AnimatedText, useStaggerAnimation } from './AnimationComponents';
+import ThreeBackground from './ThreeBackground';
 
 const FloatingCube = () => {
     const cubeRef = useRef(null);
@@ -110,12 +112,19 @@ const Landing = () => {
 
     return (
         <div className="landing-container">
+            <ThreeBackground theme="dark" intensity={0.6} particleCount={100} />
             <ParticleBackground />
             <div className="landing-content">
-                <FloatingCube />
+                <FloatingElement intensity={15} direction="both">
+                    <FloatingCube />
+                </FloatingElement>
                 <div className="landing-header scroll-animate">
-                    <h1>ECHOLINK</h1>
-                    <p className="tagline">Secure, Real-Time Communication</p>
+                    <AnimatedElement animation="fadeInUp" delay={200}>
+                        <AnimatedText text="ECHOLINK" animation="slideInChars" speed={80} />
+                    </AnimatedElement>
+                    <AnimatedElement animation="fadeInUp" delay={800}>
+                        <p className="tagline">Secure, Real-Time Communication</p>
+                    </AnimatedElement>
                     <div className="auth-buttons">
                         {user ? (
                             <>
@@ -145,21 +154,33 @@ const Landing = () => {
                 {showAuth && <Auth onAuthSuccess={handleAuthSuccess} />}
                 
                 <div className="features" id="features">
-                    <div className="feature-card scroll-animate">
-                        <div className="feature-icon">🔒</div>
-                        <h3>End-to-End Encryption</h3>
-                        <p>Your conversations are secured with state-of-the-art encryption</p>
-                    </div>
-                    <div className="feature-card scroll-animate" style={{animationDelay: '0.2s'}}>
-                        <div className="feature-icon">⚡</div>
-                        <h3>Real-Time Chat</h3>
-                        <p>Instant messaging with no delays or interruptions</p>
-                    </div>
-                    <div className="feature-card scroll-animate" style={{animationDelay: '0.4s'}}>
-                        <div className="feature-icon">🤖</div>
-                        <h3>AI-Powered Assistant</h3>
-                        <p>Get help and answers with our integrated AI chat</p>
-                    </div>
+                    <AnimatedElement animation="scaleIn" trigger="scroll" delay={0}>
+                        <div className="feature-card animated-feature-card">
+                            <FloatingElement intensity={5} direction="vertical">
+                                <div className="feature-icon">🔒</div>
+                            </FloatingElement>
+                            <h3><AnimatedText text="End-to-End Encryption" animation="fadeInWords" speed={100} /></h3>
+                            <p>Your conversations are secured with state-of-the-art encryption</p>
+                        </div>
+                    </AnimatedElement>
+                    <AnimatedElement animation="scaleIn" trigger="scroll" delay={200}>
+                        <div className="feature-card animated-feature-card">
+                            <FloatingElement intensity={5} direction="vertical">
+                                <div className="feature-icon">⚡</div>
+                            </FloatingElement>
+                            <h3><AnimatedText text="Real-Time Chat" animation="fadeInWords" speed={100} /></h3>
+                            <p>Instant messaging with no delays or interruptions</p>
+                        </div>
+                    </AnimatedElement>
+                    <AnimatedElement animation="scaleIn" trigger="scroll" delay={400}>
+                        <div className="feature-card animated-feature-card">
+                            <FloatingElement intensity={5} direction="vertical">
+                                <div className="feature-icon">🤖</div>
+                            </FloatingElement>
+                            <h3><AnimatedText text="AI-Powered Assistant" animation="fadeInWords" speed={100} /></h3>
+                            <p>Get help and answers with our integrated AI chat</p>
+                        </div>
+                    </AnimatedElement>
                 </div>
                 
                 <div className="demo-section scroll-animate">

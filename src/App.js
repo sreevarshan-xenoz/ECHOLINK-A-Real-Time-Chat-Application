@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'r
 import Sidebar from './components/Sidebar';
 import Landing from './components/Landing';
 import EchoAIPage from './components/EchoAIPage';
+import ThreeBackground from './components/ThreeBackground';
 import { webrtcService } from './services/webrtc-service';
 import aiService from './services/ai-service';
 
@@ -260,6 +261,7 @@ const MainApp = () => {
 
     return (
         <div className={`app-container ${theme}`}>
+            <ThreeBackground theme={theme} intensity={0.8} particleCount={150} />
             <Sidebar
                 currentUser={currentUser}
                 onPeerSelect={handlePeerSelect}
