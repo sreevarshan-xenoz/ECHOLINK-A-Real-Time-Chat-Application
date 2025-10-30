@@ -26,7 +26,7 @@ app.use(bodyParser.json());
 
 // GitHub OAuth credentials (replace with your actual credentials or use environment variables)
 // Load environment variables from .env file
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config();
 
 const GITHUB_CLIENT_ID = process.env.REACT_APP_GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.REACT_APP_GITHUB_CLIENT_SECRET;
