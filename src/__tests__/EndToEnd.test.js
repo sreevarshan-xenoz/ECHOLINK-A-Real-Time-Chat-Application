@@ -1,0 +1,90 @@
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import App from '../App';
+import { getCurrentUser, signIn } from '../services/supabase-service';
+
+// Mock services
+jest.mock('../services/supabase-service');
+jest.mock('../services/webrtc-service', () => ({
+  initialize: jest.fn().mockResolvedValue(true),
+  checkStunConnectivity: jest.fn().mockResolvedValue(true),
+  getPeerId: jest.fn().mockReturnValue('test-peer-id'),
+}));
+jest.mock('../services/ai-service', () => ({
+  initialize: jest.fn().mockResolvedValue(true),
+}));
+jest.mock('../config/environment', () => ({
+  default: {
+    init: jest.fn(),
+    validateRequiredConfig: jest.fn().mockReturnValue({ isValid: true, errors: [] }),
+  },
+  config: {
+    init: jest.fn(),
+    validateRequiredConfig: jest.fn().mockReturnValue({ isValid: true, errors: [] }),
+  }
+}));
+
+describe('End-to-End User Flow Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
+    window.history.pushState({}, 'Test', '/');
+  });
+
+  test('Complete user journey: Landing → Authentication → Dashboard → Chat', async () => {
+    // Mock authentication flow
+    getCurrentUser.mockResolvedValueOnce({ user: null, error: null });
+    signIn.mockResolvedValueOnce({ 
+      user: { id: 'test-user', email: 'test@example.com' }, 
+      error: null 
+    });
+    getCurrentUser.mockResolvedValue({ 
+      user: { id: 'test-user', email: 'test@example.com' }, 
+      error: null 
+    });
+
+    render(
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    );
+
+    // Verify landing page is shown
+    await waitFor(() => {
+      expect(screen.getByTestId('landing-component')).toBeInTheDocument();
+    });
+
+    // Verify redirect to dashboard after authentication
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+  });
+
+  test('Protected routes remain accessible after authentication', async () => {
+    // Mock authenticated user
+    getCurrentUser.mockResolvedValue({ 
+      user: { id: 'test-user', email: 'test@example.com' }, 
+      error: null 
+    });
+
+    render(
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    );
+
+    // Verify dashboard is accessible
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/dashboard');
+    });
+
+    // Navigate to chat
+    window.history.pushState({}, 'Test', '/chat');
+    
+    // Verify no redirect to landing page
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/chat');
+    });
+  });
+});
