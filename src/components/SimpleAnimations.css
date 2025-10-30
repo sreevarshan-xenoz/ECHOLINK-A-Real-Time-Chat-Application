@@ -1,0 +1,76 @@
+/* Simple CSS animations - lightweight and performant */
+
+.simple-fadeIn {
+  animation: simpleFadeIn 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.simple-slideUp {
+  animation: simpleSlideUp 0.8s ease-out forwards;
+  opacity: 0;
+  transform: translateY(30px);
+}
+
+.simple-scaleIn {
+  animation: simpleScaleIn 0.5s ease-out forwards;
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.simple-float {
+  animation: simpleFloat 3s ease-in-out infinite;
+}
+
+.simple-text-reveal {
+  animation: simpleTextReveal 0.8s ease-out forwards;
+  opacity: 0;
+}
+
+/* Keyframes */
+@keyframes simpleFadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes simpleSlideUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes simpleScaleIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes simpleFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes simpleTextReveal {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .simple-fadeIn,
+  .simple-slideUp,
+  .simple-scaleIn,
+  .simple-float,
+  .simple-text-reveal {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
