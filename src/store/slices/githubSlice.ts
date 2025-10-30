@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction, createEntityAdapter, EntityAdapter, EntityState } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { 
   GitHubUser, 
   GitHubRepository, 
@@ -9,13 +9,14 @@ import {
 import { RootState } from '../index';
 
 // Create entity adapters
-const repositoriesAdapter = createEntityAdapter<GitHubRepository>();
+// const repositoriesAdapter = createEntityAdapter<GitHubRepository>(); // Removed - not used
 
 // Define GitHub state structure
 export interface GitHubState {
   isAuthenticated: boolean;
   authToken: string | null;
   user: GitHubUser | null;
+  repositories: GitHubRepository[];
   isLoading: boolean;
   error: string | null;
   selectedRepository: number | null;
@@ -34,10 +35,11 @@ export interface GitHubState {
 }
 
 // Initial state
-const initialState = repositoriesAdapter.getInitialState<GitHubState>({
+const initialState: GitHubState = {
   isAuthenticated: false,
   authToken: null,
   user: null,
+  repositories: [],
   isLoading: false,
   error: null,
   selectedRepository: null,
@@ -48,8 +50,8 @@ const initialState = repositoriesAdapter.getInitialState<GitHubState>({
   branches: {},
   collaborators: {},
   pullRequests: {},
-  issues: {},
-});
+  issues: {}
+};
 
 // Create the GitHub slice
 export const githubSlice = createSlice({
@@ -74,12 +76,13 @@ export const githubSlice = createSlice({
       state.error = action.payload;
     },
     
-    // Repositories
-    setRepositories: repositoriesAdapter.setAll,
-    addRepository: repositoriesAdapter.addOne,
-    addRepositories: repositoriesAdapter.addMany,
-    updateRepository: repositoriesAdapter.updateOne,
-    removeRepository: repositoriesAdapter.removeOne,
+    // Repositories - simplified without entity adapter
+    setRepositories: (state, action: PayloadAction<GitHubRepository[]>) => {
+      state.repositories = action.payload;
+    },
+    addRepository: (state, action: PayloadAction<GitHubRepository>) => {
+      state.repositories.push(action.payload);
+    },
     
     // Selection
     setSelectedRepository: (state, action: PayloadAction<number | null>) => {
@@ -160,7 +163,7 @@ export const githubSlice = createSlice({
       state.selectedBranch = null;
       state.selectedPath = '';
       state.currentContent = null;
-      repositoriesAdapter.removeAll(state);
+      state.repositories = [];
       state.commits = {};
       state.branches = {};
       state.collaborators = {};
@@ -178,9 +181,6 @@ export const {
   setError,
   setRepositories,
   addRepository,
-  addRepositories,
-  updateRepository,
-  removeRepository,
   setSelectedRepository,
   setSelectedBranch,
   setSelectedPath,
@@ -193,31 +193,15 @@ export const {
   resetGitHubState,
 } = githubSlice.actions;
 
-// Create typed selectors
-// Note: For proper type safety, we need to add type assertions here
-// This is necessary because the RootState type might be using a different format
-export const githubSelectors = repositoriesAdapter.getSelectors<RootState>(
-  (state) => {
-    // Type assertion to ensure we can access github property
-    return state.github as unknown as EntityState<GitHubRepository, number>;
-  }
-);
-
-// Export selectors
-export const {
-  selectAll: selectAllRepositories,
-  selectById: selectRepositoryById,
-  selectIds: selectRepositoryIds,
-} = githubSelectors;
+// Create typed selectors - simplified without entity adapter
+export const selectRepositories = (state: RootState) => state.github.repositories;
+export const selectSelectedRepository = (state: RootState) => state.github.selectedRepository;
+export const selectIsLoading = (state: RootState) => state.github.isLoading;
+export const selectError = (state: RootState) => state.github.error;
 
 // Additional selectors
-export const selectSelectedRepository = (state: RootState) => {
-  // Type assertion for state.github
-  const github = state.github as unknown as GitHubState;
-  return github.selectedRepository 
-    ? selectRepositoryById(state, github.selectedRepository) 
-    : null;
-};
+export const selectRepositoryById = (state: RootState, id: number) => 
+  state.github.repositories.find(repo => repo.id === id);
 
 export const selectRepositoryBranches = (state: RootState) => {
   // Type assertion for state.github

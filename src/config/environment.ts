@@ -161,10 +161,21 @@ class EnvironmentConfig {
 
     if (errors.length > 0) {
       console.error('Configuration errors:', errors);
+      if (this.isProduction) {
+        throw new Error(`Critical configuration missing: ${errors.join(', ')}`);
+      }
       return { isValid: false, errors };
     }
 
     return { isValid: true, errors: [] };
+  }
+
+  // Initialize and validate configuration on startup
+  init(): void {
+    const validation = this.validateRequiredConfig();
+    if (!validation.isValid && this.isProduction) {
+      throw new Error('Application cannot start with missing configuration');
+    }
   }
 
   // Get configuration summary for debugging

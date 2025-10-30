@@ -11,7 +11,7 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import { FaCode, FaStar, FaCodeBranch, FaExclamationCircle } from 'react-icons/fa';
-import { selectAllRepositories, setSelectedRepository } from '../../store/slices/githubSlice';
+import { selectRepositories, setSelectedRepository } from '../../store/slices/githubSlice';
 import { AppDispatch, RootState } from '../../store';
 import { fetchRepositoryBranches } from '../../store/thunks/githubThunks';
 import { formatDistanceToNow } from 'date-fns';
@@ -19,7 +19,7 @@ import { IconWrapper } from '../../utils/IconWrapper';
 
 const RepositoryList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const repositories = useSelector(selectAllRepositories);
+  const repositories = useSelector(selectRepositories);
   const selectedRepositoryId = useSelector((state: RootState) => state.github.selectedRepository);
   const isLoading = useSelector((state: RootState) => state.github.isLoading);
   
