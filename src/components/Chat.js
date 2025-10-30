@@ -6,8 +6,7 @@ import * as supabaseService from '../services/supabase-service';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { v4 as uuidv4 } from 'uuid';
-import { FixedSizeList as List } from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
+// Removed unused imports: List, AutoSizer
 import { 
   LazyAISettings, 
   LazyProfile, 
@@ -179,39 +178,20 @@ const Chat = ({
     const { colorMode } = useColorMode();
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState('');
-    const [peers, setPeers] = useState([]);
-    const [isRecording, setIsRecording] = useState(false);
-    const [mediaRecorder, setMediaRecorder] = useState(null);
-    const [typingStatus, setTypingStatus] = useState({});
-    const [searchQuery, setSearchQuery] = useState('');
     const messagesEndRef = useRef(null);
     const fileInputRef = useRef(null);
-    let typingTimeout = null;
-    const [smartReplies, setSmartReplies] = useState([]);
-    const [messageCompletion, setMessageCompletion] = useState('');
-    const [sentiment, setSentiment] = useState(null);
-    const [language, setLanguage] = useState(null);
-    const completionTimeout = useRef(null);
     const [codeEditor, setCodeEditor] = useState({ visible: false, language: 'javascript', code: '' });
-    const [sharedWorkspace, setSharedWorkspace] = useState(null);
     const [translatedMessages, setTranslatedMessages] = useState(new Map());
-    const [userLanguage, setUserLanguage] = useState(navigator.language.split('-')[0]);
     const [showProfileModal, setShowProfileModal] = useState(false);
     const [userProfile, setUserProfile] = useState(null);
     const [persistenceEnabled, setPersistenceEnabled] = useState(true);
-    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-    const [activeGroups, setActiveGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState(null);
-    const [connectionState, setConnectionState] = useState('connected');
-    const [offlineMode, setOfflineMode] = useState(false);
     const [customEmojis, setCustomEmojis] = useState(['👍', '❤️', '😊', '😂', '👏', '🎉', '🔥', '🌟', '🎨', '🎮']);
-    const [emojiPickerVisible, setEmojiPickerVisible] = useState(false);
     const [selectedMessageForReaction, setSelectedMessageForReaction] = useState(null);
     const [voiceTranscriptionEnabled, setVoiceTranscriptionEnabled] = useState(true);
     const [collaborativeEditingEnabled, setCollaborativeEditingEnabled] = useState(true);
     const [messageEditHistory, setMessageEditHistory] = useState(new Map());
     const [showAISettings, setShowAISettings] = useState(false);
-    const [useBasicChatbot, setUseBasicChatbot] = useState(true);
     const [settings, setSettings] = useState({
         notifications: {
             enabled: true,
@@ -275,7 +255,7 @@ const Chat = ({
     };
     
     // Handler for retrying failed messages
-    const handleRetry = (message) => {
+    const handleRetry = useCallback((message) => {
         if (!selectedPeer) return;
         
         setMessages(prev => prev.map(msg => 
@@ -293,10 +273,10 @@ const Chat = ({
                 msg.id === message.id ? { ...msg, status: 'error', error: 'Failed to send message' } : msg
             ));
         }
-    };
+    }, [selectedPeer]);
     
     // Handler for marking messages as read
-    const handleMarkAsRead = (message) => {
+    const handleMarkAsRead = useCallback((message) => {
         if (!selectedPeer) return;
         
         setMessages(prev => prev.map(msg => 
@@ -304,10 +284,10 @@ const Chat = ({
         ));
         
         webrtcService.sendReadReceipt(message.id, selectedPeer);
-    };
+    }, [selectedPeer]);
     
     // Handler for deleting messages
-    const handleDeleteMessage = (message) => {
+    const handleDeleteMessage = useCallback((message) => {
         setMessages(prev => prev.filter(msg => msg.id !== message.id));
         
         if (!isAIChatActive && selectedPeer) {
@@ -318,7 +298,7 @@ const Chat = ({
                 timestamp: new Date().toISOString()
             }, selectedPeer);
         }
-    };
+    }, [selectedPeer, isAIChatActive, currentUser]);
     
     useEffect(() => {
         const savedProfile = JSON.parse(localStorage.getItem('user_profile')) || null;
@@ -377,7 +357,7 @@ const Chat = ({
         event.target.value = '';
     };
 
-    const handleReaction = (messageId, emoji) => {
+    const handleReaction = useCallback((messageId, emoji) => {
         const reactionMessage = {
             type: 'REACTION',
             messageId,
@@ -395,7 +375,7 @@ const Chat = ({
         if (!isAIChatActive && selectedPeer) {
             webrtcService.sendMessage(reactionMessage, selectedPeer);
         }
-    };
+    }, [currentUser, isAIChatActive, selectedPeer]);
 
     const handleCustomEmojiAdd = (emoji) => {
         if (!customEmojis.includes(emoji)) {

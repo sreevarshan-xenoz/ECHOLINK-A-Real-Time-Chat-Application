@@ -4,11 +4,19 @@ import Sidebar from './components/Sidebar';
 import Landing from './components/Landing';
 import EchoAIPage from './components/EchoAIPage';
 import ThreeBackground from './components/ThreeBackground';
+import { PerformanceProvider, PerformanceMonitor } from './components/PerformanceOptimization';
+import ErrorBoundary from './components/ErrorBoundary';
+import SimpleNavBar from './components/SimpleNavBar';
+import SimpleOnboarding from './components/SimpleOnboarding';
+// import ProgressiveUnlocks from './components/ProgressiveUnlocks';
 import { webrtcService } from './services/webrtc-service';
 import aiService from './services/ai-service';
+import config from './config/environment';
+import { getCurrentUser } from './services/supabase-service';
 
 import './App.css';
 import './components/UIFixes.css';
+import './components/SimpleAnimations.css';
 
 const Chat = lazy(() => import('./components/Chat'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -38,14 +46,46 @@ const MainApp = () => {
     const [theme, setTheme] = useState('dark');
     const [notifications, setNotifications] = useState([]);
     const [showTutorial, setShowTutorial] = useState(true);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [tourCompleted, setTourCompleted] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [authChecked, setAuthChecked] = useState(false);
 
     useEffect(() => {
         document.body.className = theme;
         document.documentElement.setAttribute('data-theme', theme);
     }, [theme]);
 
+    // Check authentication status on mount
+    useEffect(() => {
+        const checkAuthStatus = async () => {
+            try {
+                const { user } = await getCurrentUser();
+                setIsAuthenticated(!!user);
+                if (user) {
+                    setCurrentUser({
+                        id: user.id,
+                        email: user.email,
+                        name: user.user_metadata?.name,
+                        avatar: user.user_metadata?.avatar_url,
+                    });
+                }
+            } catch (error) {
+                console.error("Auth check failed:", error);
+                setIsAuthenticated(false);
+            } finally {
+                setAuthChecked(true);
+            }
+        };
+        
+        checkAuthStatus();
+    }, []);
+
     const initializeServices = async () => {
         try {
+            // Initialize and validate configuration
+            config.init();
+            
             setError(null);
             setIsLoading(true);
             setNetworkStatus(prev => ({ ...prev, encryption: true }));
@@ -62,9 +102,19 @@ const MainApp = () => {
                 throw new Error('STUN server connection failed. Check your network connection.');
             }
 
-            setCurrentUser({
-                id: webrtcService.getPeerId()
-            });
+            const peerId = webrtcService.getPeerId();
+            if (!currentUser) {
+                setCurrentUser(prev => ({
+                    ...prev,
+                    id: peerId
+                }));
+            }
+
+            // Check if user should see onboarding tour
+            const tourSeen = localStorage.getItem('tourSeen');
+            if (!tourSeen && isAuthenticated) {
+                setShowOnboarding(true);
+            }
 
             // Check for stored API key
             const storedApiKey = localStorage.getItem('ai_api_key');
@@ -133,9 +183,13 @@ const MainApp = () => {
             setIsAiInitialized(true);
             setShowApiInput(false);
             localStorage.setItem('ai_api_key', apiKey);
+            
+            // Add notification
             addNotification('AI service initialized successfully', 'success');
         } catch (error) {
             console.error('AI initialization failed:', error);
+            
+            // Add notification
             addNotification(error.message, 'error');
         } finally {
             setIsVerifying(false);
@@ -243,6 +297,19 @@ const MainApp = () => {
         );
     };
 
+    // Protected route component
+    const ProtectedRoute = ({ children }) => {
+        if (!authChecked) {
+            return <div className="loading-spinner">Checking authentication...</div>;
+        }
+        
+        if (!isAuthenticated) {
+            return <Navigate to="/" replace />;
+        }
+        
+        return children;
+    };
+
     if (error) {
         return (
             <div className="error-container">
@@ -282,27 +349,48 @@ const MainApp = () => {
                 notifications={notifications}
                 setShowTutorial={setShowTutorial}
             />
-            <Chat
-                selectedPeer={selectedPeer}
-                currentUser={currentUser}
-                isAIChatActive={isAIChatActive}
-                selectedAIModel={selectedAIModel}
-                isAiInitialized={isAiInitialized}
-                showSettings={showSettings}
-                setShowSettings={setShowSettings}
-                showTutorial={showTutorial}
-                setShowTutorial={setShowTutorial}
-                addNotification={addNotification}
-                theme={theme}
-                setTheme={setTheme}
+            <ErrorBoundary>
+                <Chat
+                    selectedPeer={selectedPeer}
+                    currentUser={currentUser}
+                    isAIChatActive={isAIChatActive}
+                    selectedAIModel={selectedAIModel}
+                    isAiInitialized={isAiInitialized}
+                    showSettings={showSettings}
+                    setShowSettings={setShowSettings}
+                    showTutorial={showTutorial}
+                    setShowTutorial={setShowTutorial}
+                    addNotification={addNotification}
+                    theme={theme}
+                    setTheme={setTheme}
+                />
+            </ErrorBoundary>
+            
+            {/* Onboarding Tour */}
+            <SimpleOnboarding
+                isOpen={showOnboarding}
+                onClose={() => {
+                    setShowOnboarding(false);
+                    localStorage.setItem('tourSeen', 'true');
+                    setTourCompleted(true);
+                }}
+                peerId={currentUser?.id || ''}
+                onComplete={() => {
+                    setTourCompleted(true);
+                    setShowOnboarding(false);
+                }}
             />
+            
+            {/* Progressive Unlocks - Temporarily disabled */}
+            {/* <ProgressiveUnlocks /> */}
         </div>
     );
 };
 
-const App = () => {
+const AppRouter = () => {
     return (
         <Router>
+            <SimpleNavBar />
             <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/ai" element={<EchoAIPage />} />
@@ -336,5 +424,12 @@ const App = () => {
         </Router>
     );
 };
+
+const App = () => (
+    <PerformanceProvider>
+        <AppRouter />
+        <PerformanceMonitor />
+    </PerformanceProvider>
+);
 
 export default App;

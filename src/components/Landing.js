@@ -5,8 +5,10 @@ import { ParticleBackground, StatsSection, FeatureComparison, FloatingChatPrevie
 import LandingGitHubFeatures from './LandingGitHubFeatures';
 import Auth from './Auth';
 import { getCurrentUser, signOut } from '../services/supabase-service';
-import { Text, Box, useColorModeValue, Link as ChakraLink } from '@chakra-ui/react';
-import { AnimatedElement, FloatingElement, AnimatedText, useStaggerAnimation } from './AnimationComponents';
+import { useDispatch } from 'react-redux';
+import { setUser, clearUser } from '../store/slices/userSlice';
+import { Text, Link as ChakraLink } from '@chakra-ui/react';
+import { AnimatedElement, FloatingElement, AnimatedText } from './SimpleAnimations';
 import ThreeBackground from './ThreeBackground';
 
 const FloatingCube = () => {
@@ -63,28 +65,61 @@ const ChatPreview = () => {
     );
 };
 
-const Landing = () => {
+const Landing = ({ onAuthSuccess }) => {
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
     const [showPreview, setShowPreview] = useState(false);
     const [showAuth, setShowAuth] = useState(false);
-    const [user, setUser] = useState(null);
+    const [user, setLocalUser] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         checkUser();
     }, []);
 
     const checkUser = async () => {
-        const { user: currentUser } = await getCurrentUser();
-        setUser(currentUser);
+        setIsLoading(true);
+        try {
+            const { user: currentUser } = await getCurrentUser();
+            setLocalUser(currentUser);
+            if (currentUser) {
+                dispatch(setUser({
+                    id: currentUser.id,
+                    email: currentUser.email,
+                    name: currentUser.user_metadata?.name,
+                    avatar: currentUser.user_metadata?.avatar_url,
+                }));
+            }
+        } catch (error) {
+            console.error("Error checking user:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleAuthSuccess = (data) => {
-        setUser(data.user);
+        setLocalUser(data.user);
         setShowAuth(false);
+        dispatch(setUser({
+            id: data.user.id,
+            email: data.user.email,
+            name: data.user.user_metadata?.name,
+            avatar: data.user.user_metadata?.avatar_url,
+        }));
+        
+        // Call the parent component's onAuthSuccess if provided
+        if (onAuthSuccess) {
+            onAuthSuccess(data);
+        } else {
+            // Default navigation if no callback provided
+            navigate('/dashboard');
+        }
     };
 
     const handleSignOut = async () => {
         await signOut();
-        setUser(null);
+        setLocalUser(null);
+        dispatch(clearUser());
     };
     
     useEffect(() => {
