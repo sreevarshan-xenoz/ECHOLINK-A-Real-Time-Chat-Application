@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-import config from '../config/environment';
+import config from '../config/environment.ts';
 
 const { url: supabaseUrl, anonKey: supabaseKey } = config.supabase;
 

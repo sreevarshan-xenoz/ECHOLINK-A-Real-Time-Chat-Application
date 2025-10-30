@@ -1,5 +1,4 @@
-import * as tf from '@tensorflow/tfjs';
-import { load } from '@tensorflow-models/universal-sentence-encoder';
+// TensorFlow imports removed - not currently used
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 

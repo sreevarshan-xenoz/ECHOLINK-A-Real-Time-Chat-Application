@@ -447,10 +447,10 @@ class WebRTCService {
             const pc = connection || new RTCPeerConnection(this.configuration);
             
             return new Promise((resolve, reject) => {
-                let timeout = setTimeout(() => {
+                const timeout = setTimeout(() => {
                     pc.close();
                     reject(new Error('STUN connectivity check timeout'));
-                }, 2000);
+                }, 5000); // Increased timeout for better reliability
 
                 pc.onicecandidate = (event) => {
                     if (event.candidate) {

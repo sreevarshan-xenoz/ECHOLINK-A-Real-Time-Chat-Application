@@ -3,11 +3,9 @@
  * Provides AI-powered functionalities such as sentiment analysis, smart replies, etc.
  */
 
-import * as tf from '@tensorflow/tfjs';
-import { load } from '@tensorflow-models/universal-sentence-encoder';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import config from '../config/environment';
+// TensorFlow and config imports removed - not currently used
 
 // Define types for AI request and response
 interface AIRequest {
@@ -73,7 +71,7 @@ class AIService {
         await this.initializeGemini(apiKey);
       }
 
-      this.encoder = await load();
+      // this.encoder = await load(); // Removed - TensorFlow not used
 
       console.log('AI Service initialized successfully with', this.apiType);
       this.isInitialized = true;
