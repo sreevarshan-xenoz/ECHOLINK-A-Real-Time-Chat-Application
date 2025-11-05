@@ -308,6 +308,13 @@ const MainApp = () => {
                 height: '100vh',
                 backgroundColor: '#1a1a1a',
                 color: 'white'
+            }}>
+                <div className="error-message">
+                    <h2>Connection Error</h2>
+                    <p>{error}</p>
+                    <button onClick={handleRetry} className="retry-button">Retry Connection</button>
+                </div>
+            </div>
         );
     }
 

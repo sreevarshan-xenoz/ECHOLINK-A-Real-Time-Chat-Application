@@ -1044,4 +1044,51 @@ t improvements for better space utilization */
     .message-bubble {
         max-width: 85%;
     }
+}/* 
+Error container styling */
+.error-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: var(--bg-dark);
+    color: var(--text-dark);
+}
+
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    background: var(--bg-dark-secondary);
+    border: 1px solid var(--border-dark);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+}
+
+.error-message h2 {
+    color: var(--error-color);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.error-message p {
+    color: var(--text-dark-secondary);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.retry-button {
+    background: var(--primary-gradient);
+    border: none;
+    color: var(--bg-dark);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.retry-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 247, 255, 0.3);
 }
