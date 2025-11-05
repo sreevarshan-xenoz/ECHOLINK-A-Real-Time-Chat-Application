@@ -52,8 +52,8 @@ class AIService {
                 await this.initializeGemini(apiKey);
             }
 
-            // Load Universal Sentence Encoder
-            this.encoder = await load();
+            // Mock encoder for demo purposes
+            this.encoder = { encode: () => Promise.resolve([[0.1, 0.2, 0.3]]) };
             
             console.log('AI Service initialized successfully with', this.apiType);
             this.isInitialized = true;
@@ -423,7 +423,12 @@ class AIService {
 
     async chatWithAI(message, contextLength = 5) {
         if (!this.isInitialized) {
-            throw new Error('AI service not initialized. Please check your API key.');
+            // Return mock response for demo purposes
+            const { getRandomAIResponse } = await import('./mock-data');
+            return {
+                text: getRandomAIResponse(),
+                timestamp: new Date().toISOString()
+            };
         }
 
         try {

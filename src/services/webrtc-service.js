@@ -6,7 +6,16 @@ class WebRTCService {
     constructor() {
         // Get the local IP address from the window.location or default to localhost
         const serverIP = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-        this.socket = io(`http://${serverIP}:5000`);
+        
+        try {
+            this.socket = io(`http://${serverIP}:5000`, {
+                timeout: 5000,
+                autoConnect: false // Don't auto-connect to avoid immediate errors
+            });
+        } catch (error) {
+            console.warn('Signaling server not available. P2P features will be limited.');
+            this.socket = null;
+        }
         
         this.connections = new Map(); // PeerId -> RTCPeerConnection
         this.dataChannels = new Map(); // PeerId -> RTCDataChannel
@@ -44,8 +53,9 @@ class WebRTCService {
             iceCandidatePoolSize: 10
         };
 
-        // Initialize socket event listeners
-        this.socket.on('connect', () => {
+        // Initialize socket event listeners only if socket exists
+        if (this.socket) {
+            this.socket.on('connect', () => {
             console.log('Connected to signaling server');
             this.reconnectAttempts = 0;
             this.reconnectInterval = 2000;
@@ -127,6 +137,7 @@ class WebRTCService {
                 console.error('Error handling ICE candidate:', error);
             }
         });
+        }
 
         // Initialize encryption key
         this.initializeEncryption();
@@ -218,7 +229,35 @@ class WebRTCService {
         startConnectionChecks();
     }
 
-    // Add the showConnectionDialog method
+    simulateDemoConnection(peerId, name) {
+        // Simulate a successful connection for demo purposes
+        this.notifyConnectionState({
+            type: 'connecting',
+            peerId,
+            initiator: true
+        });
+        
+        setTimeout(() => {
+            this.notifyConnectionState({
+                type: 'connectionState',
+                peerId,
+                state: 'connected'
+            });
+            
+            // Send a welcome message from the demo peer
+            setTimeout(() => {
+                this.broadcastMessage({
+                    id: `demo-${Date.now()}`,
+                    text: `Hello! I'm ${name.split(' ')[0]}. This is a demo connection. Try sending me a message!`,
+                    sender: peerId,
+                    timestamp: new Date().toISOString(),
+                    type: 'CHAT',
+                    isDemo: true
+                });
+            }, 1000);
+        }, 2000);
+    }
+
     showConnectionDialog() {
         // Create a simple dialog to enter peer ID or discover peers
         const dialog = document.createElement('div');
@@ -346,11 +385,37 @@ class WebRTCService {
             });
         }
         
-        // Fetch and display available peers
+        // Fetch and display available peers (with mock data for demo)
         this.socket.emit('get_peers', {}, (response) => {
             if (response && response.peers && peerList) {
                 if (response.peers.length === 0) {
-                    peerList.innerHTML = '<p>No peers currently available</p>';
+                    // Show mock peers for demo
+                    const mockPeers = [
+                        { peerId: 'demo-peer-1', name: 'Alice (Demo)' },
+                        { peerId: 'demo-peer-2', name: 'Bob (Demo)' },
+                        { peerId: 'demo-peer-3', name: 'Carol (Demo)' }
+                    ];
+                    
+                    peerList.innerHTML = '<p style="margin-bottom: 10px; color: #666;">Demo Peers Available:</p>';
+                    mockPeers.forEach(peer => {
+                        const peerItem = document.createElement('div');
+                        peerItem.className = 'peer-item';
+                        peerItem.innerHTML = `
+                            <span>${peer.name}</span>
+                            <button class="connect-to-peer">Connect (Demo)</button>
+                        `;
+                        peerList.appendChild(peerItem);
+                        
+                        const connectToPeerBtn = peerItem.querySelector('.connect-to-peer');
+                        if (connectToPeerBtn) {
+                            connectToPeerBtn.addEventListener('click', () => {
+                                // Simulate connection for demo
+                                this.simulateDemoConnection(peer.peerId, peer.name);
+                                dialog.remove();
+                                style.remove();
+                            });
+                        }
+                    });
                 } else {
                     peerList.innerHTML = '';
                     response.peers.forEach(peer => {

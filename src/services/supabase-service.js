@@ -1,13 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-import config from '../config/environment.ts';
+import config from '../config/environment';
 
 const { url: supabaseUrl, anonKey: supabaseKey } = config.supabase;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Add error handling for missing configuration
+if (!supabaseUrl || !supabaseKey) {
+  console.warn('Supabase configuration missing. Some features may not work properly.');
+}
+
+export const supabase = supabaseUrl && supabaseKey 
+  ? createClient(supabaseUrl, supabaseKey)
+  : null;
 
 export const signUp = async (email, password) => {
   try {
+    if (!supabase) {
+      return { data: null, error: new Error('Supabase not configured') };
+    }
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -21,6 +31,9 @@ export const signUp = async (email, password) => {
 
 export const signIn = async (email, password) => {
   try {
+    if (!supabase) {
+      return { data: null, error: new Error('Supabase not configured') };
+    }
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -44,6 +57,9 @@ export const signOut = async () => {
 
 export const getCurrentUser = async () => {
   try {
+    if (!supabase) {
+      return { user: null, error: new Error('Supabase not configured') };
+    }
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) throw error;
     return { user, error: null };

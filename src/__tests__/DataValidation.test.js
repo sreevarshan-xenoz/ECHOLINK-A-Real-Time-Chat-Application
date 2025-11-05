@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import App from '../App';
 import { getCurrentUser } from '../services/supabase-service';
@@ -55,6 +55,9 @@ describe('Data Validation Tests', () => {
     // Verify config validation was called
     await waitFor(() => {
       expect(config.validateRequiredConfig).toHaveBeenCalled();
+    });
+    
+    await waitFor(() => {
       expect(config.init).toHaveBeenCalled();
     });
   });

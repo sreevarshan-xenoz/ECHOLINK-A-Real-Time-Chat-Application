@@ -1,14 +1,16 @@
 .sidebar {
-    width: 320px;
+    width: 280px;
     height: 100vh;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-dark-secondary);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-dark);
     display: flex;
     flex-direction: column;
-    color: #fff;
+    color: var(--text-dark);
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 2px 0 10px var(--shadow-dark);
 }
 
 .sidebar::before {
@@ -18,13 +20,17 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at top left, rgba(0, 247, 255, 0.1), transparent 70%);
+    background: radial-gradient(circle at top left, rgba(0, 247, 255, 0.08), transparent 60%);
     pointer-events: none;
+    z-index: 0;
 }
 
 .sidebar-header {
-    padding: 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 24px 20px;
+    border-bottom: 1px solid var(--border-dark-subtle);
+    background: rgba(255, 255, 255, 0.02);
+    position: relative;
+    z-index: 1;
 }
 
 .user-profile {
@@ -40,16 +46,17 @@
 }
 
 .user-avatar {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, rgba(0, 247, 255, 0.2), rgba(0, 195, 255, 0.2));
+    width: 44px;
+    height: 44px;
+    background: var(--primary-gradient);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    color: #00f7ff;
-    border: 1px solid rgba(0, 247, 255, 0.3);
+    font-weight: 600;
+    color: var(--bg-dark);
+    border: 2px solid rgba(0, 247, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 247, 255, 0.2);
 }
 
 .user-details {
@@ -57,15 +64,21 @@
 }
 
 .user-name {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 2px;
 }
 
 .user-id {
-    font-size: 12px;
-    color: #00f7ff;
-    margin: 2px 0;
+    font-size: 11px;
+    color: var(--primary-color);
+    margin: 4px 0;
     word-break: break-all;
+    font-family: 'Monaco', 'Menlo', monospace;
+    background: rgba(0, 247, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
 }
 
 .user-status {
@@ -73,7 +86,7 @@
     align-items: center;
     gap: 6px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--text-dark-muted);
 }
 
 .status-indicator {
@@ -89,9 +102,9 @@
 
 .copy-button {
     padding: 8px 16px;
-    background: rgba(0, 247, 255, 0.1);
-    border: 1px solid rgba(0, 247, 255, 0.3);
-    border-radius: 20px;
+    background: rgba(0, 247, 255, 0.12);
+    border: 1px solid rgba(0, 247, 255, 0.4);
+    border-radius: 8px;
     color: #fff;
     cursor: pointer;
     font-size: 14px;
@@ -261,40 +274,45 @@
 /* New styles for AI Chat section */
 .sidebar-tabs {
     display: flex;
-    padding: 10px;
-    gap: 10px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 16px 12px;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-dark-subtle);
+    background: rgba(255, 255, 255, 0.02);
+    position: relative;
+    z-index: 1;
 }
 
 .tab-button {
     flex: 1;
-    padding: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: #fff;
+    padding: 10px 12px;
+    background: var(--bg-dark-tertiary);
+    border: 1px solid var(--border-dark-subtle);
+    border-radius: 10px;
+    color: var(--text-dark-secondary);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 500;
     position: relative;
     overflow: hidden;
 }
 
 .tab-button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background: var(--hover-dark-strong);
+    border-color: var(--border-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .tab-button.active {
-    background: rgba(0, 247, 255, 0.1);
-    border-color: rgba(0, 247, 255, 0.3);
-    color: #00f7ff;
-    box-shadow: 0 0 15px rgba(0, 247, 255, 0.2);
+    background: rgba(0, 247, 255, 0.15);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(0, 247, 255, 0.3);
 }
 
 .tab-button::after {
@@ -339,12 +357,14 @@
 }
 
 .ai-chat-section {
-    padding: 20px;
+    padding: 20px 16px;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
     animation: fadeInScale 0.4s ease-out forwards;
     transform-origin: center;
+    position: relative;
+    z-index: 1;
 }
 
 /* Settings panel styles */
@@ -359,25 +379,39 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    padding: 12px;
+    background: var(--bg-dark-tertiary);
+    border: 1px solid var(--border-dark-subtle);
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+.setting-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--border-dark);
 }
 
 .setting-item label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--text-dark-secondary);
 }
 
 .setting-item select {
-    padding: 8px 12px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    color: #fff;
-    font-size: 14px;
+    padding: 10px 12px;
+    background: var(--bg-dark);
+    border: 1px solid var(--border-dark);
+    border-radius: 8px;
+    color: var(--text-dark);
+    font-size: 13px;
     width: 100%;
+    transition: all 0.2s ease;
+}
+
+.setting-item select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 247, 255, 0.2);
 }
 
 .ai-setup-section {

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import './Landing.css';
 import { ParticleBackground, StatsSection, FeatureComparison, FloatingChatPreview } from './LandingFeatures';
 import LandingGitHubFeatures from './LandingGitHubFeatures';
@@ -71,13 +71,9 @@ const Landing = ({ onAuthSuccess }) => {
     const [showPreview, setShowPreview] = useState(false);
     const [showAuth, setShowAuth] = useState(false);
     const [user, setLocalUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
 
-    useEffect(() => {
-        checkUser();
-    }, []);
-
-    const checkUser = async () => {
+    const checkUser = React.useCallback(async () => {
         setIsLoading(true);
         try {
             const { user: currentUser } = await getCurrentUser();
@@ -95,7 +91,11 @@ const Landing = ({ onAuthSuccess }) => {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [dispatch]);
+
+    useEffect(() => {
+        checkUser();
+    }, [checkUser]);
 
     const handleAuthSuccess = (data) => {
         setLocalUser(data.user);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Landing from './components/Landing';
@@ -24,7 +24,7 @@ const GitHubHome = lazy(() => import('./components/GitHubHome'));
 const GitHubIntegration = lazy(() => import('./components/GitHubIntegration'));
 const Download = lazy(() => import('./components/Download'));
 
-// Create a wrapper component with navigation
+// Create a wrapper component with navigation and routing
 const MainApp = () => {
     const navigate = useNavigate();
     const [selectedPeer, setSelectedPeer] = useState(null);
@@ -47,7 +47,6 @@ const MainApp = () => {
     const [notifications, setNotifications] = useState([]);
     const [showTutorial, setShowTutorial] = useState(true);
     const [showOnboarding, setShowOnboarding] = useState(false);
-    const [tourCompleted, setTourCompleted] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [authChecked, setAuthChecked] = useState(false);
 
@@ -81,7 +80,7 @@ const MainApp = () => {
         checkAuthStatus();
     }, []);
 
-    const initializeServices = async () => {
+    const initializeServices = useCallback(async () => {
         try {
             // Initialize and validate configuration
             config.init();
@@ -134,14 +133,14 @@ const MainApp = () => {
             setError(error.message || 'Failed to initialize. Please check your connection.');
             setIsLoading(false);
         }
-    };
+    }, [currentUser, isAuthenticated]);
 
     useEffect(() => {
         initializeServices();
         return () => {
             webrtcService.disconnect();
         };
-    }, []);
+    }, [initializeServices]);
 
     const handleRetry = () => {
         initializeServices();
@@ -298,27 +297,17 @@ const MainApp = () => {
     };
 
     // Protected route component
-    const ProtectedRoute = ({ children }) => {
-        if (!authChecked) {
-            return <div className="loading-spinner">Checking authentication...</div>;
-        }
-        
-        if (!isAuthenticated) {
-            return <Navigate to="/" replace />;
-        }
-        
-        return children;
-    };
+    // Protected route component removed as it's not being used
 
     if (error) {
         return (
-            <div className="error-container">
-                <div className="error-message">
-                    <h2>Connection Error</h2>
-                    <p>{error}</p>
-                    <button onClick={handleRetry} className="retry-button">Retry Connection</button>
-                </div>
-            </div>
+            <div className="error-container" style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                backgroundColor: '#1a1a1a',
+                color: 'white'
         );
     }
 
@@ -372,11 +361,9 @@ const MainApp = () => {
                 onClose={() => {
                     setShowOnboarding(false);
                     localStorage.setItem('tourSeen', 'true');
-                    setTourCompleted(true);
                 }}
                 peerId={currentUser?.id || ''}
                 onComplete={() => {
-                    setTourCompleted(true);
                     setShowOnboarding(false);
                 }}
             />
