@@ -216,27 +216,7 @@ const Chat = ({
         }
     });
     
-    // Basic chatbot responses
-    const basicChatbotResponses = {
-        "hello": "Hello! I'm a basic chatbot. I can help you with simple tasks. Type 'help' to see what I can do.",
-        "hi": "Hi there! Need any help? Type 'help' to see what I can do.",
-        "help": "I can help you with:\n- Basic chat features\n- File sharing\n- Code sharing\n- Voice messages\nTo enable AI features, click the settings icon and configure your API key.",
-        "how are you": "I'm functioning well! How can I assist you today?",
-        "bye": "Goodbye! Have a great day!",
-        "features": "Current features:\n- Real-time messaging\n- File sharing\n- Code sharing\n- Voice messages\n- Reactions\nEnable AI for more advanced features!",
-        "ai": "To enable AI features, click the settings icon (⚙️) and configure your API key. This will unlock:\n- Smart replies\n- Message completion\n- Sentiment analysis\n- Language translation"
-    };
-
-    // Basic chatbot response handler
-    const getBasicChatbotResponse = (message) => {
-        const lowercaseMessage = message.toLowerCase().trim();
-        for (const [key, response] of Object.entries(basicChatbotResponses)) {
-            if (lowercaseMessage.includes(key)) {
-                return response;
-            }
-        }
-        return "I'm a basic chatbot. I can only understand simple commands. Type 'help' to see what I can do.";
-    };
+    // Removed mock chatbot responses - now using real AI service
     
     // Handler for settings changes
     const handleSettingsChange = (section, key, value) => {
@@ -434,6 +414,64 @@ const Chat = ({
         }
     };
 
+    // Fetch message history when peer or group changes
+    useEffect(() => {
+        const fetchMessageHistory = async () => {
+            if (!currentUser?.id) return;
+            
+            try {
+                if (selectedPeer && !isAIChatActive) {
+                    // Fetch direct messages
+                    const { messages: historyMessages, error } = await supabaseService.getDirectMessages(
+                        currentUser.id,
+                        selectedPeer,
+                        50,
+                        0
+                    );
+                    
+                    if (!error && historyMessages) {
+                        // Transform database messages to UI format
+                        const formattedMessages = historyMessages.map(msg => ({
+                            id: msg.id,
+                            text: msg.content,
+                            sender: msg.sender_id,
+                            timestamp: msg.created_at,
+                            type: msg.message_type || 'CHAT',
+                            status: msg.read ? 'read' : (msg.delivered ? 'delivered' : 'sent')
+                        })).reverse(); // Reverse to show oldest first
+                        
+                        setMessages(formattedMessages);
+                    }
+                } else if (selectedGroup) {
+                    // Fetch group messages
+                    const { messages: historyMessages, error } = await supabaseService.getGroupMessages(
+                        selectedGroup.id,
+                        50,
+                        0
+                    );
+                    
+                    if (!error && historyMessages) {
+                        const formattedMessages = historyMessages.map(msg => ({
+                            id: msg.id,
+                            text: msg.content,
+                            sender: msg.sender_id,
+                            timestamp: msg.created_at,
+                            type: msg.message_type || 'CHAT',
+                            status: 'sent',
+                            groupId: msg.group_id
+                        })).reverse();
+                        
+                        setMessages(formattedMessages);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching message history:', error);
+            }
+        };
+        
+        fetchMessageHistory();
+    }, [selectedPeer, selectedGroup, isAIChatActive, currentUser]);
+    
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
@@ -475,41 +513,56 @@ const Chat = ({
         
         if (isAIChatActive) {
             if (!isAiInitialized) {
-                if (useBasicChatbot) {
-                    const botResponse = {
-                        type: 'CHAT',
-                        text: getBasicChatbotResponse(newMessage),
-                        timestamp: new Date().toISOString(),
-                        sender: 'AI_ASSISTANT',
-                        id: uuidv4(),
-                        isAI: true
-                    };
-                    setMessages(prev => [...prev, botResponse]);
-                } else {
-                    addNotification('Please configure AI settings first', 'error');
-                    setShowAISettings(true);
-                }
+                addNotification('Please configure AI settings first', 'error');
+                setShowAISettings(true);
                 return;
             }
 
             try {
-                const response = await aiService.handleHelpQuery(newMessage);
-                setMessages(prev => [...prev, response]);
+                // Use real AI service for chat
+                const response = await aiService.chatWithAI(newMessage, currentUser?.id);
+                const aiMessage = {
+                    id: response.id,
+                    text: response.content,
+                    sender: 'AI_ASSISTANT',
+                    timestamp: response.timestamp,
+                    type: 'CHAT',
+                    status: 'sent',
+                    isAI: true
+                };
+                setMessages(prev => [...prev, aiMessage]);
             } catch (error) {
                 console.error('Error getting AI response:', error);
-                addNotification('Failed to get AI response', 'error');
-                if (error.message.includes('API key')) {
+                addNotification('Failed to get AI response. Please check your AI settings.', 'error');
+                if (error.message.includes('API key') || error.message.includes('not initialized')) {
                     setShowAISettings(true);
                 }
             }
         } else if (selectedPeer) {
+            // Send via WebRTC
             const success = webrtcService.sendMessage(messageData, selectedPeer);
+            
+            // Persist to database
+            if (currentUser?.id && persistenceEnabled) {
+                try {
+                    await supabaseService.saveMessage({
+                        senderId: currentUser.id,
+                        recipientId: selectedPeer,
+                        groupId: null,
+                        content: newMessage,
+                        type: 'TEXT',
+                        parentMessageId: null
+                    });
+                } catch (error) {
+                    console.error('Error persisting message:', error);
+                }
+            }
             
             if (success) {
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'sent' } : msg
                 ));
-            } else if (offlineMode && persistenceEnabled) {
+            } else if (persistenceEnabled) {
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'queued', offline: true } : msg
                 ));
@@ -528,13 +581,30 @@ const Chat = ({
                 groupId: selectedGroup.id
             };
             
+            // Send via WebRTC
             const success = webrtcService.sendMessage(groupMessageData);
+            
+            // Persist to database
+            if (currentUser?.id && persistenceEnabled) {
+                try {
+                    await supabaseService.saveMessage({
+                        senderId: currentUser.id,
+                        recipientId: null,
+                        groupId: selectedGroup.id,
+                        content: newMessage,
+                        type: 'TEXT',
+                        parentMessageId: null
+                    });
+                } catch (error) {
+                    console.error('Error persisting group message:', error);
+                }
+            }
             
             if (success) {
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'sent' } : msg
                 ));
-            } else if (offlineMode && persistenceEnabled) {
+            } else if (persistenceEnabled) {
                 setMessages(prev => prev.map(msg => 
                     msg.id === messageId ? { ...msg, status: 'queued', offline: true } : msg
                 ));

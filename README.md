@@ -95,10 +95,23 @@
      ```
 
 3. **Configure environment variables**
-   - Copy `.env.example` to `.env`
-   - Fill in your actual credentials (see setup guides below)
+   - Copy `.env.example` to `.env` in both root and `server/` directories
+   - Fill in your actual credentials:
+     - **Supabase** (Required): Get from [supabase.com](https://supabase.com)
+     - **MongoDB** (Optional): Local (`mongodb://localhost:27017/echolink`) or Atlas
+     - **AI APIs** (Optional): OpenAI, Gemini, or Hugging Face tokens
+     - **GitHub OAuth** (Optional): For GitHub integration
 
-4. **Start all servers**
+4. **Database Setup**
+   - **Supabase** (Default): Run the SQL from `server/supabase-setup.sql` in your Supabase SQL editor
+   - **MongoDB** (Optional): 
+     ```bash
+     # Install MongoDB locally or use MongoDB Atlas
+     # Set USE_MONGODB=true in server/.env
+     # Models will auto-create collections on first use
+     ```
+
+5. **Start all servers**
    ```bash
    npm run dev:all
    ```
@@ -117,7 +130,10 @@
    npm run update:browsers
    ```
 4. **Configure environment variables** (see `.env.example`)
-5. **Start servers individually**
+5. **Set up database**
+   - For Supabase: Run SQL from `server/supabase-setup.sql`
+   - For MongoDB: Install locally or configure Atlas connection
+6. **Start servers individually**
    ```bash
    # Terminal 1: Signaling Server
    cd signaling-server && npm start
@@ -128,6 +144,21 @@
    # Terminal 3: Frontend
    npm start
    ```
+
+### Database Options
+
+**Supabase (Default - Recommended)**
+- Cloud-hosted PostgreSQL with real-time capabilities
+- Free tier available
+- Setup: Run `server/supabase-setup.sql` in Supabase SQL editor
+- Configure: Add `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` to `.env`
+
+**MongoDB (Optional)**
+- Can be used alongside or instead of Supabase
+- Local or Atlas (cloud) deployment
+- Setup: Set `USE_MONGODB=true` in `server/.env`
+- Configure: Add `MONGODB_URI` to `server/.env`
+- Models auto-create collections on first use
 
 ---
 

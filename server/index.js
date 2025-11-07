@@ -4,7 +4,13 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const axios = require('axios');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 const supabaseClient = require('./supabase-client');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const messagesRoutes = require('./routes/messages');
+const roomsRoutes = require('./routes/rooms');
 
 const app = express();
 
@@ -32,6 +38,24 @@ const GITHUB_CLIENT_ID = process.env.REACT_APP_GITHUB_CLIENT_ID;
 const GITHUB_CLIENT_SECRET = process.env.REACT_APP_GITHUB_CLIENT_SECRET;
 const GITHUB_REDIRECT_URI = process.env.GITHUB_REDIRECT_URI || 'http://localhost:5000/auth/github/callback'; // Ensure this matches your GitHub app settings
 
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || process.env.DB_URI || 'mongodb://localhost:27017/echolink';
+const USE_MONGODB = process.env.USE_MONGODB === 'true' || false;
+
+if (USE_MONGODB) {
+    mongoose.connect(MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    })
+    .then(() => console.log('MongoDB connected successfully'))
+    .catch(err => {
+        console.error('MongoDB connection error:', err);
+        console.log('Falling back to Supabase only');
+    });
+} else {
+    console.log('Using Supabase for persistence (MongoDB disabled)');
+}
+
 // In-memory storage (Consider Redis or a database for production)
 const connectedUsers = new Map(); // userId -> socket.id
 const connectedPeers = new Map(); // peerId -> socket.id
@@ -42,6 +66,11 @@ const peerIdToUserId = new Map(); // peerId -> userId
 app.get('/', (req, res) => {
     res.send('Signaling server is running');
 });
+
+// Mount API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/messages', messagesRoutes);
+app.use('/api/rooms', roomsRoutes);
 
 // API routes for message history and groups
 app.get('/api/messages/group/:groupId', async (req, res) => {

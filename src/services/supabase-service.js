@@ -249,21 +249,29 @@ export const getGitHubInfo = async (userId) => {
 
 // Message persistence functions
 
-// Save an encrypted message to the database
+// Save a message to the database (supports both encrypted and plain text)
 export const saveMessage = async (message) => {
   try {
+    const messageData = {
+      sender_id: message.senderId,
+      recipient_id: message.recipientId || null,
+      group_id: message.groupId || null,
+      message_type: message.type || 'TEXT',
+      parent_message_id: message.parentMessageId || null,
+      created_at: new Date().toISOString()
+    };
+
+    // Support both encrypted and plain content
+    if (message.encryptedContent) {
+      messageData.encrypted_content = message.encryptedContent;
+      messageData.encryption_iv = message.encryptionIv;
+    } else {
+      messageData.content = message.content;
+    }
+
     const { data, error } = await supabase
       .from('messages')
-      .insert({
-        sender_id: message.senderId,
-        recipient_id: message.recipientId,
-        group_id: message.groupId,
-        encrypted_content: message.encryptedContent,
-        encryption_iv: message.encryptionIv,
-        message_type: message.type || 'TEXT',
-        parent_message_id: message.parentMessageId || null,
-        created_at: new Date().toISOString()
-      })
+      .insert(messageData)
       .select();
 
     if (error) throw error;
