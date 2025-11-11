@@ -67,7 +67,7 @@
 - **React**
 - **Firebase/Supabase**
 - **Chakra UI**
-- **WebRTC**
+- **WebRTC** - ⚠️ **Status: Data Channels Only** (see [WebRTC Status](#webrtc-status))
 - **Electron** (for Windows app)
 - **Redux**
 - **React Router**
@@ -216,6 +216,37 @@ This project uses Jest and React Testing Library.
 - Both users must access the signaling server (default: localhost:5000)
 - WebRTC traffic must be allowed by the network/firewall
 - STUN servers are used for NAT traversal
+
+---
+
+## 📡 WebRTC Status
+
+**Implementation Status:** ✅ **PRESENT** | ⚠️ **YELLOW** (Functional with Gaps)
+
+### What's Working:
+- ✅ **Peer-to-Peer Data Channels**: Real-time text messaging via RTCDataChannel
+- ✅ **File Sharing**: Secure P2P file transfer with chunking
+- ✅ **ICE Handling**: Proper STUN/TURN server configuration with NAT traversal
+- ✅ **Encryption**: AES-GCM end-to-end encryption for all messages
+- ✅ **Reconnection Logic**: Automatic ICE restart on connection failures
+- ✅ **Signaling Server**: Socket.IO-based offer/answer/candidate exchange
+
+### What's NOT Implemented:
+- ❌ **Video Calling**: No media stream support (no `addTrack`/`ontrack` handlers)
+- ❌ **Audio Calling**: Voice messages only (recording), no real-time audio streams
+- ❌ **Screen Sharing**: Not implemented
+
+### Key Files:
+- `/src/services/webrtc-service.js` - Main WebRTC implementation (1,299 lines)
+- `/server/index.js` - Signaling server (Socket.IO)
+- See `WEBRTC_VERIFICATION_REPORT.md` for detailed analysis
+
+### Known Issues:
+1. ⚠️ TURN credentials hardcoded (should use environment variables)
+2. ⚠️ Limited browser compatibility testing
+3. ⚠️ No bandwidth adaptation for poor connections
+
+**Recommendation:** Production-ready for **text chat and file sharing**. Video/audio calling requires additional implementation.
 
 ---
 
