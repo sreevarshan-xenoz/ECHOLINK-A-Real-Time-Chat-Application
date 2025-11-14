@@ -4,9 +4,19 @@ const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? ['https://your-production-domain.com']
+  : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
 const io = socketIo(server, {
   cors: {
-    origin: "*",
+    origin: function(origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     methods: ["GET", "POST"]
   }
 });

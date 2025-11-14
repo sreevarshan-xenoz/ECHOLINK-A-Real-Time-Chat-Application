@@ -71,9 +71,9 @@ async function createWindow() {
         minHeight: 600,
         show: false, // Don't show until ready
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            webSecurity: !isDev
+            nodeIntegration: false,
+            contextIsolation: true,
+            webSecurity: true
         },
         title: 'P2P Chat',
         icon: path.join(__dirname, 'assets/icon.png'),
@@ -162,4 +162,4 @@ ipcMain.on('open-file-dialog', (event) => {
 // Handle notifications
 ipcMain.on('show-notification', (event, { title, body }) => {
     new Notification({ title, body }).show();
-}); 
+});

@@ -115,16 +115,7 @@ const MainApp = () => {
                 setShowOnboarding(true);
             }
 
-            // Check for stored API key
-            const storedApiKey = localStorage.getItem('ai_api_key');
-            if (storedApiKey) {
-                try {
-                    await aiService.initialize(storedApiKey);
-                    setIsAiInitialized(true);
-                } catch (error) {
-                    console.error('Failed to initialize AI service:', error);
-                }
-            }
+            // Skip persistent AI key usage to avoid storing secrets client-side
 
             await new Promise(resolve => setTimeout(resolve, 500));
             setIsLoading(false);
@@ -181,7 +172,6 @@ const MainApp = () => {
             await aiService.initialize(apiKey);
             setIsAiInitialized(true);
             setShowApiInput(false);
-            localStorage.setItem('ai_api_key', apiKey);
             
             // Add notification
             addNotification('AI service initialized successfully', 'success');

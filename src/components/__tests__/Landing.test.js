@@ -1,5 +1,12 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+jest.mock('react-router-dom', () => ({
+  BrowserRouter: ({ children }) => <div>{children}</div>,
+  MemoryRouter: ({ children }) => <div>{children}</div>,
+  Routes: ({ children }) => <div>{children}</div>,
+  Route: ({ element }) => element,
+  Navigate: () => null,
+}), { virtual: true });
 import { BrowserRouter } from 'react-router-dom';
 import Landing from '../Landing';
 import { signIn, signUp } from '../../services/supabase-service';

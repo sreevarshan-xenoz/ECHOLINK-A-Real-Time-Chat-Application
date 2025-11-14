@@ -1,14 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import io from 'socket.io-client';
 import * as supabaseService from './supabase-service';
+import config from '../config/environment';
 
 class WebRTCService {
     constructor() {
-        // Get the local IP address from the window.location or default to localhost
-        const serverIP = window.location.hostname === 'localhost' ? 'localhost' : window.location.hostname;
-        
         try {
-            this.socket = io(`http://${serverIP}:5000`, {
+            this.socket = io(config.server.signalingUrl, {
                 timeout: 5000,
                 autoConnect: false // Don't auto-connect to avoid immediate errors
             });
@@ -262,21 +260,49 @@ class WebRTCService {
         // Create a simple dialog to enter peer ID or discover peers
         const dialog = document.createElement('div');
         dialog.className = 'connection-dialog';
-        dialog.innerHTML = `
-            <div class="connection-dialog-content">
-                <h2>Connect with Peers</h2>
-                <p>Your Peer ID: <strong>${this.peerId}</strong></p>
-                <div class="connection-form">
-                    <input type="text" id="peer-id-input" placeholder="Enter Peer ID to connect" />
-                    <button id="connect-btn">Connect</button>
-                </div>
-                <div class="available-peers">
-                    <h3>Available Peers</h3>
-                    <div id="peer-list"></div>
-                </div>
-                <button id="close-dialog-btn">Close</button>
-            </div>
-        `;
+
+        const content = document.createElement('div');
+        content.className = 'connection-dialog-content';
+
+        const title = document.createElement('h2');
+        title.textContent = 'Connect with Peers';
+        content.appendChild(title);
+
+        const peerInfo = document.createElement('p');
+        const strong = document.createElement('strong');
+        strong.textContent = this.peerId;
+        peerInfo.append('Your Peer ID: ', strong);
+        content.appendChild(peerInfo);
+
+        const form = document.createElement('div');
+        form.className = 'connection-form';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'peer-id-input';
+        input.placeholder = 'Enter Peer ID to connect';
+        const connectButton = document.createElement('button');
+        connectButton.id = 'connect-btn';
+        connectButton.textContent = 'Connect';
+        form.appendChild(input);
+        form.appendChild(connectButton);
+        content.appendChild(form);
+
+        const availablePeers = document.createElement('div');
+        availablePeers.className = 'available-peers';
+        const peersHeader = document.createElement('h3');
+        peersHeader.textContent = 'Available Peers';
+        const peerList = document.createElement('div');
+        peerList.id = 'peer-list';
+        availablePeers.appendChild(peersHeader);
+        availablePeers.appendChild(peerList);
+        content.appendChild(availablePeers);
+
+        const closeButton = document.createElement('button');
+        closeButton.id = 'close-dialog-btn';
+        closeButton.textContent = 'Close';
+        content.appendChild(closeButton);
+
+        dialog.appendChild(content);
         
         document.body.appendChild(dialog);
         
@@ -362,10 +388,9 @@ class WebRTCService {
         document.head.appendChild(style);
         
         // Handle connecting to a peer
-        const connectBtn = document.getElementById('connect-btn');
-        const peerIdInput = document.getElementById('peer-id-input');
-        const closeBtn = document.getElementById('close-dialog-btn');
-        const peerList = document.getElementById('peer-list');
+        const connectBtn = connectButton;
+        const peerIdInput = input;
+        const closeBtn = closeButton;
         
         if (connectBtn) {
             connectBtn.addEventListener('click', () => {
@@ -395,18 +420,24 @@ class WebRTCService {
                         { peerId: 'demo-peer-2', name: 'Bob (Demo)' },
                         { peerId: 'demo-peer-3', name: 'Carol (Demo)' }
                     ];
-                    
-                    peerList.innerHTML = '<p style="margin-bottom: 10px; color: #666;">Demo Peers Available:</p>';
+                    const demoLabel = document.createElement('p');
+                    demoLabel.style.marginBottom = '10px';
+                    demoLabel.style.color = '#666';
+                    demoLabel.textContent = 'Demo Peers Available:';
+                    peerList.appendChild(demoLabel);
                     mockPeers.forEach(peer => {
                         const peerItem = document.createElement('div');
                         peerItem.className = 'peer-item';
-                        peerItem.innerHTML = `
-                            <span>${peer.name}</span>
-                            <button class="connect-to-peer">Connect (Demo)</button>
-                        `;
+                        const nameSpan = document.createElement('span');
+                        nameSpan.textContent = peer.name;
+                        const btn = document.createElement('button');
+                        btn.className = 'connect-to-peer';
+                        btn.textContent = 'Connect (Demo)';
+                        peerItem.appendChild(nameSpan);
+                        peerItem.appendChild(btn);
                         peerList.appendChild(peerItem);
                         
-                        const connectToPeerBtn = peerItem.querySelector('.connect-to-peer');
+                        const connectToPeerBtn = btn;
                         if (connectToPeerBtn) {
                             connectToPeerBtn.addEventListener('click', () => {
                                 // Simulate connection for demo
@@ -417,18 +448,23 @@ class WebRTCService {
                         }
                     });
                 } else {
-                    peerList.innerHTML = '';
+                    while (peerList.firstChild) {
+                        peerList.removeChild(peerList.firstChild);
+                    }
                     response.peers.forEach(peer => {
                         if (peer.peerId !== this.peerId) {
                             const peerItem = document.createElement('div');
                             peerItem.className = 'peer-item';
-                            peerItem.innerHTML = `
-                                <span>${peer.peerId}</span>
-                                <button class="connect-to-peer">Connect</button>
-                            `;
+                            const idSpan = document.createElement('span');
+                            idSpan.textContent = peer.peerId;
+                            const btn = document.createElement('button');
+                            btn.className = 'connect-to-peer';
+                            btn.textContent = 'Connect';
+                            peerItem.appendChild(idSpan);
+                            peerItem.appendChild(btn);
                             peerList.appendChild(peerItem);
                             
-                            const connectToPeerBtn = peerItem.querySelector('.connect-to-peer');
+                            const connectToPeerBtn = btn;
                             if (connectToPeerBtn) {
                                 connectToPeerBtn.addEventListener('click', () => {
                                     this.initiateConnection(peer.peerId);
@@ -1361,4 +1397,4 @@ class WebRTCService {
 }
 
 // Create and export instance
-export const webrtcService = new WebRTCService(); 
+export const webrtcService = new WebRTCService();

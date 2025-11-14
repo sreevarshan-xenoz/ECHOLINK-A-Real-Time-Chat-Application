@@ -23,3 +23,12 @@ window.location = {
 // Suppress console errors during tests
 console.error = jest.fn();
 console.warn = jest.fn();
+
+// Mock ESM-only clients to avoid transform issues in Jest 27
+jest.mock('@gradio/client', () => ({
+  Client: class {
+    async predict() {
+      return {};
+    }
+  }
+}), { virtual: true });

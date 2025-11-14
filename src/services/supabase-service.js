@@ -9,8 +9,9 @@ if (!supabaseUrl || !supabaseKey) {
   console.warn('Supabase configuration missing. Some features may not work properly.');
 }
 
-export const supabase = supabaseUrl && supabaseKey 
-  ? createClient(supabaseUrl, supabaseKey)
+const shouldMockClientInTest = typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test';
+export const supabase = (supabaseUrl && supabaseKey) || shouldMockClientInTest
+  ? createClient(supabaseUrl || 'http://localhost', supabaseKey || 'anon')
   : null;
 
 export const signUp = async (email, password) => {
@@ -131,7 +132,7 @@ export const saveAISettings = async (userId, aiSettings) => {
       .upsert({
         user_id: userId,
         provider: aiSettings.provider,
-        api_key: aiSettings.apiKey, // Note: In a production app, you should encrypt this
+        // Do not store API keys in plaintext client-managed settings
         model: aiSettings.model,
         temperature: aiSettings.temperature || 0.7,
         max_tokens: aiSettings.maxTokens || 2048,
@@ -161,7 +162,7 @@ export const getAISettings = async (userId) => {
     // Convert from snake_case to camelCase
     const aiSettings = data ? {
       provider: data.provider,
-      apiKey: data.api_key,
+      // apiKey intentionally not returned from storage
       model: data.model,
       temperature: data.temperature || 0.7,
       maxTokens: data.max_tokens || 2048

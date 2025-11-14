@@ -5,7 +5,6 @@
 
 export interface GitHubConfig {
   clientId: string | undefined;
-  clientSecret: string | undefined;
   isConfigured: boolean;
   redirectUri: string;
   scope: string;
@@ -19,15 +18,12 @@ export interface SupabaseConfig {
 
 export interface AIConfig {
   huggingFace: {
-    token: string | undefined;
     isConfigured: boolean;
   };
   openai: {
-    apiKey: string | undefined;
     isConfigured: boolean;
   };
   gemini: {
-    apiKey: string | undefined;
     isConfigured: boolean;
   };
 }
@@ -74,8 +70,7 @@ class EnvironmentConfig {
   get github() {
     return {
       clientId: process.env.REACT_APP_GITHUB_CLIENT_ID,
-      clientSecret: process.env.REACT_APP_GITHUB_CLIENT_SECRET,
-      isConfigured: !!(process.env.REACT_APP_GITHUB_CLIENT_ID && process.env.REACT_APP_GITHUB_CLIENT_SECRET),
+      isConfigured: !!(process.env.REACT_APP_GITHUB_CLIENT_ID),
       redirectUri: `${window.location.origin}/auth/callback`,
       scope: 'repo user'
     };
@@ -94,16 +89,13 @@ class EnvironmentConfig {
   get ai() {
     return {
       huggingFace: {
-        token: process.env.REACT_APP_HF_TOKEN,
-        isConfigured: !!process.env.REACT_APP_HF_TOKEN
+        isConfigured: false
       },
       openai: {
-        apiKey: process.env.REACT_APP_OPENAI_API_KEY,
-        isConfigured: !!process.env.REACT_APP_OPENAI_API_KEY
+        isConfigured: false
       },
       gemini: {
-        apiKey: process.env.REACT_APP_GEMINI_API_KEY,
-        isConfigured: !!process.env.REACT_APP_GEMINI_API_KEY
+        isConfigured: false
       }
     };
   }
@@ -128,7 +120,7 @@ class EnvironmentConfig {
   // Feature Flags
   get features() {
     return {
-      aiChat: this.ai.openai.isConfigured || this.ai.gemini.isConfigured || this.ai.huggingFace.isConfigured,
+      aiChat: true,
       githubIntegration: this.github.isConfigured,
       voiceMessages: true,
       fileSharing: true,

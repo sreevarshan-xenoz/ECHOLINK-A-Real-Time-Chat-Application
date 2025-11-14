@@ -15,8 +15,6 @@ declare global {
 
 // Set up global variables
 window.Buffer = Buffer;
-// @ts-ignore - The process variable types are complex, we're simplifying for the app
-window.process = { env: { ...process.env } };
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -28,4 +26,4 @@ root.render(
       <App />
     </AppProviders>
   </React.StrictMode>
-); 
+);
