@@ -5,6 +5,7 @@ const cors = require('cors');
 const axios = require('axios');
 const bodyParser = require('body-parser');
 const supabaseClient = require('./supabase-client');
+const crypto = require('crypto');
 
 const app = express();
 
@@ -123,16 +124,22 @@ app.get('/api/groups/:groupId/members', async (req, res) => {
 
 // GitHub OAuth Step 1: Redirect to GitHub's authorization page
 app.get('/auth/github', (req, res) => {
-    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${GITHUB_REDIRECT_URI}&scope=user:email`;
+    const state = crypto.randomBytes(16).toString('hex');
+    oauthStates.add(state);
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${GITHUB_REDIRECT_URI}&scope=user:email&state=${state}`;
     res.redirect(githubAuthUrl);
 });
 
 // GitHub OAuth Step 2: GitHub redirects back to your server
 app.get('/auth/github/callback', async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
     if (!code) {
         return res.status(400).send('Authorization code is missing');
     }
+    if (!state || !oauthStates.has(state)) {
+        return res.status(400).send('Invalid OAuth state');
+    }
+    oauthStates.delete(state);
 
     try {
         // Exchange authorization code for an access token
@@ -167,8 +174,15 @@ app.get('/auth/github/callback', async (req, res) => {
         const frontendRedirectUrl = process.env.NODE_ENV === 'production' 
             ? 'https://your-production-domain.com/auth/callback' 
             : 'http://localhost:3000/auth/callback';
-        
-        res.redirect(`${frontendRedirectUrl}?userId=${userId}&userName=${userName}&avatarUrl=${encodeURIComponent(userAvatar)}&accessToken=${accessToken}`);
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 1000
+        };
+        res.cookie('gh_token', accessToken, cookieOptions);
+        res.redirect(`${frontendRedirectUrl}?userId=${userId}&userName=${userName}&avatarUrl=${encodeURIComponent(userAvatar)}`);
 
     } catch (error) {
         console.error('GitHub OAuth error:', error.response ? error.response.data : error.message);
@@ -618,3 +632,5 @@ const HOST = process.env.HOST || '0.0.0.0'; // Standard for listening on all ava
 server.listen(PORT, HOST, () => {
     console.log(`Server listening on ${HOST}:${PORT}`);
 });
+// OAuth state tracking (in-memory)
+const oauthStates = new Set();
